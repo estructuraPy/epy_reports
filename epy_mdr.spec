@@ -1,7 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for epy_mdr: portable onedir build.
 
+from pathlib import Path as _Path
 import pypandoc
+
+_ICON = str(_Path("assets_build/epy_mdr.ico"))
 from PyInstaller.utils.hooks import (
     collect_data_files,
     collect_dynamic_libs,
@@ -57,7 +60,7 @@ exe = EXE(
     upx=False,
     console=False,
     disable_windowed_traceback=False,
-    icon=None,
+    icon=_ICON,
 )
 
 coll = COLLECT(

@@ -1,0 +1,94 @@
+name: Build Installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Windows: PyInstaller onedir + Inno Setup .exe
+  # ---------------------------------------------------------------------------
+  windows-installer:
+    name: Windows installer (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev] pyinstaller pypandoc-binary pillow
+
+      - name: Generate icons
+        run: python installer/make_icon.py
+
+      - name: Build PyInstaller onedir
+        run: python build.py
+
+      - name: Install Inno Setup via Chocolatey
+        run: choco install innosetup --yes --no-progress
+
+      - name: Compile Inno Setup installer
+        shell: cmd
+        run: |
+          set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
+          if not exist %ISCC% set ISCC="%ProgramFiles%\Inno Setup 6\ISCC.exe"
+          %ISCC% installer\windows\epy_mdr.iss
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: epy_mdr-windows-installer
+          path: installer/dist/epy_mdr-setup-*.exe
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Ubuntu: pure-Python .deb assembler
+  # ---------------------------------------------------------------------------
+  ubuntu-deb:
+    name: Ubuntu .deb package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev] pypandoc-binary pillow
+
+      - name: Generate icons
+        run: python installer/make_icon.py
+
+      - name: Build .deb package
+        run: python installer/linux/build_deb.py
+
+      - name: Validate .deb structure (dpkg-deb)
+        run: dpkg-deb --info installer/dist/epy-mdr_*.deb
+
+      - name: Lint .deb (lintian, non-blocking)
+        run: |
+          sudo apt-get install -y lintian 2>/dev/null || true
+          lintian installer/dist/epy-mdr_*.deb || true
+
+      - name: Upload Ubuntu .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: epy_mdr-ubuntu-deb
+          path: installer/dist/epy-mdr_*.deb
+          retention-days: 30

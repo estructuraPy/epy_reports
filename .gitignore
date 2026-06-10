@@ -36,3 +36,7 @@ _archive/
 _scratch/
 results/
 *.epyx
+
+# Installer build artifacts
+installer/dist/
+
