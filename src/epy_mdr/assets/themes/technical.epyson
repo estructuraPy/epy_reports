@@ -1,0 +1,142 @@
+{
+  "description": "Layout técnico - Configuración integrada directa",
+  "version": "4.0.0",
+  "last_updated": "2025-11-22",
+  "chunk_types": {
+    "display_chunk": {"code_block_format": "```{language}\n{code}\n```"},
+    "executable_chunk": {"code_block_format": "```{{{language}}}\n{code}\n```"}
+  },
+  "layout_name": "technical",
+  "font_family_ref": "technical",
+  "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
+  "font_families": {
+    "default": {"description": "Fuente por defecto", "primary": "Calibri",
+      "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
+    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"},
+    "technical": {"description": "Fuente técnica", "primary": "Liberation Mono",
+      "fallback": "FreeMono, Consolas, Monaco, monospace", "latex_primary": "Latin Modern Mono"}
+  },
+  "typography": {
+    "role_assignments": {"caption": "technical", "code": "mono_code", "figures": "technical",
+      "footer": "technical", "headings": "technical", "tables": "technical", "text": "technical"},
+    "scales": {
+      "caption": {"size": 9.5, "weight": "400"},
+      "footer": {"size": 9.0, "weight": "400"},
+      "h1": {"size": 22.0, "weight": "700"},
+      "h2": {"size": 18.0, "weight": "700"},
+      "h3": {"size": 16.0, "weight": "600"},
+      "h4": {"size": 14.0, "weight": "600"},
+      "h5": {"size": 12.0, "weight": "600"},
+      "h6": {"size": 11.0, "weight": "600"},
+      "text": {"size": 11.0, "weight": "400"}
+    },
+    "line_spacing": {"single": 1.0, "one_and_half": 1.4, "double": 1.8},
+    "element_typography": {
+      "callouts": {"title_weight": "700", "content_weight": "400", "size_scale": 0.95, "line_height": 1.4},
+      "tables": {
+        "caption": {"size": 8.5, "weight": "400"},
+        "content": {"size": 8.5, "weight": "400"},
+        "header": {"size": 9.5, "weight": "700"},
+        "title": {"size": 9.5, "weight": "700"}
+      }
+    }
+  },
+  "palette": {
+    "description": "Paleta gris técnica: tonos industriales modernos",
+    "border_color": [229, 231, 235],
+    "caption_color": [100, 100, 100],
+    "code": {"background": [249, 250, 251], "text": [0, 0, 0]},
+    "colors": {
+      "primary": [75, 85, 99],
+      "secondary": [107, 114, 128],
+      "tertiary": [156, 163, 175],
+      "quaternary": [200, 200, 200],
+      "quinary": [220, 220, 220],
+      "senary": [31, 41, 55],
+      "septenary": [0, 0, 0]
+    },
+    "page": {"background": [240, 245, 250], "footer_color": [100, 100, 100], "header_color": [31, 41, 55], "text": [0, 0, 0]},
+    "table": {
+      "background": [240, 245, 250],
+      "background_text": [0, 0, 0],
+      "header": [75, 85, 99],
+      "header_text": [255, 255, 255],
+      "stripe": [249, 250, 251],
+      "stripe_text": [0, 0, 0]
+    }
+  },
+  "callouts": {
+    "format": {"bg_alpha": 0.08, "border": {"style": "solid", "width_px": 0.5}, "line_height": 1.5, "size_scale": 0.92},
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n**{{title}}**\n{{content}}\n:::",
+      "collapse": false,
+      "spacing": {"after": "\n\n", "before": "\n\n"},
+      "title_required": true
+    },
+    "types": {
+      "caution": {"icon": "alert", "palette": "monochrome"},
+      "important": {"icon": "exclamation", "palette": "monochrome"},
+      "note": {"icon": "info", "palette": "monochrome"},
+      "tip": {"icon": "lightbulb", "palette": "monochrome"},
+      "warning": {"icon": "warning", "palette": "oranges"}
+    }
+  },
+  "code_chunks": {
+    "caption_format": "**Listing {counter}:** {caption}",
+    "spacing": {"after": "\n\n", "before": "\n\n"}
+  },
+  "figures": {
+    "alignment": "left",
+    "caption": {"format": "**{caption}**", "numbering": true, "reference_format": "@fig-{id}", "style": "bold"},
+    "caption_format": "**{caption}**",
+    "caption_position": "bottom",
+    "default_width": "6.0in",
+    "defaults": {"alt_text": "Figure", "width": "7.0in"},
+    "include_alt_text": true,
+    "plot_settings": {"bbox_inches": "tight", "dpi": 200, "facecolor": "layout_background", "format": "png"},
+    "spacing": {"after": "\n\n", "before": "\n\n"}
+  },
+  "tables": {
+    "alignment": "left",
+    "alternating_rows": true,
+    "caption_format": ": **{caption}**",
+    "caption_position": "top",
+    "header_bold": true,
+    "spacing": {"after": "\n\n", "before": "\n\n"},
+    "styling": {
+      "alternating_rows": true,
+      "cell_padding": 0.03,
+      "content_bold": false,
+      "grid_width_px": 0.25,
+      "header_bold": true,
+      "header_wrap_max_chars": 35,
+      "highlight_node_column": true,
+      "line_spacing": 1.3,
+      "right_padding_spaces": 3,
+      "width_in": 7.0
+    },
+    "defaults": {
+      "alignment": {
+        "content": {"horizontal": "right", "vertical": "center"},
+        "header": {"horizontal": "center", "vertical": "center"},
+        "numeric": {"horizontal": "right"},
+        "title": {"horizontal": "center"}
+      },
+      "borders": {"style": "solid", "width_px": 0.25},
+      "category_detection": {
+        "analysis": ["analysis"],
+        "design": ["design"],
+        "dimensions": ["dimensions"],
+        "forces": ["forces"],
+        "general": ["general"],
+        "nodes": ["nodes"],
+        "properties": ["properties"]
+      },
+      "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
+    }
+  },
+  "citation_style": "ieee",
+  "docx_reference": "assets/templates/technical.docx",
+  "html_theme": "cyborg"
+}

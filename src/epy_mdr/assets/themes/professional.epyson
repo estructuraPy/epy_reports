@@ -1,0 +1,142 @@
+{
+  "description": "Layout profesional - Configuración integrada directa",
+  "version": "4.0.0",
+  "last_updated": "2025-11-22",
+  "chunk_types": {
+    "display_chunk": {"code_block_format": "```{language}\n{code}\n```"},
+    "executable_chunk": {"code_block_format": "```{{{language}}}\n{code}\n```"}
+  },
+  "layout_name": "professional",
+  "font_family_ref": "professional",
+  "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
+  "font_families": {
+    "default": {"description": "Fuente por defecto", "primary": "Calibri",
+      "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
+    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"},
+    "professional": {"description": "Fuente profesional", "primary": "Source Sans Pro",
+      "fallback": "Arial, Helvetica, sans-serif", "latex_primary": "Latin Modern Sans"}
+  },
+  "typography": {
+    "role_assignments": {"caption": "professional", "code": "mono_code", "figures": "professional",
+      "footer": "professional", "headings": "professional", "tables": "professional", "text": "professional"},
+    "scales": {
+      "caption": {"size": 10.0, "weight": "400"},
+      "footer": {"size": 9.0, "weight": "400"},
+      "h1": {"size": 24.0, "weight": "700"},
+      "h2": {"size": 20.0, "weight": "700"},
+      "h3": {"size": 18.0, "weight": "600"},
+      "h4": {"size": 16.0, "weight": "600"},
+      "h5": {"size": 14.0, "weight": "600"},
+      "h6": {"size": 12.0, "weight": "600"},
+      "text": {"size": 12.0, "weight": "400"}
+    },
+    "line_spacing": {"single": 1.0, "one_and_half": 1.5, "double": 2.0},
+    "element_typography": {
+      "callouts": {"title_weight": "700", "content_weight": "400", "size_scale": 0.95, "line_height": 1.4},
+      "tables": {
+        "caption": {"size": 8.8, "weight": "400"},
+        "content": {"size": 8.8, "weight": "400"},
+        "header": {"size": 10.0, "weight": "700"},
+        "title": {"size": 10.0, "weight": "700"}
+      }
+    }
+  },
+  "palette": {
+    "description": "Paleta azul cielo profesional: gradiente de azules claros a navy",
+    "border_color": [179, 213, 245],
+    "caption_color": [100, 100, 100],
+    "code": {"background": [227, 242, 253], "text": [0, 0, 0]},
+    "colors": {
+      "primary": [13, 71, 161],
+      "secondary": [25, 118, 210],
+      "tertiary": [100, 181, 246],
+      "quaternary": [179, 213, 245],
+      "quinary": [227, 242, 253],
+      "senary": [0, 33, 132],
+      "septenary": [0, 0, 0]
+    },
+    "page": {"background": [255, 255, 255], "footer_color": [100, 100, 100], "header_color": [0, 33, 132], "text": [0, 0, 0]},
+    "table": {
+      "background": [255, 255, 255],
+      "background_text": [0, 0, 0],
+      "header": [13, 71, 161],
+      "header_text": [255, 255, 255],
+      "stripe": [227, 242, 253],
+      "stripe_text": [0, 0, 0]
+    }
+  },
+  "callouts": {
+    "format": {"bg_alpha": 0.1, "border": {"style": "solid", "width_px": 1.0}, "line_height": 1.4, "size_scale": 0.95},
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n## {{title}}\n{{content}}\n:::",
+      "collapse": false,
+      "spacing": {"after": "\n\n", "before": "\n\n"},
+      "title_required": true
+    },
+    "types": {
+      "caution": {"icon": "alert", "palette": "purples"},
+      "important": {"icon": "exclamation", "palette": "reds"},
+      "note": {"icon": "info", "palette": "blues"},
+      "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
+      "warning": {"icon": "warning", "palette": "oranges"}
+    }
+  },
+  "code_chunks": {
+    "caption_format": "*{caption}*",
+    "spacing": {"after": "\n\n", "before": "\n\n"}
+  },
+  "figures": {
+    "alignment": "center",
+    "caption": {"format": "*{caption}*", "numbering": true, "reference_format": "@fig-{id}", "style": "italic"},
+    "caption_format": "*{caption}*",
+    "caption_position": "bottom",
+    "default_width": "6.0in",
+    "defaults": {"alt_text": "Figure", "width": "6.5in"},
+    "include_alt_text": true,
+    "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"},
+    "spacing": {"after": "\n\n", "before": "\n\n"}
+  },
+  "tables": {
+    "alignment": "center",
+    "alternating_rows": true,
+    "caption_format": ": {caption}",
+    "caption_position": "top",
+    "header_bold": true,
+    "spacing": {"after": "\n\n", "before": "\n\n"},
+    "styling": {
+      "alternating_rows": true,
+      "cell_padding": 0.03,
+      "content_bold": false,
+      "grid_width_px": 0.25,
+      "header_bold": true,
+      "header_wrap_max_chars": 35,
+      "highlight_node_column": true,
+      "line_spacing": 1.3,
+      "right_padding_spaces": 3,
+      "width_in": 7.0
+    },
+    "defaults": {
+      "alignment": {
+        "content": {"horizontal": "right", "vertical": "center"},
+        "header": {"horizontal": "center", "vertical": "center"},
+        "numeric": {"horizontal": "right"},
+        "title": {"horizontal": "center"}
+      },
+      "borders": {"style": "solid", "width_px": 0.25},
+      "category_detection": {
+        "analysis": ["analysis"],
+        "design": ["design"],
+        "dimensions": ["dimensions"],
+        "forces": ["forces"],
+        "general": ["general"],
+        "nodes": ["nodes"],
+        "properties": ["properties"]
+      },
+      "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
+    }
+  },
+  "citation_style": "apa",
+  "docx_reference": "assets/templates/professional.docx",
+  "html_theme": "united"
+}

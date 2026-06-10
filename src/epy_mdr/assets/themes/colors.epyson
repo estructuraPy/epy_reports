@@ -1,0 +1,532 @@
+{
+  "note": "Estructura de colores v3.0 - Paletas de coloración con 6 colores para resaltar elementos",
+  "color_palettes": {
+    "blues": {
+      "description": "Paleta azul cielo suave: gradiente azul claro a navy profundo",
+      "primary": [70, 74, 133],
+      "secondary": [99, 98, 149],
+      "tertiary": [130, 126, 168],
+      "quaternary": [164, 161, 193],
+      "quinary": [207, 222, 233],
+      "senary": [0, 33, 126],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "engineering": {
+      "description": "Paleta técnica profesional: azules técnicos y grises industriales",
+      "primary": [30, 96, 169],
+      "secondary": [66, 142, 212],
+      "tertiary": [129, 186, 239],
+      "quaternary": [187, 222, 251],
+      "quinary": [236, 245, 255],
+      "senary": [13, 60, 108],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "grays": {
+      "description": "Paleta gris neutra: tonos grises equilibrados",
+      "primary": [99, 100, 102],
+      "secondary": [128, 130, 133],
+      "tertiary": [157, 159, 162],
+      "quaternary": [175, 177, 179],
+      "quinary": [188, 190, 192],
+      "senary": [1, 1, 1],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "greens": {
+      "description": "Paleta verde esmeralda: tonos verdes frescos y teal",
+      "primary": [27, 94, 32],
+      "secondary": [76, 132, 73],
+      "tertiary": [76, 175, 80],
+      "quaternary": [200, 230, 201],
+      "quinary": [232, 245, 233],
+      "senary": [0, 121, 107],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "info": {
+      "description": "Paleta azul información: azules brillantes informativos",
+      "primary": [29, 78, 216],
+      "secondary": [37, 99, 235],
+      "tertiary": [59, 130, 246],
+      "quaternary": [191, 219, 254],
+      "quinary": [239, 246, 255],
+      "senary": [30, 58, 138],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "monochrome": {
+      "description": "Paleta gris pizarra minimalista: tonos slate sutiles",
+      "primary": [71, 85, 105],
+      "secondary": [100, 116, 139],
+      "tertiary": [148, 163, 184],
+      "quaternary": [226, 232, 240],
+      "quinary": [248, 250, 252],
+      "senary": [30, 41, 59],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "demand_capacity": {
+      "description": "Paleta demanda-capacidad tipo semáforo: rojo (sobrecarga) a verde (subcarga) pasando por amarillo",
+      "primary":  [27, 94, 32],
+      "secondary": [76, 175, 80],
+      "tertiary": [139, 195, 74],
+      "quaternary": [255, 193, 7],
+      "quinary": [244, 67, 54],
+      "senary": [220, 38, 38],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#FFFFFF",
+        "senary": "#FFFFFF"
+      }
+    },
+    "neutrals": {
+      "description": "Paleta neutral balanceada: grises cálidos equilibrados",
+      "primary": [115, 115, 115],
+      "secondary": [163, 163, 163],
+      "tertiary": [212, 212, 212],
+      "quaternary": [245, 245, 245],
+      "quinary": [250, 250, 250],
+      "senary": [64, 64, 64],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "oranges": {
+      "description": "Paleta naranja cálida: amarillo-naranja brillante a naranja oscuro",
+      "primary": [255, 87, 34],
+      "secondary": [202, 154, 36],
+      "tertiary": [255, 152, 0],
+      "quaternary": [255, 204, 128],
+      "quinary": [255, 243, 224],
+      "senary": [230, 81, 0],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "purples": {
+      "description": "Paleta púrpura vibrante: lavanda a violeta profundo",
+      "primary": [74, 20, 140],
+      "secondary": [101, 57, 114],
+      "tertiary": [156, 39, 176],
+      "quaternary": [225, 190, 231],
+      "quinary": [248, 245, 250],
+      "senary": [49, 27, 146],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "reds": {
+      "description": "Paleta roja intensa: rosa claro a rojo profundo y magenta",
+      "primary": [205, 78, 63],
+      "secondary": [211, 111, 106],
+      "tertiary": [222, 143, 135],
+      "quaternary": [232, 178, 170],
+      "quinary": [255, 235, 238],
+      "senary": [198, 18, 60],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "yellows": {
+      "description": "Paleta amarilla cálida: amarillo brillante a dorado",
+      "primary": [213, 160, 47],
+      "secondary": [224, 167, 58],
+      "tertiary": [232, 179, 70],
+      "quaternary": [240, 195, 85],
+      "quinary": [248, 211, 105],
+      "senary": [202, 154, 36],
+      "text_colors": {
+        "primary": "#000000",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#000000"
+      }
+    },
+    "ocean": {
+      "description": "Paleta océano profundo: azul-verde marino con toques de turquesa",
+      "primary": [0, 77, 64],
+      "secondary": [0, 105, 92],
+      "tertiary": [0, 150, 136],
+      "quaternary": [77, 182, 172],
+      "quinary": [178, 223, 219],
+      "senary": [0, 51, 51],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "sunset": {
+      "description": "Paleta atardecer cálido: degradado de coral a violeta profundo",
+      "primary": [255, 112, 67],
+      "secondary": [239, 83, 80],
+      "tertiary": [171, 71, 188],
+      "quaternary": [255, 183, 77],
+      "quinary": [255, 238, 221],
+      "senary": [136, 14, 79],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "forest": {
+      "description": "Paleta bosque natural: verdes orgánicos y tonos tierra",
+      "primary": [56, 142, 60],
+      "secondary": [104, 159, 56],
+      "tertiary": [139, 195, 74],
+      "quaternary": [174, 213, 129],
+      "quinary": [220, 237, 200],
+      "senary": [27, 94, 32],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "amber": {
+      "description": "Paleta ámbar terroso: tonos cálidos de miel y tierra",
+      "primary": [255, 160, 0],
+      "secondary": [255, 179, 0],
+      "tertiary": [255, 193, 7],
+      "quaternary": [255, 224, 130],
+      "quinary": [255, 248, 225],
+      "senary": [255, 111, 0],
+      "text_colors": {
+        "primary": "#000000",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "cyan": {
+      "description": "Paleta cian brillante: azul cielo vibrante y fresco",
+      "primary": [0, 172, 193],
+      "secondary": [0, 188, 212],
+      "tertiary": [38, 198, 218],
+      "quaternary": [128, 222, 234],
+      "quinary": [224, 247, 250],
+      "senary": [0, 96, 100],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "indigo": {
+      "description": "Paleta índigo elegante: azul-violeta profundo y sofisticado",
+      "primary": [48, 63, 159],
+      "secondary": [63, 81, 181],
+      "tertiary": [92, 107, 192],
+      "quaternary": [159, 168, 218],
+      "quinary": [232, 234, 246],
+      "senary": [26, 35, 126],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "rose": {
+      "description": "Paleta rosa elegante: tonos rosados suaves y cálidos",
+      "primary": [194, 24, 91],
+      "secondary": [233, 30, 99],
+      "tertiary": [240, 98, 146],
+      "quaternary": [248, 187, 208],
+      "quinary": [252, 228, 236],
+      "senary": [136, 14, 79],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "teal": {
+      "description": "Paleta verde azulado: equilibrio entre verde y azul marino",
+      "primary": [0, 121, 107],
+      "secondary": [0, 137, 123],
+      "tertiary": [38, 166, 154],
+      "quaternary": [128, 203, 196],
+      "quinary": [224, 242, 241],
+      "senary": [0, 77, 64],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "brown": {
+      "description": "Paleta café orgánico: tonos tierra cálidos y naturales",
+      "primary": [93, 64, 55],
+      "secondary": [121, 85, 72],
+      "tertiary": [161, 136, 127],
+      "quaternary": [188, 170, 164],
+      "quinary": [239, 235, 233],
+      "senary": [62, 39, 35],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "lime": {
+      "description": "Paleta lima energética: verde brillante y vibrante",
+      "primary": [158, 157, 36],
+      "secondary": [192, 202, 51],
+      "tertiary": [205, 220, 57],
+      "quaternary": [230, 238, 156],
+      "quinary": [249, 251, 231],
+      "senary": [130, 119, 23],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "mint": {
+      "description": "Paleta menta fresca: verde claro refrescante y suave",
+      "primary": [38, 166, 154],
+      "secondary": [77, 182, 172],
+      "tertiary": [128, 203, 196],
+      "quaternary": [178, 223, 219],
+      "quinary": [224, 242, 241],
+      "senary": [0, 121, 107],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "burgundy": {
+      "description": "Paleta vino borgoña: rojos profundos y elegantes",
+      "primary": [136, 14, 79],
+      "secondary": [173, 20, 87],
+      "tertiary": [194, 24, 91],
+      "quaternary": [233, 30, 99],
+      "quinary": [248, 187, 208],
+      "senary": [74, 20, 140],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#FFFFFF",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "navy": {
+      "description": "Paleta azul marino corporativo: azul profundo profesional",
+      "primary": [13, 71, 161],
+      "secondary": [25, 118, 210],
+      "tertiary": [66, 165, 245],
+      "quaternary": [144, 202, 249],
+      "quinary": [227, 242, 253],
+      "senary": [1, 87, 155],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "lavender": {
+      "description": "Paleta lavanda suave: violeta claro relajante",
+      "primary": [126, 87, 194],
+      "secondary": [149, 117, 205],
+      "tertiary": [179, 157, 219],
+      "quaternary": [209, 196, 233],
+      "quinary": [243, 239, 248],
+      "senary": [94, 53, 177],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "coral": {
+      "description": "Paleta coral vibrante: naranja-rosa tropical",
+      "primary": [255, 87, 34],
+      "secondary": [255, 112, 67],
+      "tertiary": [255, 138, 101],
+      "quaternary": [255, 204, 188],
+      "quinary": [255, 243, 238],
+      "senary": [239, 83, 80],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "slate": {
+      "description": "Paleta pizarra moderna: grises azulados contemporáneos",
+      "primary": [55, 71, 79],
+      "secondary": [69, 90, 100],
+      "tertiary": [96, 125, 139],
+      "quaternary": [176, 190, 197],
+      "quinary": [236, 239, 241],
+      "senary": [38, 50, 56],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "peach": {
+      "description": "Paleta durazno suave: tonos melocotón cálidos y delicados",
+      "primary": [255, 138, 101],
+      "secondary": [255, 171, 145],
+      "tertiary": [255, 204, 188],
+      "quaternary": [255, 224, 178],
+      "quinary": [255, 248, 240],
+      "senary": [255, 87, 34],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "emerald": {
+      "description": "Paleta esmeralda brillante: verde joya intenso",
+      "primary": [0, 150, 136],
+      "secondary": [38, 166, 154],
+      "tertiary": [77, 182, 172],
+      "quaternary": [128, 203, 196],
+      "quinary": [224, 242, 241],
+      "senary": [0, 105, 92],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    },
+    "crimson": {
+      "description": "Paleta carmesí intensa: rojo intenso y dramático",
+      "primary": [183, 28, 28],
+      "secondary": [211, 47, 47],
+      "tertiary": [229, 115, 115],
+      "quaternary": [239, 154, 154],
+      "quinary": [255, 235, 238],
+      "senary": [136, 14, 79],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
+    }
+  }
+}

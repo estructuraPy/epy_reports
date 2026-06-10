@@ -1,0 +1,42 @@
+[project]
+name = "epy_mdr"
+version = "0.2.0"
+description = "Quarto/Markdown editor with live preview and one-click PDF export."
+authors = [{ name = "Ing. Angel Navarro-Mora M.Sc." }]
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.6",
+    "pypandoc-binary>=1.13",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.6"]
+
+[project.gui-scripts]
+epy_mdr = "epy_mdr.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epy_mdr"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/epy_mdr/assets" = "epy_mdr/assets"
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "D", "UP", "B", "SIM"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["D"]
+"build.py" = ["D"]
+"epy_mdr.spec" = ["D", "F821", "E501"]

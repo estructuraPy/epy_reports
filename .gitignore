@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+.venv_*/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+
+# PyInstaller
+*.manifest
+
+# Coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ePy Suite
+_archive/
+_scratch/
+results/
+*.epyx

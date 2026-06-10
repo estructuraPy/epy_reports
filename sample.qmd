@@ -1,0 +1,147 @@
+---
+title: "epy_mdr — Quarto demo"
+author: "Ing. Angel Navarro-Mora M.Sc."
+date: "2026-06-09"
+bibliography: sample.bib
+---
+
+# Introduction {#sec-intro}
+
+A short technical note that exercises **Quarto** features inside
+`epy_mdr`: YAML front matter, fenced-div callouts, code blocks
+with syntax highlighting, Pandoc tables with captions, implicit
+figures and LaTeX math.
+
+> The same Pandoc render is used for the on-screen preview and the
+> PDF export, so the printed page matches what you see.
+
+# Callouts {#sec-callouts}
+
+Quarto callouts are written as fenced divs and support an optional
+`title` attribute.
+
+::: {.callout-note}
+A `note` callout. Useful for context that is not critical to the
+reader's main task.
+:::
+
+::: {.callout-tip title="Pro tip"}
+Use `Ctrl + P` to export this exact view to PDF. The print
+stylesheet adapts margins, fonts and code blocks automatically.
+:::
+
+::: {.callout-warning}
+Empirical formulas have a **range of validity**. Always check the
+parameters against the code before applying them.
+:::
+
+::: {.callout-important title="Read this first"}
+The minimum shear reinforcement in @sec-math is the *larger* of two
+expressions, never the average and never rounded down.
+:::
+
+::: {.callout-caution title="Safety critical"}
+A wrong shear-reinforcement detail can trigger a brittle failure
+with **no warning**.
+:::
+
+# Images {#sec-images}
+
+Two figures are embedded with relative paths, so they only resolve
+when this file is opened from its real location on disk.
+
+![Pushover capacity curve (base shear vs. roof drift).](../Books/modules/M14_sismica_control/figures/F4_2_curva_capacidad.png){#fig-capacity width=80%}
+
+![The Eiffel Tower — an early lattice-tower benchmark for wind-dominated tall structures.](../Books/modules/M00_introduccion_ingenieria_estructural/figures/F3.1_eiffel_actual.png){#fig-eiffel width=70%}
+
+# Tables {#sec-tables}
+
+: Strength-design load combinations (ASCE 7). {#tbl-loads}
+
+| #   | Combination                          | Governs                |
+| --- | ------------------------------------ | ---------------------- |
+| 1   | $1.4\,D$                             | Pure gravity           |
+| 2   | $1.2\,D + 1.6\,L + 0.5\,(L_r,S,R)$   | Live load              |
+| 3   | $1.2\,D + 1.6\,(L_r,S,R) + (L,0.5W)$ | Roof live / snow       |
+| 4   | $1.2\,D + 1.0\,W + L + 0.5\,(L_r,S)$ | Wind                   |
+| 5   | $0.9\,D + 1.0\,W$                    | Wind uplift / overturn |
+| 6   | $1.2\,D + 1.0\,E + L + 0.2\,S$       | Seismic                |
+| 7   | $0.9\,D + 1.0\,E$                    | Seismic overturning    |
+
+: Typical material properties. {#tbl-materials}
+
+| Material         | $f'_c$ / $f_y$ | $E$ (GPa) | $\nu$ | $\gamma$ (kN/m³) |
+| ---------------- | -------------- | --------- | ----- | ---------------- |
+| Concrete C25     | 25 MPa         | 25.0      | 0.20  | 24.0             |
+| Concrete C35     | 35 MPa         | 28.5      | 0.20  | 24.0             |
+| Rebar A615 Gr.60 | 420 MPa        | 200.0     | 0.30  | 77.0             |
+| Steel A36        | 250 MPa        | 200.0     | 0.30  | 77.0             |
+| Steel A992       | 345 MPa        | 200.0     | 0.30  | 77.0             |
+
+# Equations {#sec-math}
+
+Inline math: $\lambda = k L / r$ with $r = \sqrt{I/A}$.
+
+ACI 318-19 §9.6.3.4 — minimum shear reinforcement:
+
+$$
+A_{v,\min} \;=\; \max\!\left(
+    0.062\,\sqrt{f'_c}\,\frac{b_w\,s}{f_{yt}},\;
+    0.35\,\frac{b_w\,s}{f_{yt}}
+\right)
+$$ {#eq-avmin}
+
+Simply supported beam, uniform load $w$, length $L$:
+
+$$
+\delta_{\max} \;=\; \frac{5\,w\,L^{4}}{384\,E\,I}
+\qquad\text{at } x = L/2
+$$ {#eq-delta}
+
+SDOF equation of motion under ground acceleration $\ddot u_g$:
+
+$$
+m\,\ddot u(t) + c\,\dot u(t) + k\,u(t)
+\;=\; -\,m\,\ddot u_g(t)
+$$ {#eq-eom}
+
+# Code {#sec-code}
+
+Standard fenced code block with a language tag (highlighted by
+Pandoc's skylighting engine):
+
+```python
+def av_min(fc: float, fyt: float, bw: float, s: float) -> float:
+    """Return ACI 318-19 minimum shear reinforcement area (mm^2)."""
+    a = 0.062 * fc**0.5 * bw * s / fyt
+    b = 0.35 * bw * s / fyt
+    return max(a, b)
+```
+
+Quarto also accepts the engine-style fence; here it is rendered but
+not executed:
+
+````qmd
+```{python}
+import numpy as np
+np.linspace(0, 1, 5)
+```
+````
+
+# Lists and quotes {#sec-misc}
+
+- [x] YAML front matter as document header
+- [x] Quarto callouts with optional titles
+- [x] Figures with captions and IDs
+- [x] Tables with captions and IDs
+- [x] Display math with `{#eq-...}` labels
+- [ ] Cross-reference resolution (`@fig-…`, `@eq-…`) — future work
+
+> *"All models are wrong, but some are useful."* — G. E. P. Box
+
+# References {.unnumbered}
+
+This document cites @box1987empirical for the famous remark above,
+@aci318min for the shear reinforcement formula in @sec-math, and
+@tacoma1941collapse for the wind-induced collapse mentioned next to
+the Eiffel image in @sec-images.

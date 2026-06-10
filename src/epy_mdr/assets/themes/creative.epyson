@@ -1,0 +1,198 @@
+{
+  "description": "Layout creativo - Configuración integrada directa",
+  "version": "4.0.0",
+  "last_updated": "2025-11-22",
+  "chunk_types": {
+    "display_chunk": {"code_block_format": "```{language}\n{code}\n```"},
+    "executable_chunk": {"code_block_format": "```{{{language}}}\n{code}\n```"}
+  },
+  "layout_name": "creative",
+  "font_family_ref": "creative",
+  "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
+  "font_families": {
+    "creative": {"description": "Fuente creativa legible", "primary": "Montserrat",
+      "fallback": "Verdana, Geneva, Tahoma, sans-serif", "latex_primary": "Latin Modern Sans"},
+    "default": {"description": "Fuente por defecto", "primary": "Calibri",
+      "fallback": "Arial, sans-serif", "latex_primary": "Calibri"},
+    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Consolas"}
+  },
+  "typography": {
+    "role_assignments": {"caption": "creative", "code": "mono_code", "figures": "creative",
+      "footer": "creative", "headings": "creative", "tables": "creative", "text": "creative"},
+    "scales": {
+      "h1": {"size": 28.0, "weight": "400"},
+      "h2": {"size": 24.0, "weight": "400"},
+      "h3": {"size": 20.0, "weight": "400"},
+      "h4": {"size": 18.0, "weight": "400"},
+      "h5": {"size": 16.0, "weight": "400"},
+      "h6": {"size": 14.0, "weight": "400"},
+      "text": {"size": 11.0, "weight": "400"}
+    },
+    "line_spacing": {"single": 1.0, "one_and_half": 1.5, "double": 2.0},
+    "element_typography": {
+      "callouts": {"title_weight": "700", "content_weight": "400", "size_scale": 0.95, "line_height": 1.5},
+      "tables": {
+        "caption": {"size": 11.0, "weight": "500"},
+        "content": {"size": 10.0, "weight": "500"},
+        "header": {"size": 14.0, "weight": "800"},
+        "title": {"size": 14.0, "weight": "800"}
+      }
+    }
+  },
+  "palette": {
+    "description": "Paleta creativa anaranjada: fondo anaranjado con colores complementarios atrevidos",
+    "border_color": [139, 69, 19],
+    "caption_color": [139, 69, 19],
+    "code": {"background": [255, 248, 220], "text": [139, 69, 19]},
+    "colors": {
+      "primary": [255, 140, 0],
+      "secondary": [255, 69, 0],
+      "tertiary": [139, 69, 19],
+      "quaternary": [210, 105, 30],
+      "quinary": [255, 165, 0],
+      "senary": [205, 133, 63],
+      "septenary": [160, 82, 45]
+    },
+    "page": {"background": [255, 248, 220], "footer_color": [139, 69, 19], "header_color": [139, 69, 19], "text": [139, 69, 19]},
+    "table": {
+      "background": [255, 248, 220],
+      "background_text": [139, 69, 19],
+      "header": [255, 69, 0],
+      "header_text": [255, 255, 255],
+      "stripe": [255, 228, 181],
+      "stripe_text": [139, 69, 19]
+    }
+  },
+  "callouts": {
+    "format": {"bg_alpha": 0.15, "border": {"style": "solid", "width_px": 2.0}, "line_height": 1.5, "size_scale": 1.0},
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n## 💡 {{title}}\n{{content}}\n:::",
+      "collapse": false,
+      "spacing": {"after": "\n\n\n", "before": "\n\n\n"},
+      "title_required": false
+    },
+    "types": {
+      "caution": {"icon": "alert", "palette": "purples"},
+      "important": {"icon": "exclamation", "palette": "reds"},
+      "note": {"icon": "info", "palette": "blues"},
+      "tip": {"bg_alpha": 0.2, "icon": "lightbulb", "palette": "greens"},
+      "warning": {"icon": "warning", "palette": "oranges"}
+    }
+  },
+  "code_chunks": {
+    "caption_format": "🎨 {caption}",
+    "spacing": {"after": "\n\n\n", "before": "\n\n\n"}
+  },
+  "figures": {
+    "alignment": "center",
+    "caption": {"format": "{caption}", "numbering": false, "reference_format": "@fig-{id}", "style": "normal"},
+    "caption_format": "{caption}",
+    "caption_position": "bottom",
+    "default_width": "6.5in",
+    "defaults": {"alt_text": "Image", "width": "7.0in"},
+    "include_alt_text": false,
+    "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "white", "format": "png", "edgecolor": [210, 105, 30], "linewidth": 2},
+    "spacing": {"after": "\n\n\n", "before": "\n\n\n"}
+  },
+  "tables": {
+    "alignment": "center",
+    "alternating_rows": false,
+    "caption_format": "\n\n_{caption}_",
+    "caption_position": "bottom",
+    "header_bold": false,
+    "spacing": {"after": "\n\n\n", "before": "\n\n\n"},
+    "styling": {
+      "alternating_rows": false,
+      "cell_padding": 0.03,
+      "content_bold": false,
+      "grid_width_px": 0.25,
+      "header_bold": false,
+      "header_wrap_max_chars": 60,
+      "highlight_node_column": true,
+      "line_spacing": 1.3,
+      "right_padding_spaces": 3,
+      "width_in": 7.0
+    },
+    "defaults": {
+      "alignment": {
+        "content": {"horizontal": "right", "vertical": "center"},
+        "header": {"horizontal": "center", "vertical": "center"},
+        "numeric": {"horizontal": "right"},
+        "title": {"horizontal": "center"}
+      },
+      "borders": {"style": "solid", "width_px": 0.25},
+      "category_detection": {
+        "analysis": ["analysis"],
+        "design": ["design"],
+        "dimensions": ["dimensions"],
+        "forces": ["forces"],
+        "general": ["general"],
+        "nodes": ["nodes"],
+        "properties": ["properties"]
+      },
+      "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
+    }
+  },
+  "format": {
+    "shared_superscripts": {
+      "common_numbers": {
+        "^1": "¹",
+        "^2": "²", 
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹",
+        "^0": "⁰",
+        "^10": "¹⁰",
+        "^11": "¹¹",
+        "^12": "¹²"
+      },
+      "common_math": {
+        "^n": "ⁿ",
+        "^x": "ˣ",
+        "^y": "ʸ",
+        "^i": "ⁱ",
+        "^j": "ʲ",
+        "^k": "ᵏ",
+        "^+": "⁺",
+        "^-": "⁻",
+        "^=": "⁼"
+      }
+    },
+    "format_specific": {
+      "matplotlib": {
+        "extends": ["common_numbers", "common_math"],
+        "description": "Matplotlib table rendering with Unicode superscripts"
+      },
+      "html": {
+        "extends": ["common_numbers", "common_math"],
+        "prefix": "<sup>",
+        "suffix": "</sup>",
+        "description": "HTML rendering with sup tags"
+      },
+      "latex": {
+        "extends": ["common_numbers", "common_math"], 
+        "prefix": "\\textsuperscript{",
+        "suffix": "}",
+        "description": "LaTeX rendering with textsuperscript command"
+      }
+    },
+    "text_wrapping": {
+      "max_width": 80,
+      "ellipsis": "...",
+      "preserve_spaces": true
+    },
+    "missing_value_indicators": {
+      "empty": "",
+      "null": "—",
+      "undefined": "N/A"
+    }
+  },
+  "citation_style": "chicago",
+  "docx_reference": "assets/templates/creative.docx",
+  "html_theme": "lumen"
+}
