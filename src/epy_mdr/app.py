@@ -8,7 +8,12 @@ from collections import defaultdict
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtGui import QAction, QActionGroup, QKeySequence
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QCursor,
+    QKeySequence,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -22,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_mdr import bib, snippets, themes
+from epy_mdr.docs_bridge import epy_docs_available
 from epy_mdr.renderer import render_markdown
 from epy_mdr.tab import MarkdownTab
 
@@ -155,6 +161,17 @@ class MarkdownWindow(QMainWindow):
         self.act_quit = QAction("Quit", self)
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_quit.triggered.connect(self.close)
+
+        self.act_docs_export = QAction("Export via epy_docs...", self)
+        if epy_docs_available():
+            self.act_docs_export.triggered.connect(
+                self._export_via_docs
+            )
+        else:
+            self.act_docs_export.setEnabled(False)
+            self.act_docs_export.setToolTip(
+                "Requires the epy-docs package"
+            )
 
         # Theme actions (one per registered theme, exclusive group).
         self.theme_group = QActionGroup(self)
@@ -334,6 +351,8 @@ class MarkdownWindow(QMainWindow):
         self.export_menu.addAction(self.act_export_html)
         self.export_menu.addSeparator()
         self.export_menu.addAction(self.act_print)
+        self.export_menu.addSeparator()
+        self.export_menu.addAction(self.act_docs_export)
 
         self.view_menu = QMenu("&View", self)
         theme_sub = self.view_menu.addMenu("Theme")
@@ -750,6 +769,83 @@ class MarkdownWindow(QMainWindow):
             QMessageBox.warning(
                 self, APP_NAME, f"Failed to write PDF:\n{path}"
             )
+
+    def _export_via_docs(self) -> None:
+        """Launch the epy_docs export dialog and render in a worker."""
+        from epy_mdr.docs_export_dialog import (  # noqa: PLC0415
+            DocsExportDialog,
+            _RenderWorker,
+        )
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+
+        # Require the buffer to be saved on disk.
+        if tab.path is None or tab.dirty:
+            choice = QMessageBox.question(
+                self,
+                APP_NAME,
+                "The document must be saved before exporting via "
+                "epy_docs. Save now?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if choice != QMessageBox.StandardButton.Save:
+                return
+            if not self._save_current():
+                return
+
+        if tab.path is None:
+            return
+
+        dialog = DocsExportDialog(tab.path, parent=self)
+        if dialog.exec() != DocsExportDialog.DialogCode.Accepted:
+            return
+
+        dialog.persist_settings()
+
+        source = tab.path
+        layout = dialog.layout_name
+        doc_type = dialog.document_type
+        out_dir = dialog.output_dir
+        want_pdf = dialog.export_pdf
+        want_html = dialog.export_html
+
+        QApplication.setOverrideCursor(
+            QCursor(Qt.CursorShape.WaitCursor)
+        )
+        self.statusBar().showMessage("Exporting via epy_docs…", 0)
+
+        self._docs_worker = _RenderWorker(
+            source_path=source,
+            layout=layout,
+            document_type=doc_type,
+            output_dir=out_dir,
+            pdf=want_pdf,
+            html=want_html,
+        )
+        self._docs_worker.finished_ok.connect(self._on_docs_done_ok)
+        self._docs_worker.finished_err.connect(self._on_docs_done_err)
+        self._docs_worker.start()
+
+    def _on_docs_done_ok(self, out_dir: str) -> None:
+        """Handle a successful epy_docs render."""
+        QApplication.restoreOverrideCursor()
+        self.statusBar().showMessage(
+            f"Exported to {out_dir}", 5000
+        )
+
+    def _on_docs_done_err(self, message: str) -> None:
+        """Handle a failed epy_docs render."""
+        QApplication.restoreOverrideCursor()
+        self.statusBar().clearMessage()
+        QMessageBox.critical(
+            self,
+            APP_NAME,
+            f"epy_docs export failed:\n\n{message}",
+        )
 
     # ------------------------------------------------ closing logic
 

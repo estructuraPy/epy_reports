@@ -1,6 +1,6 @@
 [project]
 name = "epy_mdr"
-version = "0.2.0"
+version = "0.3.0"
 description = "Quarto/Markdown editor with live preview and one-click PDF export."
 authors = [{ name = "Ing. Angel Navarro-Mora M.Sc." }]
 requires-python = ">=3.10"
@@ -11,6 +11,8 @@ dependencies = [
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.6"]
+docs = ["epy-docs>=0.2.0"]
+dev = ["pytest>=8.0"]
 
 [project.gui-scripts]
 epy_mdr = "epy_mdr.app:main"
@@ -24,6 +26,9 @@ packages = ["src/epy_mdr"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/epy_mdr/assets" = "epy_mdr/assets"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 79

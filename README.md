@@ -11,7 +11,7 @@ Lightweight **Quarto / Markdown** editor with live preview, BibTeX-aware cross-r
 | Themes | 9 layout presets — academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical |
 | References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs |
 | Snippets | Section / figure / table / equation / code block / callout |
-| Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), Print (`Ctrl+Alt+P`) |
+| Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), Print (`Ctrl+Alt+P`), epy_docs |
 | Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_mdr.spec`) |
 | Windows | Optional shell association via `winreg_assoc.py` |
 
@@ -35,6 +35,38 @@ pip install -e ".[build]"
 python build.py
 # output -> dist/epy_mdr/epy_mdr.exe
 ```
+
+## Export via epy_docs
+
+The **Export → Export via epy_docs…** action renders the current document through
+the [epy_docs](https://pypi.org/project/epy-docs/) typesetting engine, which
+produces publication-quality PDF and HTML output using Quarto and corporate
+layout templates.
+
+**Requirements:** `epy_docs >= 0.2.0` and Quarto installed.  The action is
+disabled (greyed out with a tooltip) when `epy_docs` is not found, so the
+rest of the editor works without it.
+
+**Install the optional backend:**
+
+```bash
+pip install -e ".[docs]"
+# or
+pip install epy-docs
+```
+
+**Dialog options:**
+
+| Control | Default | Description |
+|---------|---------|-------------|
+| Layout | `corporate` | Any layout from `epy_docs.available_layouts()` |
+| Document type | `report` | Any type from `epy_docs.available_document_types()` |
+| Output directory | `<file-dir>/results` | Where the rendered files land |
+| PDF / HTML | both checked | Select which formats to generate |
+
+The last-used values persist in `QSettings` (`docs_layout`, `docs_doctype`,
+`docs_outdir`).  The document must be saved before exporting; if there are
+unsaved changes you will be prompted to save first.
 
 ## Key shortcuts
 

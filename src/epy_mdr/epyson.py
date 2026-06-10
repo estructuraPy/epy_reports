@@ -1,4 +1,4 @@
-"""Build :class:`Theme` objects from ePy_docs ``.epyson`` layouts.
+"""Build :class:`Theme` objects from epy_docs ``.epyson`` layouts.
 
 Each layout file in ``assets/themes/*.epyson`` defines a font stack,
 typography scale, palette and per-callout palette mappings. This
