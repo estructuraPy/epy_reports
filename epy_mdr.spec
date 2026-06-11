@@ -41,6 +41,7 @@ hiddenimports += collect_submodules("pypandoc")
 # dynamically; PyInstaller cannot detect that statically.
 hiddenimports += [
     "epy_mdr.assets",
+    "epy_mdr.assets.branding",
     "epy_mdr.assets.themes",
     "epy_mdr.assets.reference_docx",
 ]

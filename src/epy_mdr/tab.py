@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_mdr import snippets
+from epy_mdr.checklist_dialog import ChecklistDialog
 from epy_mdr.renderer import render_markdown
 from epy_mdr.table_dialog import TableDialog
 from epy_mdr.xref_dialog import CrossRefDialog
@@ -358,6 +359,20 @@ class MarkdownTab(QWidget):
         cursor = self.editor.textCursor()
         if cursor.positionInBlock() != 0:
             cursor.insertText("\n")
+        cursor.insertText(md)
+        self.editor.setFocus()
+
+    def insert_checklist(self) -> None:
+        """Open checklist dialog, then insert task-list items at cursor."""
+        dialog = ChecklistDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        # build_markdown already starts with a blank line, so we only
+        # need to move to a new line when we are not at the start of
+        # the document and the leading blank line is not enough.
         cursor.insertText(md)
         self.editor.setFocus()
 

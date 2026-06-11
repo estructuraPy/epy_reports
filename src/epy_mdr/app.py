@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QAction,
     QActionGroup,
     QCursor,
+    QIcon,
     QKeySequence,
 )
 from PySide6.QtWidgets import (
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_mdr import bib, snippets, themes
+from epy_mdr.about_dialog import _load_branding_pixmap
 from epy_mdr.docs_bridge import epy_docs_available
 from epy_mdr.renderer import export_docx, render_markdown
 from epy_mdr.tab import MarkdownTab
@@ -64,9 +66,11 @@ WELCOME_TEXT = (
     "(picks the image file and copies it next to your document).\n"
     "3. `Ctrl+Shift+T` — table: choose columns, rows, header and "
     "caption; the `{#tbl-...}` label is added for you.\n"
-    "4. `Ctrl+Shift+Q` — display equation with `{#eq-...}` label.\n"
-    "5. `Ctrl+Shift+K` — fenced code block.\n"
-    "6. `Ctrl+Shift+C` — callout box (note, tip, warning, caution, "
+    "4. `Ctrl+Shift+L` — checklist: choose item count and an optional "
+    "title; inserts GitHub-flavoured task-list items `- [ ]`.\n"
+    "5. `Ctrl+Shift+Q` — display equation with `{#eq-...}` label.\n"
+    "6. `Ctrl+Shift+K` — fenced code block.\n"
+    "7. `Ctrl+Shift+C` — callout box (note, tip, warning, caution, "
     "important — see the Elements menu).\n\n"
     "## Step 4 — Cite and cross-reference\n\n"
     "1. Press `Ctrl+Shift+B` once to link your BibTeX file; this "
@@ -128,6 +132,11 @@ class MarkdownWindow(QMainWindow):
         self._current_theme: themes.Theme = themes.get(saved_theme)
         self._apply_theme(self._current_theme.id, persist=False)
 
+        # Window icon (title bar + taskbar).
+        logo_pix = _load_branding_pixmap("epy_mdr.png")
+        if not logo_pix.isNull():
+            self.setWindowIcon(QIcon(logo_pix))
+
         self._open_welcome_tab()
 
     # ------------------------------------------------- actions/menus
@@ -177,6 +186,9 @@ class MarkdownWindow(QMainWindow):
         self.act_quit = QAction("Quit", self)
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_quit.triggered.connect(self.close)
+
+        self.act_about = QAction("About epy_mdr…", self)
+        self.act_about.triggered.connect(self._show_about)
 
         self.act_docs_export = QAction("Export via epy_docs...", self)
         if epy_docs_available():
@@ -281,6 +293,12 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_table")
         )
 
+        self.act_ins_checklist = QAction("Checklist", self)
+        self.act_ins_checklist.setShortcut(QKeySequence("Ctrl+Shift+L"))
+        self.act_ins_checklist.triggered.connect(
+            lambda: self._on_active_tab("insert_checklist")
+        )
+
         self.act_ins_equation = QAction("Equation", self)
         self.act_ins_equation.setShortcut(QKeySequence("Ctrl+Shift+Q"))
         self.act_ins_equation.triggered.connect(
@@ -357,6 +375,7 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addAction(self.act_ins_image)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_table)
+        self.elements_menu.addAction(self.act_ins_checklist)
         self.elements_menu.addAction(self.act_ins_equation)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_code_block)
@@ -384,6 +403,9 @@ class MarkdownWindow(QMainWindow):
         for act in self.theme_group.actions():
             theme_sub.addAction(act)
 
+        self.help_menu = QMenu("&Help", self)
+        self.help_menu.addAction(self.act_about)
+
     def _build_toolbar(self) -> None:
         """Toolbar: five dropdowns + reload."""
         bar = QToolBar("Main", self)
@@ -396,6 +418,7 @@ class MarkdownWindow(QMainWindow):
         self._add_dropdown(bar, "References", self.references_menu)
         self._add_dropdown(bar, "Export", self.export_menu)
         self._add_dropdown(bar, "View", self.view_menu)
+        self._add_dropdown(bar, "Help", self.help_menu)
 
         bar.addSeparator()
         bar.addAction(self.act_reload)
@@ -523,6 +546,13 @@ class MarkdownWindow(QMainWindow):
             self.statusBar().showMessage(
                 f"Theme: {theme.display_name}", 2000
             )
+
+    def _show_about(self) -> None:
+        """Open the About epy_mdr dialog modally."""
+        from epy_mdr.about_dialog import AboutDialog  # noqa: PLC0415
+
+        dlg = AboutDialog(self)
+        dlg.exec()
 
     def _link_bibliography(self) -> None:
         """Pick a .bib file and write it into the YAML front matter."""
@@ -1013,6 +1043,12 @@ class MarkdownWindow(QMainWindow):
 def _run_gui(files: list[str]) -> int:
     """Boot the Qt application and open ``files`` in tabs."""
     app = QApplication(sys.argv)
+
+    # Set the application-level icon (taskbar / OS task switcher).
+    logo_pix = _load_branding_pixmap("epy_mdr.png")
+    if not logo_pix.isNull():
+        app.setWindowIcon(QIcon(logo_pix))
+
     window = MarkdownWindow()
     window.show()
     for raw in files:
