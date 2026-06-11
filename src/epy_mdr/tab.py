@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from epy_mdr import snippets
 from epy_mdr.renderer import render_markdown
+from epy_mdr.table_dialog import TableDialog
 from epy_mdr.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
@@ -235,9 +236,43 @@ class MarkdownTab(QWidget):
             self._insert_template(snippets.LINK_TEMPLATE, "TEXT")
         self.editor.setFocus()
 
+    def _slugify(self, text: str, fallback: str) -> str:
+        """Lowercase, collapse non-alphanumeric to hyphens."""
+        slug = re.sub(r"[^a-z0-9-]+", "-", text.lower()).strip("-")
+        return slug if slug else fallback
+
+    def _prompt_caption_and_insert(
+        self, template: str, label_prefix: str, prompt_title: str,
+        caption_token: str = "CAPTION", label_token: str = "LABEL",
+    ) -> None:
+        """Prompt for caption, auto-generate label, insert filled template.
+
+        If the user cancels, fall back to ``_insert_template`` with the
+        original placeholder tokens.
+        """
+        caption, ok = QInputDialog.getText(
+            self, prompt_title, "Caption:",
+        )
+        if not ok or not caption:
+            self._insert_template(template, label_token)
+            return
+        label = self._slugify(caption, label_prefix)
+        filled = (
+            template
+            .replace(caption_token, caption)
+            .replace(label_token, label)
+        )
+        cursor = self.editor.textCursor()
+        if "\n" in filled and cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(filled)
+        self.editor.setFocus()
+
     def insert_figure(self) -> None:
-        """Insert a Quarto figure skeleton and select its label."""
-        self._insert_template(snippets.FIGURE_TEMPLATE, "LABEL")
+        """Insert a Quarto figure skeleton with caption dialog."""
+        self._prompt_caption_and_insert(
+            snippets.FIGURE_TEMPLATE, "fig", "Figure caption",
+        )
 
     def insert_image_from_dialog(self) -> None:
         """Pick an image file, copy to figures/, insert at cursor."""
@@ -310,8 +345,20 @@ class MarkdownTab(QWidget):
         self.editor.setFocus()
 
     def insert_table(self) -> None:
-        """Insert a 3-column pipe table with caption and select label."""
-        self._insert_template(snippets.TABLE_TEMPLATE, "LABEL")
+        """Open table dialog, then insert pipe table with caption."""
+        dialog = TableDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        caption = dialog.caption or "TABLE"
+        label = self._slugify(caption, "tbl")
+
+        md = dialog.build_markdown(f"#tbl-{label}")
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md)
+        self.editor.setFocus()
 
     def insert_equation(self) -> None:
         """Insert a display equation with a ``{#eq-...}`` label."""
@@ -322,10 +369,16 @@ class MarkdownTab(QWidget):
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")
 
     def insert_callout(self, kind: str = "note") -> None:
-        """Insert a Quarto fenced callout of the given ``kind``."""
+        """Insert a Quarto fenced callout, prompting for title if applicable."""
         template = snippets.CALLOUT_TEMPLATES.get(
             kind, snippets.CALLOUT_TEMPLATES["note"]
         )
+        if "TITLE" in template:
+            title, ok = QInputDialog.getText(
+                self, "Callout title", "Title:", text=kind.title(),
+            )
+            if ok and title:
+                template = template.replace("TITLE", title)
         token = "TITLE" if "TITLE" in template else "BODY"
         self._insert_template(template, token)
 
