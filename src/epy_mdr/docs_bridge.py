@@ -55,8 +55,8 @@ def list_layouts() -> list[str]:
     """
     if not epy_docs_available():
         raise BridgeUnavailableError(
-            "epy_docs is not installed. "
-            "Install it with: pip install epy-docs"
+            "epy_docs is not installed. It is a commercial add-on by "
+            "ANM Ingenieria: ahnavarro@anmingenieria.com"
         )
     import epy_docs  # noqa: PLC0415  (lazy import by design)
 
@@ -75,8 +75,8 @@ def list_document_types() -> list[str]:
     """
     if not epy_docs_available():
         raise BridgeUnavailableError(
-            "epy_docs is not installed. "
-            "Install it with: pip install epy-docs"
+            "epy_docs is not installed. It is a commercial add-on by "
+            "ANM Ingenieria: ahnavarro@anmingenieria.com"
         )
     import epy_docs  # noqa: PLC0415
 
@@ -116,8 +116,8 @@ def render_document(
     """
     if not epy_docs_available():
         raise BridgeUnavailableError(
-            "epy_docs is not installed. "
-            "Install it with: pip install epy-docs"
+            "epy_docs is not installed. It is a commercial add-on by "
+            "ANM Ingenieria: ahnavarro@anmingenieria.com"
         )
     import epy_docs  # noqa: PLC0415
 

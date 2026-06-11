@@ -36,24 +36,23 @@ python build.py
 # output -> dist/epy_mdr/epy_mdr.exe
 ```
 
-## Export via epy_docs
+## Export via epy_docs (commercial add-on)
 
-The **Export → Export via epy_docs…** action renders the current document through
-the [epy_docs](https://pypi.org/project/epy-docs/) typesetting engine, which
-produces publication-quality PDF and HTML output using Quarto and corporate
+The **Export → Export via epy_docs…** action renders the current document
+through the **epy_docs** typesetting engine, which produces
+publication-quality PDF / HTML / DOCX output using Quarto and professional
 layout templates.
 
-**Requirements:** `epy_docs >= 0.2.0` and Quarto installed.  The action is
-disabled (greyed out with a tooltip) when `epy_docs` is not found, so the
-rest of the editor works without it.
+epy_docs is a **commercial, privately distributed package by
+[ANM Ingeniería](https://www.anmingenieria.com/)** — it is not available on
+PyPI. epy_mdr detects it at runtime: when it is not installed the action is
+simply disabled (greyed out with a tooltip) and **every other feature of the
+editor works normally**.
 
-**Install the optional backend:**
+For licensing and access to the epy_docs backend contact
+[ahnavarro@anmingenieria.com](mailto:ahnavarro@anmingenieria.com).
 
-```bash
-pip install -e ".[docs]"
-# or
-pip install epy-docs
-```
+**Requirements (licensed users):** `epy_docs >= 0.2.0` and Quarto installed.
 
 **Dialog options:**
 
@@ -115,4 +114,9 @@ src/epy_mdr/
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+The epy_mdr **source code** is MIT — see [LICENSE](LICENSE).
+
+The bundled **brand images, layout themes and Word reference templates**
+are proprietary assets of ANM Ingeniería, licensed only for use within
+epy_mdr; the bundled Pandoc executable is GPL and Qt is LGPL. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full picture.

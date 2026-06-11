@@ -11,7 +11,10 @@ dependencies = [
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.6"]
-docs = ["epy-docs>=0.2.0"]
+# NOTE: the epy_docs rendering backend is a commercial, privately
+# distributed package (not on PyPI). It is detected at runtime when
+# installed; do NOT add it here — a public extra pointing at an
+# unregistered PyPI name is a dependency-confusion vector.
 dev = ["pytest>=8.0"]
 
 [project.gui-scripts]

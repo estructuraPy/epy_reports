@@ -20,8 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/test_docs_bridge.py`: 8 pure-Python pytest tests covering
   availability detection, real `list_*` delegation, mocked
   `DocumentWriter` wiring, and `BridgeUnavailableError` error paths.
-- `pyproject.toml`: optional extras `docs = ["epy-docs>=0.2.0"]` and
-  `dev = ["pytest>=8.0"]`.
+- `pyproject.toml`: optional extra `dev = ["pytest>=8.0"]`. The
+  epy_docs backend is detected at runtime (commercial add-on, not on
+  PyPI — no public extra to avoid dependency confusion).
 - Windows (.exe, Inno Setup, per-user, registers `.md`/`.markdown`/`.qmd`
   associations) and Ubuntu (.deb) installers with CI workflow
   (`installer/`, `.github/workflows/installers.yml`).
