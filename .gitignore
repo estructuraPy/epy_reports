@@ -40,3 +40,5 @@ results/
 # Installer build artifacts
 installer/dist/
 
+.benchmarks/
+
