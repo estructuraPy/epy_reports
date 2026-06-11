@@ -36,7 +36,7 @@ from pathlib import Path
 PKG_NAME = "epy-mdr"
 PKG_VERSION = "0.2.0"
 PKG_ARCH = "all"
-MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <angel120689@gmail.com>"
+MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
 DESCRIPTION_LONG = """\
  epy_mdr is a desktop Markdown and Quarto (.qmd) editor built with PySide6.
@@ -54,11 +54,7 @@ DESCRIPTION_LONG = """\
  The postinst script updates system MIME and desktop caches and adds
  epy_mdr to /usr/share/applications/defaults.list as a best-effort hint."""
 
-DEPENDS = (
-    "python3 (>= 3.10), "
-    "python3-pyside6.qtwidgets | python3-pyside6, "
-    "pandoc"
-)
+DEPENDS = "python3 (>= 3.10), pandoc"
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 OUT_DIR = ROOT / "installer" / "dist"
@@ -145,23 +141,31 @@ def _build_control_tar() -> bytes:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tf:
         # control
-        control = textwrap.dedent(f"""\
-            Package: {PKG_NAME}
-            Version: {PKG_VERSION}
-            Architecture: {PKG_ARCH}
-            Maintainer: {MAINTAINER}
-            Depends: {DEPENDS}
-            Section: editors
-            Priority: optional
-            Description: {DESCRIPTION_SHORT}
-            {DESCRIPTION_LONG}
-        """)
+        control = (
+            f"Package: {PKG_NAME}\n"
+            f"Version: {PKG_VERSION}\n"
+            f"Architecture: {PKG_ARCH}\n"
+            f"Maintainer: {MAINTAINER}\n"
+            f"Depends: {DEPENDS}\n"
+            "Section: editors\n"
+            "Priority: optional\n"
+            f"Description: {DESCRIPTION_SHORT}\n"
+            f"{DESCRIPTION_LONG}\n"
+        )
         _tar_add_data(tf, "./control", control.encode(), mode=0o644)
 
         # postinst
         postinst = textwrap.dedent("""\
             #!/bin/sh
             set -e
+
+            # Install PySide6 via pip (not available as system package on Ubuntu 24.04+).
+            if command -v pip3 >/dev/null 2>&1; then
+                pip3 install PySide6
+            else
+                echo "WARNING: pip3 not found — PySide6 must be installed manually" >&2
+                echo "  Run: sudo apt install python3-pip && sudo pip3 install PySide6" >&2
+            fi
 
             # Update system MIME database so .qmd type is recognized.
             if command -v update-mime-database >/dev/null 2>&1; then
