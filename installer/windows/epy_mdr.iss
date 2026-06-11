@@ -26,7 +26,7 @@
 ;     checkbox below launches "ms-settings:defaultapps" as a convenience.
 
 #define AppName "epy_mdr"
-#define AppVersion "0.2.0"
+#define AppVersion "0.3.0"
 #define AppPublisher "Ing. Angel Navarro-Mora M.Sc."
 #define AppURL "https://github.com/ingah/epy_mdr"
 #define AppId "{{A7C3E2F1-8D4B-4E9A-B5C6-3F1D2E8A9B7C}"

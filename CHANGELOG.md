@@ -4,7 +4,7 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] — 2026-06-10
+## [0.3.0] — 2026-06-11
 
 ### Added
 - `docs_bridge.py`: thin optional bridge to `epy_docs`; lazy imports keep
@@ -22,8 +22,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentWriter` wiring, and `BridgeUnavailableError` error paths.
 - `pyproject.toml`: optional extras `docs = ["epy-docs>=0.2.0"]` and
   `dev = ["pytest>=8.0"]`.
-- Windows installers and CI integration (built by the packaging stream;
-  see `installer/` and `.github/`).
+- Windows (.exe, Inno Setup, per-user, registers `.md`/`.markdown`/`.qmd`
+  associations) and Ubuntu (.deb) installers with CI workflow
+  (`installer/`, `.github/workflows/installers.yml`).
+- Theme-aware tonal UI: toolbar, status bar, menus, tab underline and
+  hover tints derived from the active theme palette (all 9 layouts).
+- Theme-preserving exports: HTML embeds the active theme CSS; DOCX uses
+  a per-theme Word reference document (9 templates bundled) and keeps
+  tango syntax highlighting in code chunks.
+- Native DOCX export (`Ctrl+Shift+D`) via Pandoc with citeproc support.
+- Table dialog (`Ctrl+Shift+T`): columns / rows / header / caption.
+- Checklist dialog (`Ctrl+Shift+L`): item count + optional bold title.
+- Insert image from file dialog; the image is copied into `figures/`.
+- Official branding: app icon/logo from `assets_build/epy_mdr.png`;
+  window/taskbar icon; Help > About dialog with author credit, mailto,
+  LinkedIn and company links, and the ANM Ingeniería / estructuraPy
+  logos.
+- Guided step-by-step welcome tab with author credit.
+
+### Fixed
+- Frozen build: `assets/` subpackages importable in the .exe
+  (importlib.resources), PyQt5/heavy-stack exclusions, themes and
+  reference documents bundled explicitly.
+- Installer: per-user shortcut folders (`autodesktop`/`autoprograms`)
+  fix `IPersistFile::Save 0x80070005` on shortcut creation.
 - Bumped version to `0.3.0`.
 
 ## [0.2.0] — 2026-06-09
