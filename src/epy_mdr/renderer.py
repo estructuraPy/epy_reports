@@ -139,6 +139,37 @@ def _expand_quarto_callouts(source: str) -> str:
     return _CALLOUT_OPEN_RE.sub(replace, source)
 
 
+def export_docx(
+    source: str,
+    target: Path,
+    base_dir: Path | None = None,
+) -> None:
+    """Convert Quarto/Pandoc Markdown ``source`` to a ``.docx`` file.
+
+    Args:
+        source: Markdown text. Quarto YAML front matter and fenced
+            callouts are supported; a linked ``bibliography:`` enables
+            citeproc just like the HTML preview.
+        target: Destination ``.docx`` path (written by Pandoc).
+        base_dir: Directory used to resolve relative image paths.
+    """
+    metadata = parse_front_matter(source)
+    prepared = _expand_quarto_callouts(source)
+
+    extra_args = ["--wrap=preserve"]
+    if base_dir is not None:
+        extra_args.append(f"--resource-path={base_dir}")
+    extra_args += _bibliography_args(metadata, base_dir)
+
+    pypandoc.convert_text(
+        prepared,
+        to="docx",
+        format=PANDOC_FORMAT,
+        outputfile=str(target),
+        extra_args=extra_args,
+    )
+
+
 def render_markdown(
     source: str,
     base_dir: Path | None = None,

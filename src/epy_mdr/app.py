@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 
 from epy_mdr import bib, snippets, themes
 from epy_mdr.docs_bridge import epy_docs_available
-from epy_mdr.renderer import render_markdown
+from epy_mdr.renderer import export_docx, render_markdown
 from epy_mdr.tab import MarkdownTab
 
 APP_NAME = "epy_mdr"
@@ -38,44 +38,55 @@ SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
 
 WELCOME_TEXT = (
-    "# epy_mdr\n\n"
+    "# Welcome to epy_mdr\n\n"
     "A small **Quarto / Markdown** editor with live preview and "
     "one-click PDF export.\n\n"
-    "## File\n\n"
-    "- `Ctrl+N` — new tab\n"
-    "- `Ctrl+O` — open a file (`.qmd`, `.md`, `.markdown`)\n"
-    "- `Ctrl+S` — save (`Ctrl+Shift+S` to save as)\n"
-    "- `Ctrl+W` — close the current tab\n"
-    "- `F5`     — reload from disk (discards unsaved changes)\n\n"
-    "## Text\n\n"
-    "- `Ctrl+1` … `Ctrl+6` — heading levels H1–H6 on current line\n"
-    "- `Ctrl+0` — strip heading on current line\n"
-    "- `Ctrl+B` — **bold**\n"
-    "- `Ctrl+I` — *italic*\n"
-    "- `Ctrl+E` — `inline code`\n"
-    "- `Ctrl+K` — link `[text](url)`\n\n"
-    "## Elements\n\n"
-    "- `Ctrl+Shift+H` — Section heading with `{#sec-...}` label\n"
-    "- `Ctrl+Shift+F` — Figure with `{#fig-...}` label\n"
-    "- `Ctrl+Shift+T` — Table with caption and `{#tbl-...}` label\n"
-    "- `Ctrl+Shift+Q` — Display equation with `{#eq-...}` label\n"
-    "- `Ctrl+Shift+K` — Fenced code block\n"
-    "- `Ctrl+Shift+C` — Callout (note variant; more in Elements menu)\n\n"
-    "## References\n\n"
-    "- `Ctrl+R` — Open the cross-reference picker (`@label`)\n"
-    "- `Ctrl+Shift+B` — Link a BibTeX file (writes `bibliography:` "
-    "into the YAML front matter, Quarto-style)\n"
-    "- Once linked, the *References* dropdown shows the buffer "
-    "labels and a *Citations* submenu with every entry from "
-    "the `.bib` — click to insert `@key`. The rendered preview "
-    "and the PDF/HTML export add the bibliography at the end "
-    "automatically via Pandoc's citeproc.\n\n"
-    "## Export\n\n"
-    "- `Ctrl+P`       — Export as PDF\n"
-    "- `Ctrl+Shift+P` — Export as HTML\n"
-    "- `Ctrl+Alt+P`   — Print\n\n"
-    "> Drop `.qmd` / `.md` files anywhere on the window to open "
-    "them as tabs.\n"
+    "**Author:** Ing. Angel Navarro-Mora M.Sc.\n\n"
+    "Follow these steps to build your first document.\n\n"
+    "## Step 1 — Create or open a document\n\n"
+    "1. Press `Ctrl+N` for a new tab, or `Ctrl+O` to open an "
+    "existing `.qmd`, `.md` or `.markdown` file.\n"
+    "2. You can also drag and drop files anywhere on the window — "
+    "each one opens as a tab.\n"
+    "3. Save early with `Ctrl+S` (`Ctrl+Shift+S` to save as). "
+    "`Ctrl+W` closes the tab and `F5` reloads from disk.\n\n"
+    "## Step 2 — Write and format text\n\n"
+    "1. Put the cursor on a line and press `Ctrl+1` … `Ctrl+6` to "
+    "make it a heading H1–H6 (`Ctrl+0` strips the heading).\n"
+    "2. Select text and apply `Ctrl+B` for **bold**, `Ctrl+I` for "
+    "*italic*, `Ctrl+E` for `inline code`.\n"
+    "3. Press `Ctrl+K` to insert a link `[text](url)`.\n\n"
+    "## Step 3 — Insert structured elements\n\n"
+    "Every element gets a label so you can cross-reference it later:\n\n"
+    "1. `Ctrl+Shift+H` — section heading with `{#sec-...}` label.\n"
+    "2. `Ctrl+Shift+F` — figure with `{#fig-...}` label "
+    "(picks the image file and copies it next to your document).\n"
+    "3. `Ctrl+Shift+T` — table: choose columns, rows, header and "
+    "caption; the `{#tbl-...}` label is added for you.\n"
+    "4. `Ctrl+Shift+Q` — display equation with `{#eq-...}` label.\n"
+    "5. `Ctrl+Shift+K` — fenced code block.\n"
+    "6. `Ctrl+Shift+C` — callout box (note, tip, warning, caution, "
+    "important — see the Elements menu).\n\n"
+    "## Step 4 — Cite and cross-reference\n\n"
+    "1. Press `Ctrl+Shift+B` once to link your BibTeX file; this "
+    "writes `bibliography:` into the YAML front matter.\n"
+    "2. Press `Ctrl+R` to open the cross-reference picker and "
+    "insert `@sec-...`, `@fig-...`, `@tbl-...`, `@eq-...` or a "
+    "`@citation` from the linked `.bib`.\n"
+    "3. The bibliography is appended automatically to the preview "
+    "and to every export (Pandoc citeproc).\n\n"
+    "## Step 5 — Export your document\n\n"
+    "1. `Ctrl+P` exports the rendered preview as PDF.\n"
+    "2. `Ctrl+Shift+P` exports as HTML and `Ctrl+Shift+D` as Word "
+    "(.docx); `Ctrl+Alt+P` prints.\n"
+    "3. For publication-quality output, use *Export > Export via "
+    "epy_docs...* to render with professional layouts "
+    "(requires the optional `epy-docs` package and Quarto).\n\n"
+    "::: {.callout-tip}\n"
+    "## Make it yours\n"
+    "Change the editor and preview theme from the *View* menu — "
+    "nine layouts are available, from academic to handwritten.\n"
+    ":::\n"
 )
 
 
@@ -153,6 +164,10 @@ class MarkdownWindow(QMainWindow):
         self.act_export_html = QAction("Export as HTML...", self)
         self.act_export_html.setShortcut(QKeySequence("Ctrl+Shift+P"))
         self.act_export_html.triggered.connect(self._export_html)
+
+        self.act_export_docx = QAction("Export as DOCX...", self)
+        self.act_export_docx.setShortcut(QKeySequence("Ctrl+Shift+D"))
+        self.act_export_docx.triggered.connect(self._export_docx)
 
         self.act_print = QAction("Print...", self)
         self.act_print.setShortcut(QKeySequence("Ctrl+Alt+P"))
@@ -357,6 +372,7 @@ class MarkdownWindow(QMainWindow):
         self.export_menu = QMenu("E&xport", self)
         self.export_menu.addAction(self.act_pdf)
         self.export_menu.addAction(self.act_export_html)
+        self.export_menu.addAction(self.act_export_docx)
         self.export_menu.addSeparator()
         self.export_menu.addAction(self.act_print)
         self.export_menu.addSeparator()
@@ -533,6 +549,37 @@ class MarkdownWindow(QMainWindow):
         )
 
     # ----------------------------------------------- export helpers
+
+    def _export_docx(self) -> None:
+        """Save the current document as a Word (.docx) file."""
+        tab = self._current_tab()
+        if tab is None:
+            return
+        default = (
+            str(tab.path.with_suffix(".docx"))
+            if tab.path is not None
+            else "untitled.docx"
+        )
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Export DOCX", default, "Word document (*.docx)"
+        )
+        if not filename:
+            return
+        target = Path(filename)
+        if target.suffix == "":
+            target = target.with_suffix(".docx")
+        text = tab.editor.toPlainText()
+        base_dir = tab.path.parent if tab.path is not None else None
+        try:
+            export_docx(text, target, base_dir=base_dir)
+        except (OSError, RuntimeError) as exc:
+            QMessageBox.critical(
+                self, "Export DOCX failed", str(exc)
+            )
+            return
+        self.statusBar().showMessage(
+            f"Exported {target.name}", 5000
+        )
 
     def _export_html(self) -> None:
         """Save the current preview as a standalone HTML file."""
@@ -820,6 +867,7 @@ class MarkdownWindow(QMainWindow):
         out_dir = dialog.output_dir
         want_pdf = dialog.export_pdf
         want_html = dialog.export_html
+        want_docx = dialog.export_docx
 
         QApplication.setOverrideCursor(
             QCursor(Qt.CursorShape.WaitCursor)
@@ -833,6 +881,7 @@ class MarkdownWindow(QMainWindow):
             output_dir=out_dir,
             pdf=want_pdf,
             html=want_html,
+            docx=want_docx,
         )
         self._docs_worker.finished_ok.connect(self._on_docs_done_ok)
         self._docs_worker.finished_err.connect(self._on_docs_done_err)

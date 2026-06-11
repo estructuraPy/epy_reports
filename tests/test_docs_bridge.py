@@ -148,6 +148,7 @@ def test_render_document_calls_writer_correctly():
         output_filename="my_report",
         pdf=True,
         html=False,
+        docx=False,
     )
     assert result is fake_result
 
@@ -180,6 +181,40 @@ def test_render_document_html_only():
         output_filename="doc",
         pdf=False,
         html=True,
+        docx=False,
+    )
+
+
+def test_render_document_docx():
+    """render_document forwards docx=True to generate()."""
+    mock_writer = MagicMock()
+    mock_writer.generate.return_value = {}
+    mock_writer_cls = MagicMock(return_value=mock_writer)
+
+    with patch("epy_mdr.docs_bridge.epy_docs_available", return_value=True):
+        import sys
+
+        fake_epy_docs = MagicMock()
+        fake_epy_docs.DocumentWriter = mock_writer_cls
+
+        with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
+            from epy_mdr.docs_bridge import render_document
+
+            render_document(
+                source_path=Path("/tmp/doc.md"),
+                layout="classic",
+                document_type="report",
+                output_dir=Path("/tmp/out"),
+                pdf=False,
+                html=False,
+                docx=True,
+            )
+
+    mock_writer.generate.assert_called_once_with(
+        output_filename="doc",
+        pdf=False,
+        html=False,
+        docx=True,
     )
 
 

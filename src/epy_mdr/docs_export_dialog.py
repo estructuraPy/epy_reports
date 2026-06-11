@@ -39,6 +39,7 @@ class _RenderWorker(QThread):
         output_dir: Path,
         pdf: bool,
         html: bool,
+        docx: bool = False,
     ) -> None:
         """Store render parameters.
 
@@ -49,6 +50,7 @@ class _RenderWorker(QThread):
             output_dir: Destination directory for the rendered output.
             pdf: Request PDF output.
             html: Request HTML output.
+            docx: Request Word (.docx) output.
         """
         super().__init__()
         self._source_path = source_path
@@ -57,6 +59,7 @@ class _RenderWorker(QThread):
         self._output_dir = output_dir
         self._pdf = pdf
         self._html = html
+        self._docx = docx
 
     def run(self) -> None:
         """Execute the render; emit the appropriate signal when done."""
@@ -70,6 +73,7 @@ class _RenderWorker(QThread):
                 output_dir=self._output_dir,
                 pdf=self._pdf,
                 html=self._html,
+                docx=self._docx,
             )
             self.finished_ok.emit(str(self._output_dir))
         except Exception as exc:  # noqa: BLE001
@@ -150,9 +154,12 @@ class DocsExportDialog(QDialog):
         self._chk_pdf.setChecked(True)
         self._chk_html = QCheckBox("HTML")
         self._chk_html.setChecked(True)
+        self._chk_docx = QCheckBox("DOCX")
+        self._chk_docx.setChecked(False)
         checks_row = QHBoxLayout()
         checks_row.addWidget(self._chk_pdf)
         checks_row.addWidget(self._chk_html)
+        checks_row.addWidget(self._chk_docx)
         checks_row.addStretch()
 
         # --- Form layout ------------------------------------------
@@ -216,6 +223,11 @@ class DocsExportDialog(QDialog):
     def export_html(self) -> bool:
         """``True`` when the HTML checkbox is checked."""
         return self._chk_html.isChecked()
+
+    @property
+    def export_docx(self) -> bool:
+        """``True`` when the DOCX checkbox is checked."""
+        return self._chk_docx.isChecked()
 
     def persist_settings(self) -> None:
         """Save the current combo / directory values to QSettings."""

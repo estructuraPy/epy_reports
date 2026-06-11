@@ -90,6 +90,7 @@ def render_document(
     output_dir: Path,
     pdf: bool,
     html: bool,
+    docx: bool = False,
 ) -> dict:
     """Render ``source_path`` through epy_docs and return the result.
 
@@ -105,6 +106,7 @@ def render_document(
             files.  Created by epy_docs if it does not exist.
         pdf: When ``True``, request PDF output.
         html: When ``True``, request HTML output.
+        docx: When ``True``, request Word (.docx) output.
 
     Returns:
         The ``dict`` returned by ``DocumentWriter.generate()``.
@@ -133,4 +135,5 @@ def render_document(
         output_filename=source_path.stem,
         pdf=pdf,
         html=html,
+        docx=docx,
     )

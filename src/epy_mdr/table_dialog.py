@@ -1,4 +1,4 @@
-"""Modal dialog for inserting a pipe table with configurable size and header."""
+"""Modal dialog for inserting a pipe table (size, header, caption)."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ class TableDialog(QDialog):
     """Ask the user for table dimensions, header option, and caption."""
 
     def __init__(self, parent=None) -> None:
+        """Build the dialog widgets (spinboxes, header toggle, caption)."""
         super().__init__(parent)
         self.setWindowTitle("Insert table")
         self.setMinimumWidth(300)
@@ -55,18 +56,22 @@ class TableDialog(QDialog):
 
     @property
     def columns(self) -> int:
+        """Number of table columns chosen by the user."""
         return self.cols_spin.value()
 
     @property
     def rows(self) -> int:
+        """Number of data rows chosen by the user."""
         return self.rows_spin.value()
 
     @property
     def has_header(self) -> bool:
+        """Whether the table includes a header row."""
         return self.header_cb.isChecked()
 
     @property
     def caption(self) -> str:
+        """Caption text, stripped; empty string when not provided."""
         return self.caption_edit.text().strip()
 
     def build_markdown(self, label: str) -> str:

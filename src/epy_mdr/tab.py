@@ -285,7 +285,8 @@ class MarkdownTab(QWidget):
             self,
             "Insert image",
             start_dir,
-            "Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp);;All files (*)",
+            "Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp)"
+            ";;All files (*)",
         )
         if not filename:
             return
@@ -369,7 +370,7 @@ class MarkdownTab(QWidget):
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")
 
     def insert_callout(self, kind: str = "note") -> None:
-        """Insert a Quarto fenced callout, prompting for title if applicable."""
+        """Insert a Quarto fenced callout, with title prompt if needed."""
         template = snippets.CALLOUT_TEMPLATES.get(
             kind, snippets.CALLOUT_TEMPLATES["note"]
         )
