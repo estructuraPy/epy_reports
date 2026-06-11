@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl, Signal
@@ -9,6 +11,8 @@ from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
+    QFileDialog,
+    QInputDialog,
     QMessageBox,
     QPlainTextEdit,
     QSplitter,
@@ -234,6 +238,76 @@ class MarkdownTab(QWidget):
     def insert_figure(self) -> None:
         """Insert a Quarto figure skeleton and select its label."""
         self._insert_template(snippets.FIGURE_TEMPLATE, "LABEL")
+
+    def insert_image_from_dialog(self) -> None:
+        """Pick an image file, copy to figures/, insert at cursor."""
+        start_dir = (
+            str(self._path.parent)
+            if self._path is not None
+            else ""
+        )
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Insert image",
+            start_dir,
+            "Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp);;All files (*)",
+        )
+        if not filename:
+            return
+
+        src = Path(filename)
+
+        # Determine figures/ directory
+        if self._path is not None:
+            figures_dir = self._path.parent / "figures"
+        else:
+            figures_dir = Path.cwd() / "figures"
+        figures_dir.mkdir(parents=True, exist_ok=True)
+
+        # Resolve name collision
+        dst = figures_dir / src.name
+        if dst.exists():
+            stem = src.stem
+            suffix = src.suffix
+            counter = 1
+            while dst.exists():
+                dst = figures_dir / f"{stem}-{counter}{suffix}"
+                counter += 1
+
+        shutil.copy2(str(src), str(dst))
+
+        # Build relative path for markdown
+        if self._path is not None:
+            rel = dst.relative_to(self._path.parent)
+        else:
+            rel = dst
+        md_path = str(rel).replace("\\", "/")
+
+        # Auto-generate label from filename
+        label = re.sub(r"[^a-z0-9-]+", "-", src.stem.lower()).strip("-")
+        if not label:
+            label = "image"
+
+        # Caption: prompt user with filename as default
+        caption, ok = QInputDialog.getText(
+            self,
+            "Image caption",
+            "Caption:",
+            text=src.stem,
+        )
+        if not ok:
+            caption = src.stem
+        caption = caption or src.stem
+
+        md = snippets.IMAGE_MARKDOWN.format(
+            caption=caption, path=md_path, label=label
+        )
+
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_table(self) -> None:
         """Insert a 3-column pipe table with caption and select label."""

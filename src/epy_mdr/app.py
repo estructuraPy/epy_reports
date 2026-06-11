@@ -247,10 +247,16 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_section_heading")
         )
 
-        self.act_ins_figure = QAction("Figure", self)
+        self.act_ins_figure = QAction("Figure (skeleton)", self)
         self.act_ins_figure.setShortcut(QKeySequence("Ctrl+Shift+F"))
         self.act_ins_figure.triggered.connect(
             lambda: self._on_active_tab("insert_figure")
+        )
+
+        self.act_ins_image = QAction("Image from file...", self)
+        self.act_ins_image.setShortcut(QKeySequence("Ctrl+Shift+I"))
+        self.act_ins_image.triggered.connect(
+            lambda: self._on_active_tab("insert_image_from_dialog")
         )
 
         self.act_ins_table = QAction("Table", self)
@@ -332,6 +338,8 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addAction(self.act_ins_section)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_figure)
+        self.elements_menu.addAction(self.act_ins_image)
+        self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_table)
         self.elements_menu.addAction(self.act_ins_equation)
         self.elements_menu.addSeparator()
