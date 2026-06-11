@@ -13,7 +13,16 @@ from PyInstaller.utils.hooks import (
 
 datas = []
 datas += collect_data_files("pypandoc", include_py_files=False)
-datas += collect_data_files("epy_mdr", include_py_files=False)
+# epy_mdr is built from src/ via pathex (it may not be pip-installed), so
+# collect_data_files cannot resolve it reliably — bundle the assets tree
+# explicitly. Keeping the epy_mdr/assets/... layout preserves
+# importlib.resources lookups at runtime.
+_ASSETS = _Path("src/epy_mdr/assets")
+datas += [
+    (str(p), str(_Path("epy_mdr") / p.relative_to("src/epy_mdr").parent))
+    for p in _ASSETS.rglob("*")
+    if p.is_file() and p.suffix != ".py"
+]
 
 binaries = []
 binaries += collect_dynamic_libs("pypandoc")
@@ -28,6 +37,9 @@ binaries.append((_pandoc, "pypandoc/files"))
 
 hiddenimports = []
 hiddenimports += collect_submodules("pypandoc")
+# importlib.resources.files("epy_mdr.assets.themes") imports these packages
+# dynamically; PyInstaller cannot detect that statically.
+hiddenimports += ["epy_mdr.assets", "epy_mdr.assets.themes"]
 
 a = Analysis(
     ["src/epy_mdr/__main__.py"],
@@ -42,6 +54,16 @@ a = Analysis(
         "tkinter",
         "test",
         "unittest",
+        # The build env may carry other Qt bindings (PyQt5 via matplotlib,
+        # pulled in by sibling libs). epy_mdr uses PySide6 exclusively.
+        "PyQt5",
+        "PyQt6",
+        # Heavy scientific stack reachable through optional epy_docs paths;
+        # never imported by the frozen editor itself.
+        "matplotlib",
+        "pandas",
+        "numpy",
+        "epy_docs",
     ],
     noarchive=False,
 )
