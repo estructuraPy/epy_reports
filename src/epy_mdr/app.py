@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.resources
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -550,6 +551,36 @@ class MarkdownWindow(QMainWindow):
 
     # ----------------------------------------------- export helpers
 
+    def _resolve_reference_doc(self, theme_id: str) -> Path | None:
+        """Return the bundled DOCX reference template for ``theme_id``.
+
+        Resolves via ``importlib.resources`` so it works both from a
+        source install and from a frozen PyInstaller build.  Returns
+        ``None`` when the asset is missing so the caller can fall back
+        to a default Pandoc export.
+
+        Args:
+            theme_id: Theme identifier, e.g. ``"corporate"``.
+
+        Returns:
+            Resolved :class:`~pathlib.Path` to the ``.docx`` template,
+            or ``None`` if the file cannot be found.
+        """
+        try:
+            pkg = importlib.resources.files(
+                "epy_mdr.assets.reference_docx"
+            )
+            ref = pkg / f"{theme_id}.docx"
+            # Materialise the resource as a real path (works for both
+            # installed and frozen builds; raises FileNotFoundError when
+            # the file is absent inside the zip/bundle).
+            with importlib.resources.as_file(ref) as p:
+                if p.is_file():
+                    return p
+        except (FileNotFoundError, TypeError, ModuleNotFoundError):
+            pass
+        return None
+
     def _export_docx(self) -> None:
         """Save the current document as a Word (.docx) file."""
         tab = self._current_tab()
@@ -570,8 +601,13 @@ class MarkdownWindow(QMainWindow):
             target = target.with_suffix(".docx")
         text = tab.editor.toPlainText()
         base_dir = tab.path.parent if tab.path is not None else None
+        reference_doc = self._resolve_reference_doc(
+            self._current_theme.id
+        )
         try:
-            export_docx(text, target, base_dir=base_dir)
+            export_docx(
+                text, target, base_dir=base_dir, reference_doc=reference_doc
+            )
         except (OSError, RuntimeError) as exc:
             QMessageBox.critical(
                 self, "Export DOCX failed", str(exc)
@@ -602,7 +638,12 @@ class MarkdownWindow(QMainWindow):
         text = tab.editor.toPlainText()
         base_dir = tab.path.parent if tab.path is not None else None
         title = tab.path.name if tab.path is not None else "untitled"
-        html = render_markdown(text, base_dir=base_dir, title=title)
+        html = render_markdown(
+            text,
+            base_dir=base_dir,
+            title=title,
+            theme_css=self._current_theme.to_css(),
+        )
         target.write_text(html, encoding="utf-8")
         self.statusBar().showMessage(f"Saved HTML: {target}", 3000)
 
@@ -923,9 +964,7 @@ class MarkdownWindow(QMainWindow):
         if choice == QMessageBox.StandardButton.Save:
             self.tabs.setCurrentWidget(tab)
             return self._save_current()
-        if choice == QMessageBox.StandardButton.Discard:
-            return True
-        return False
+        return choice == QMessageBox.StandardButton.Discard
 
     def _close_tab_at(self, index: int) -> None:
         """Handle the close button on a specific tab."""

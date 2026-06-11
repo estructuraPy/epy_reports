@@ -39,7 +39,11 @@ hiddenimports = []
 hiddenimports += collect_submodules("pypandoc")
 # importlib.resources.files("epy_mdr.assets.themes") imports these packages
 # dynamically; PyInstaller cannot detect that statically.
-hiddenimports += ["epy_mdr.assets", "epy_mdr.assets.themes"]
+hiddenimports += [
+    "epy_mdr.assets",
+    "epy_mdr.assets.themes",
+    "epy_mdr.assets.reference_docx",
+]
 
 a = Analysis(
     ["src/epy_mdr/__main__.py"],

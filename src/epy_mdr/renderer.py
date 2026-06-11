@@ -143,6 +143,7 @@ def export_docx(
     source: str,
     target: Path,
     base_dir: Path | None = None,
+    reference_doc: Path | None = None,
 ) -> None:
     """Convert Quarto/Pandoc Markdown ``source`` to a ``.docx`` file.
 
@@ -152,6 +153,10 @@ def export_docx(
             citeproc just like the HTML preview.
         target: Destination ``.docx`` path (written by Pandoc).
         base_dir: Directory used to resolve relative image paths.
+        reference_doc: Optional Word reference document whose styles
+            (fonts, colors, heading levels) Pandoc will copy into the
+            output.  When ``None`` or when the file does not exist the
+            export proceeds with Pandoc's default styles.
     """
     metadata = parse_front_matter(source)
     prepared = _expand_quarto_callouts(source)
@@ -160,6 +165,8 @@ def export_docx(
     if base_dir is not None:
         extra_args.append(f"--resource-path={base_dir}")
     extra_args += _bibliography_args(metadata, base_dir)
+    if reference_doc is not None and reference_doc.is_file():
+        extra_args.append(f"--reference-doc={reference_doc}")
 
     pypandoc.convert_text(
         prepared,

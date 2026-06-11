@@ -32,13 +32,50 @@ def _rgb_to_hex(arr: list[int] | tuple[int, int, int]) -> str:
     return f"#{r:02X}{g:02X}{b:02X}"
 
 
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    """Convert ``#RRGGBB`` to an ``(r, g, b)`` int triplet."""
+    h = hex_color.lstrip("#")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def _mix(c1: str, c2: str, t: float) -> str:
+    """Linear blend: ``t=0`` is ``c1``, ``t=1`` is ``c2``.
+
+    Args:
+        c1: Source hex color.
+        c2: Target hex color.
+        t: Blend weight toward ``c2`` in [0, 1].
+
+    Returns:
+        Blended ``#RRGGBB`` hex string.
+    """
+    r1, g1, b1 = _hex_to_rgb(c1)
+    r2, g2, b2 = _hex_to_rgb(c2)
+    r = int(r1 + (r2 - r1) * t)
+    g = int(g1 + (g2 - g1) * t)
+    b = int(b1 + (b2 - b1) * t)
+    return f"#{r:02X}{g:02X}{b:02X}"
+
+
+def _lighten(c: str, t: float) -> str:
+    """Mix ``c`` toward white by factor ``t`` in [0, 1]."""
+    return _mix(c, "#FFFFFF", t)
+
+
+def _darken(c: str, t: float) -> str:
+    """Mix ``c`` toward black by factor ``t`` in [0, 1]."""
+    return _mix(c, "#000000", t)
+
+
+def _is_dark(c: str) -> bool:
+    """Return True if ``c`` has WCAG relative luminance below 0.5."""
+    r, g, b = (v / 255 for v in _hex_to_rgb(c))
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 0.5
+
+
 def _contrast_text(bg_hex: str) -> str:
     """Pick black or white text for ``bg_hex`` using WCAG luminance."""
-    r = int(bg_hex[1:3], 16) / 255
-    g = int(bg_hex[3:5], 16) / 255
-    b = int(bg_hex[5:7], 16) / 255
-    luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-    return "#000000" if luminance > 0.55 else "#FFFFFF"
+    return "#000000" if not _is_dark(bg_hex) else "#FFFFFF"
 
 
 def _read_json(filename: str) -> dict[str, Any]:
@@ -298,33 +335,112 @@ def apply_palette(app: QApplication, theme: Theme) -> None:
     app.setPalette(palette)
 
 
+def _tonal_variants(
+    bg: str, accent: str, is_dark_theme: bool
+) -> dict[str, str]:
+    """Derive subtle tonal variants from ``bg`` and ``accent``.
+
+    Args:
+        bg: Window background hex color.
+        accent: Primary accent (link/highlight) hex color.
+        is_dark_theme: True when the palette background is dark.
+
+    Returns:
+        Dict with keys: bg_toolbar, bg_statusbar, bg_panel,
+        bg_menu, accent_soft, accent_strong, scrollbar_handle.
+    """
+    if is_dark_theme:
+        bg_toolbar = _lighten(bg, 0.08)
+        bg_statusbar = _darken(bg, 0.06)
+        bg_panel = _lighten(bg, 0.05)
+        bg_menu = _lighten(bg, 0.06)
+    else:
+        bg_toolbar = _darken(bg, 0.06)
+        bg_statusbar = _darken(bg, 0.04)
+        bg_panel = _darken(bg, 0.03)
+        bg_menu = _darken(bg, 0.02)
+
+    accent_soft = _mix(accent, bg, 0.82)
+    accent_strong = _mix(accent, bg, 0.55)
+    # Scrollbar handle: mid-tone between fg and bg
+    scrollbar_handle = _mix(accent, bg, 0.70)
+    return {
+        "bg_toolbar": bg_toolbar,
+        "bg_statusbar": bg_statusbar,
+        "bg_panel": bg_panel,
+        "bg_menu": bg_menu,
+        "accent_soft": accent_soft,
+        "accent_strong": accent_strong,
+        "scrollbar_handle": scrollbar_handle,
+    }
+
+
 def qss_for(theme: Theme) -> str:
-    """Build a Qt stylesheet that covers widgets beyond ``QPalette``."""
+    """Build a Qt stylesheet that covers widgets beyond ``QPalette``.
+
+    Derives subtle tonal variants from the theme palette so each zone
+    (toolbar, statusbar, menus, tabs, scrollbars) has a visibly distinct
+    but harmonious tone.
+    """
     p = theme.qt_palette
     window = p.get("Window", "#ffffff")
     text = p.get("WindowText", "#000000")
     base = p.get("Base", window)
-    alt = p.get("AlternateBase", base)
-    button = p.get("Button", alt)
     highlight = p.get("Highlight", "#0969da")
     highlight_text = p.get("HighlightedText", "#ffffff")
     border = theme.css_vars.get("border", "#cccccc")
+
+    dark = _is_dark(window)
+    tonal = _tonal_variants(window, highlight, dark)
+    bg_toolbar = tonal["bg_toolbar"]
+    bg_statusbar = tonal["bg_statusbar"]
+    bg_menu = tonal["bg_menu"]
+    accent_soft = tonal["accent_soft"]
+    accent_strong = tonal["accent_strong"]
+    scrollbar_handle = tonal["scrollbar_handle"]
+
+    # Tab unselected background matches the toolbar tone.
+    tab_bg = bg_toolbar
+    # Tab selected background matches the editor pane.
+    tab_selected = base
+    # Tab hover slightly lighter/darker than toolbar.
+    tab_hover = accent_soft
+
+    # Text over accent_soft must remain readable.
+    accent_soft_text = _contrast_text(accent_soft)
+
+    # Muted text for statusbar.
+    muted_text = _mix(text, window, 0.30)
+
     return f"""
     QMainWindow, QDialog {{
         background: {window}; color: {text};
     }}
     QToolBar {{
-        background: {window}; color: {text};
-        border: 0; spacing: 4px; padding: 4px;
+        background: qlineargradient(
+            x1:0, y1:0, x2:0, y2:1,
+            stop:0 {bg_toolbar},
+            stop:1 {window}
+        );
+        color: {text};
+        border: 0;
+        border-bottom: 1px solid {accent_soft};
+        spacing: 4px; padding: 4px;
     }}
     QToolBar::separator {{
         background: {border}; width: 1px; margin: 4px 6px;
     }}
     QToolButton {{
         background: transparent; color: {text};
-        padding: 5px 10px; border-radius: 4px;
+        padding: 5px 10px; border-radius: 4px; border: none;
     }}
-    QToolButton:hover {{ background: {alt}; }}
+    QToolButton:hover {{
+        background: {accent_soft}; color: {accent_soft_text};
+    }}
+    QToolButton:pressed, QToolButton:checked {{
+        background: {accent_strong};
+        color: {_contrast_text(accent_strong)};
+    }}
     QToolButton::menu-indicator {{
         subcontrol-position: right center; right: 4px;
     }}
@@ -334,12 +450,12 @@ def qss_for(theme: Theme) -> str:
         background: {highlight}; color: {highlight_text};
     }}
     QMenu {{
-        background: {base}; color: {text};
+        background: {bg_menu}; color: {text};
         border: 1px solid {border}; padding: 4px;
     }}
     QMenu::item {{ padding: 4px 18px; border-radius: 3px; }}
     QMenu::item:selected {{
-        background: {highlight}; color: {highlight_text};
+        background: {accent_soft}; color: {accent_soft_text};
     }}
     QMenu::separator {{
         height: 1px; background: {border}; margin: 4px 8px;
@@ -348,31 +464,48 @@ def qss_for(theme: Theme) -> str:
         background: {base}; border: 1px solid {border};
     }}
     QTabBar::tab {{
-        background: {alt}; color: {text};
-        padding: 6px 14px; border: 1px solid {border};
+        background: {tab_bg}; color: {text};
+        padding: 6px 14px;
+        border: 1px solid {border};
         border-bottom: none;
-        border-top-left-radius: 6px; border-top-right-radius: 6px;
+        border-top-left-radius: 4px; border-top-right-radius: 4px;
         margin-right: 2px;
     }}
-    QTabBar::tab:selected {{ background: {base}; }}
-    QTabBar::tab:hover {{ background: {button}; }}
+    QTabBar::tab:selected {{
+        background: {tab_selected};
+        border-bottom: 2px solid {highlight};
+    }}
+    QTabBar::tab:hover:!selected {{ background: {tab_hover}; }}
     QPlainTextEdit, QTextEdit {{
         background: {base}; color: {text};
         selection-background-color: {highlight};
         selection-color: {highlight_text};
         border: 1px solid {border};
     }}
-    QStatusBar {{ background: {window}; color: {text}; }}
-    QSplitter::handle {{ background: {alt}; }}
-    QSplitter::handle:hover {{ background: {border}; }}
-    QScrollBar:vertical, QScrollBar:horizontal {{
-        background: {base}; border: 0; width: 12px; height: 12px;
+    QStatusBar {{
+        background: {bg_statusbar}; color: {muted_text};
+        border-top: 1px solid {border};
+    }}
+    QSplitter::handle {{
+        background: {border};
+    }}
+    QSplitter::handle:hover {{ background: {accent_soft}; }}
+    QScrollBar:vertical {{
+        background: {base}; border: 0; width: 10px;
+    }}
+    QScrollBar:horizontal {{
+        background: {base}; border: 0; height: 10px;
     }}
     QScrollBar::handle:vertical,
     QScrollBar::handle:horizontal {{
-        background: {alt}; border-radius: 5px; margin: 2px;
+        background: {scrollbar_handle};
+        border-radius: 4px; margin: 2px;
+        min-height: 24px; min-width: 24px;
     }}
-    QScrollBar::handle:hover {{ background: {border}; }}
+    QScrollBar::handle:vertical:hover,
+    QScrollBar::handle:horizontal:hover {{
+        background: {highlight};
+    }}
     QScrollBar::add-line, QScrollBar::sub-line {{
         background: transparent; border: 0; width: 0; height: 0;
     }}
@@ -382,12 +515,17 @@ def qss_for(theme: Theme) -> str:
         selection-background-color: {highlight};
         selection-color: {highlight_text};
     }}
+    QLineEdit:focus, QListWidget:focus {{
+        border: 1px solid {highlight};
+    }}
     QDialogButtonBox QPushButton {{
-        background: {button}; color: {text};
+        background: {bg_menu}; color: {text};
         border: 1px solid {border};
         padding: 5px 14px; border-radius: 4px;
     }}
-    QDialogButtonBox QPushButton:hover {{ background: {alt}; }}
+    QDialogButtonBox QPushButton:hover {{
+        background: {accent_soft}; color: {accent_soft_text};
+    }}
     QDialogButtonBox QPushButton:default {{
         background: {highlight}; color: {highlight_text};
         border-color: {highlight};

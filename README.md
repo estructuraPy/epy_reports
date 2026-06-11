@@ -11,7 +11,7 @@ Lightweight **Quarto / Markdown** editor with live preview, BibTeX-aware cross-r
 | Themes | 9 layout presets — academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical |
 | References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs |
 | Snippets | Section / figure / table / equation / code block / callout |
-| Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), Print (`Ctrl+Alt+P`), epy_docs |
+| Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), DOCX (`Ctrl+Shift+D`), Print (`Ctrl+Alt+P`), epy_docs |
 | Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_mdr.spec`) |
 | Windows | Optional shell association via `winreg_assoc.py` |
 
@@ -75,7 +75,21 @@ unsaved changes you will be prompted to save first.
 - `Ctrl+B` bold · `Ctrl+I` italic · `Ctrl+E` code · `Ctrl+K` link
 - `Ctrl+Shift+H/F/T/Q/K/C` section / figure / table / equation / fenced code / callout
 - `Ctrl+R` cross-reference picker · `Ctrl+Shift+B` link `.bib`
-- `Ctrl+P` PDF · `Ctrl+Shift+P` HTML · `Ctrl+Alt+P` print
+- `Ctrl+P` PDF · `Ctrl+Shift+P` HTML · `Ctrl+Shift+D` DOCX · `Ctrl+Alt+P` print
+
+## Theme-aware exports
+
+HTML (`Ctrl+Shift+P`) and DOCX (`Ctrl+Shift+D`) exports preserve the active theme:
+
+- **HTML** — the exported file embeds the same `:root { … }` CSS custom-property block
+  used by the live preview, so fonts, heading colours, code backgrounds, and all other
+  theme tokens are reproduced faithfully when the file is opened in a browser.
+
+- **DOCX** — Pandoc is invoked with a `--reference-doc` argument pointing to a bundled
+  Word template for the active theme (one `.docx` file per theme, stored under
+  `assets/reference_docx/`).  The reference template carries the theme's fonts and
+  paragraph styles, so headings and body text match the on-screen layout.  If a
+  template file is missing the export falls back to Pandoc's default styles.
 
 ## Project layout
 
