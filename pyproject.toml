@@ -3,6 +3,13 @@ name = "epy_mdr"
 version = "0.3.0"
 description = "Quarto/Markdown editor with live preview and one-click PDF export."
 authors = [{ name = "Ing. Angel Navarro-Mora M.Sc." }]
+license = {text = "MIT"}
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Text Editors",
+    "Topic :: Office/Business",
+]
 requires-python = ">=3.10"
 dependencies = [
     "PySide6>=6.6",
