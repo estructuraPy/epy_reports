@@ -2,7 +2,11 @@
 
 The actual conversion is delegated to Pandoc (bundled by
 ``pypandoc-binary``). A small Quarto preprocessor expands titled
-fenced callouts so they render with a visible header.
+fenced callouts so they render with a visible header. A second
+preprocessor resolves Quarto-style cross-references
+(``@fig-x``, ``@tbl-x``, ``@eq-x``, ``@sec-x``) before Pandoc
+sees the source, so they render correctly even without a Quarto
+installation.
 """
 
 from __future__ import annotations
@@ -139,6 +143,241 @@ def _expand_quarto_callouts(source: str) -> str:
     return _CALLOUT_OPEN_RE.sub(replace, source)
 
 
+# ---------------------------------------------------------------------------
+# Cross-reference resolver
+# ---------------------------------------------------------------------------
+
+# Matches a Quarto label definition like {#fig-x} or {#tbl-y width=80%}.
+_XREF_DEF_RE = re.compile(
+    r"\{#(?P<label>(?P<kind>fig|tbl|eq|sec)-[A-Za-z0-9_-]+)[^}]*\}"
+)
+
+# Matches a cross-reference like @fig-x, @tbl-y, @eq-z, @sec-w.
+# Deliberately restricted to the four Quarto kinds so that bibliography
+# citations like @navarro2020 pass through unchanged.
+_XREF_REF_RE = re.compile(
+    r"@(?P<label>(?:fig|tbl|eq|sec)-[A-Za-z0-9_-]+)"
+)
+
+# Figure caption: ![CAP](path){#fig-x ...}
+_FIG_CAP_RE = re.compile(
+    r"(!\[)((?!(?:[A-Z][a-záéíóúüñA-Z]+ )+\d+:)[^]]*)"
+    r"(\]\([^)]*\)\{#(?P<label>fig-[A-Za-z0-9_-]+)[^}]*\})"
+)
+
+# Table caption: `: CAP {#tbl-x ...}`  (Pandoc table caption syntax)
+_TBL_CAP_RE = re.compile(
+    r"^(:\s+)((?!(?:[A-Z][a-záéíóúüñA-Z]+ )+\d+:).+?)"
+    r"(\s+\{#(?P<label>tbl-[A-Za-z0-9_-]+)[^}]*\}\s*)$"
+)
+
+# Equation block closing: optional whitespace before `$$` then `{#eq-x}`
+# Handles both  `$$ {#eq-x}`  and  `$$  {#eq-x}`  on the same line.
+_EQ_CLOSE_RE = re.compile(
+    r"(\$\$)\s+(\{#(?P<label>eq-[A-Za-z0-9_-]+)[^}]*\})"
+)
+
+# Localised words for the four kinds.
+_WORDS: dict[str, dict[str, str]] = {
+    "en": {
+        "fig": "Figure",
+        "tbl": "Table",
+        "eq": "Equation",
+        "sec": "Section",
+    },
+    "es": {
+        "fig": "Figura",
+        "tbl": "Tabla",
+        "eq": "Ecuación",
+        "sec": "Sección",
+    },
+}
+
+# Fence-start / end detector (``` or ~~~, any leading spaces).
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+
+# Standalone display-math delimiter: a line with only $$ (and whitespace).
+_DMATH_LINE_RE = re.compile(r"^\s*\$\$\s*$")
+
+# One or more backtick runs — used to strip inline code spans.
+_INLINE_CODE_RE = re.compile(r"`+[^`]*`+")
+
+
+def _strip_code_spans(text: str) -> list[tuple[str, bool]]:
+    """Split *text* into ``(segment, is_code)`` pairs.
+
+    Non-code segments are the prose the resolver may transform; code
+    segments must be returned verbatim.
+    """
+    result: list[tuple[str, bool]] = []
+    last = 0
+    for m in _INLINE_CODE_RE.finditer(text):
+        if m.start() > last:
+            result.append((text[last : m.start()], False))
+        result.append((m.group(), True))
+        last = m.end()
+    if last < len(text):
+        result.append((text[last:], False))
+    return result
+
+
+def _resolve_crossrefs(source: str, lang: str = "en") -> str:
+    """Resolve Quarto cross-references in *source* before Pandoc sees it.
+
+    Scans for ``{#fig-x}``, ``{#tbl-x}``, ``{#eq-x}``, ``{#sec-x}``
+    label definitions and assigns sequential numbers per kind. Then
+    prefixes figure/table captions and equation tags at definition sites
+    and replaces ``@fig-x`` / ``@tbl-x`` / ``@eq-x`` / ``@sec-x``
+    references with ``[Word N](#label)`` links.
+
+    Only the four Quarto cross-ref prefixes are touched — bibliography
+    citations (``@author2020``) pass through unchanged. Content inside
+    fenced code blocks (``` / ~~~) and inline code spans is never
+    transformed.
+
+    Args:
+        source: Raw Markdown / Quarto source text.
+        lang: Two-letter BCP-47 language tag. ``"es"`` selects Spanish
+            caption words; anything else uses English.
+
+    Returns:
+        Preprocessed source with numbered captions and resolved refs.
+    """
+    lang_key = lang[:2].lower() if lang else "en"
+    words = _WORDS.get(lang_key, _WORDS["en"])
+
+    # ------------------------------------------------------------------
+    # PASS A — number every label definition in document order.
+    # Definitions inside fenced code blocks are skipped.
+    # ------------------------------------------------------------------
+    numbers: dict[str, int] = {}
+    counters: dict[str, int] = {"fig": 0, "tbl": 0, "eq": 0, "sec": 0}
+
+    lines = source.splitlines(keepends=True)
+    in_fence = False
+    for line in lines:
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for m in _XREF_DEF_RE.finditer(line):
+            label = m.group("label")
+            kind = m.group("kind")
+            if label not in numbers:
+                counters[kind] += 1
+                numbers[label] = counters[kind]
+
+    # ------------------------------------------------------------------
+    # PASS B + C — transform lines outside fenced blocks.
+    # For each non-fence line: protect inline-code spans, apply caption
+    # prefixing (B) and reference replacement (C) only to prose parts.
+    # ------------------------------------------------------------------
+
+    def _prefix_fig(line: str) -> str:
+        """Prefix figure captions at their definition site."""
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            n = numbers.get(label)
+            if n is None:
+                return m.group(0)
+            word = words["fig"]
+            return f"{m.group(1)}{word} {n}: {m.group(2)}{m.group(3)}"
+
+        return _FIG_CAP_RE.sub(repl, line)
+
+    def _prefix_tbl(line: str) -> str:
+        """Prefix table captions at their definition site."""
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            n = numbers.get(label)
+            if n is None:
+                return m.group(0)
+            word = words["tbl"]
+            return (
+                f"{m.group(1)}{word} {n}: {m.group(2)}{m.group(3)}"
+            )
+
+        return _TBL_CAP_RE.sub(repl, line)
+
+    def _replace_refs(text: str) -> str:
+        """Replace @kind-label refs with [Word N](#label) links."""
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            n = numbers.get(label)
+            if n is None:
+                return m.group(0)  # unknown label — leave raw
+            kind = label.split("-", 1)[0]
+            word = words[kind]
+            return f"[{word} {n}](#{label})"
+
+        return _XREF_REF_RE.sub(repl, text)
+
+    def _transform_prose(text: str) -> str:
+        """Apply ref replacement to prose, preserving inline code."""
+        parts = _strip_code_spans(text)
+        out: list[str] = []
+        for segment, is_code in parts:
+            out.append(segment if is_code else _replace_refs(segment))
+        return "".join(out)
+
+    # State for equation block tracking (detect pre-existing \tag).
+    # eq_state[0] = True  →  current eq block already has a \tag.
+    # Reset on each opening $$ line (outside a fence).
+    eq_state = [False]  # mutable so nested _tag_eq can read it
+
+    def _tag_eq(line: str) -> str:
+        r"""Inject ``\tag{N}`` into display-math closing line."""
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            n = numbers.get(label)
+            if n is None:
+                return m.group(0)
+            # Don't inject if the block body already has \tag{.
+            if eq_state[0]:
+                return m.group(0)
+            return f"\\tag{{{n}}} {m.group(1)} {m.group(2)}"
+
+        return _EQ_CLOSE_RE.sub(repl, line)
+
+    out_lines: list[str] = []
+    in_fence = False
+    in_eq_block = False
+    for line in lines:
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out_lines.append(line)
+            continue
+        if in_fence:
+            out_lines.append(line)
+            continue
+        # Track display-math blocks to detect pre-existing \tag.
+        if _DMATH_LINE_RE.match(line):
+            if not in_eq_block:
+                # Opening $$ — reset block tag state.
+                in_eq_block = True
+                eq_state[0] = False
+            else:
+                in_eq_block = False
+        elif in_eq_block and "\\tag{" in line:
+            eq_state[0] = True
+        # Apply caption prefixes (operate on the full line; labels are
+        # not inside inline-code spans in practice, and the regexes are
+        # specific enough not to mis-fire on code-looking prose).
+        line = _prefix_fig(line)
+        line = _prefix_tbl(line)
+        line = _tag_eq(line)
+        # Replace prose references, protecting inline code spans.
+        line = _transform_prose(line)
+        out_lines.append(line)
+
+    return "".join(out_lines)
+
+
 def export_docx(
     source: str,
     target: Path,
@@ -146,6 +385,14 @@ def export_docx(
     reference_doc: Path | None = None,
 ) -> None:
     """Convert Quarto/Pandoc Markdown ``source`` to a ``.docx`` file.
+
+    The pipeline is:
+
+    1. ``_expand_quarto_callouts`` — rewrite titled callout fences.
+    2. ``_resolve_crossrefs`` — number and link ``@fig-x`` / ``@tbl-x``
+       / ``@eq-x`` / ``@sec-x`` cross-references so they survive Pandoc
+       without a Quarto installation.
+    3. ``pypandoc.convert_text`` — the actual Markdown → DOCX conversion.
 
     Args:
         source: Markdown text. Quarto YAML front matter and fenced
@@ -159,7 +406,9 @@ def export_docx(
             export proceeds with Pandoc's default styles.
     """
     metadata = parse_front_matter(source)
+    lang = metadata.get("lang", "en")
     prepared = _expand_quarto_callouts(source)
+    prepared = _resolve_crossrefs(prepared, lang=lang)
 
     # tango matches the HTML preview so code chunks keep colored
     # tokens in Word; the reference-doc supplies the monospace
@@ -189,6 +438,14 @@ def render_markdown(
 ) -> str:
     """Render Quarto/Pandoc Markdown ``source`` to a full HTML page.
 
+    The pipeline is:
+
+    1. ``_expand_quarto_callouts`` — rewrite titled callout fences.
+    2. ``_resolve_crossrefs`` — number and link ``@fig-x`` / ``@tbl-x``
+       / ``@eq-x`` / ``@sec-x`` cross-references so they survive Pandoc
+       without a Quarto installation.
+    3. ``pypandoc.convert_text`` — the actual Markdown → HTML5 conversion.
+
     Args:
         source: Markdown text. Quarto YAML front matter and fenced
             callouts are supported.
@@ -208,7 +465,9 @@ def render_markdown(
     if metadata.get("title"):
         title = metadata["title"]
 
+    lang = metadata.get("lang", "en")
     prepared = _expand_quarto_callouts(source)
+    prepared = _resolve_crossrefs(prepared, lang=lang)
 
     extra_args = list(PANDOC_ARGS) + _bibliography_args(
         metadata, base_dir

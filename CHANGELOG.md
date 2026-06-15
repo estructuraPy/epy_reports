@@ -4,6 +4,31 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-06-11
+
+### Added
+- Cross-reference resolution in the preview and every export (HTML, PDF,
+  DOCX): `@fig-`, `@tbl-`, `@eq-`, `@sec-` now render as linked
+  "Figure 1", "Table 1", etc. instead of raw text. A lightweight
+  preprocessor (`_resolve_crossrefs`) numbers definitions per kind and
+  rewrites references before Pandoc, so no Quarto install or
+  `pandoc-crossref` binary is required. Localized to the document `lang:`
+  (English / Spanish). Real bibliography citations are left untouched.
+- Dedicated **Reference ID** field in the table, figure and equation
+  dialogs (new `FigureDialog`, `EquationDialog`). IDs are now short and
+  independent of the caption (auto-numbered `fig-1`, `tbl-1`, `eq-1`,
+  editable), replacing the previous caption-slug ids.
+
+### Fixed
+- Table captions now render **above** the table (academic convention);
+  figure captions remain below. Was a `caption-side: bottom` rule in the
+  base stylesheet.
+
+### Known limitations
+- Cross-reference numbering is flat (Figure 1, 2, 3…), not chapter-scoped.
+- In DOCX the reference text resolves correctly; internal hyperlinks and
+  equation numbers may not be live Word fields.
+
 ## [0.3.0] — 2026-06-11
 
 ### Added

@@ -246,8 +246,9 @@ table th {
 }
 table tr:nth-child(even) td { background: var(--bg-stripe); }
 table caption {
-    caption-side: bottom;
-    padding: 0.5em 0;
+    /* Academic convention: table captions sit ABOVE the table. */
+    caption-side: top;
+    padding: 0 0 0.5em;
     color: var(--fg-muted);
     font-size: var(--caption-size);
     text-align: left;

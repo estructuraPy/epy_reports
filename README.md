@@ -9,8 +9,8 @@ Lightweight **Quarto / Markdown** editor with live preview, BibTeX-aware cross-r
 | Editor | Multi-tab, drag-and-drop open, `.md` / `.markdown` / `.qmd` |
 | Preview | Live HTML preview via Pandoc (`pypandoc-binary`) |
 | Themes | 9 layout presets — academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical |
-| References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs |
-| Snippets | Section / figure / table / equation / code block / callout |
+| References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs resolved in preview & exports (Figure 1, Table 1, …) |
+| Snippets | Section / figure / table / equation / code block / callout — each element gets a short editable Reference ID, separate from its caption |
 | Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), DOCX (`Ctrl+Shift+D`), Print (`Ctrl+Alt+P`), epy_docs |
 | Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_mdr.spec`) |
 | Windows | Optional shell association via `winreg_assoc.py` |

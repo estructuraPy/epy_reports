@@ -16,11 +16,19 @@ from PySide6.QtWidgets import (
 class TableDialog(QDialog):
     """Ask the user for table dimensions, header option, and caption."""
 
-    def __init__(self, parent=None) -> None:
-        """Build the dialog widgets (spinboxes, header toggle, caption)."""
+    def __init__(
+        self, parent=None, default_id: str = "1"
+    ) -> None:
+        """Build the dialog widgets (spinboxes, header toggle, caption).
+
+        Args:
+            parent: Optional parent widget.
+            default_id: Suffix pre-filled in the Reference ID field.
+        """
         super().__init__(parent)
         self.setWindowTitle("Insert table")
         self.setMinimumWidth(300)
+        self._default_id = default_id
 
         self.cols_spin = QSpinBox(self)
         self.cols_spin.setRange(1, 20)
@@ -36,11 +44,16 @@ class TableDialog(QDialog):
         self.caption_edit = QLineEdit(self)
         self.caption_edit.setPlaceholderText("Optional caption…")
 
+        self.id_edit = QLineEdit(self)
+        self.id_edit.setText(default_id)
+        self.id_edit.setPlaceholderText("e.g. 1, beam-properties")
+
         form = QFormLayout()
         form.addRow("Columns:", self.cols_spin)
         form.addRow("Data rows:", self.rows_spin)
         form.addRow("", self.header_cb)
         form.addRow("Caption:", self.caption_edit)
+        form.addRow("Reference ID:", self.id_edit)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -74,18 +87,36 @@ class TableDialog(QDialog):
         """Caption text, stripped; empty string when not provided."""
         return self.caption_edit.text().strip()
 
-    def build_markdown(self, label: str) -> str:
-        """Generate pipe-table Markdown from the dialog choices."""
+    @property
+    def reference_id(self) -> str:
+        """Reference ID suffix, stripped; falls back to default_id."""
+        value = self.id_edit.text().strip()
+        return value if value else self._default_id
+
+    def build_markdown(self, label: str = "") -> str:
+        """Generate pipe-table Markdown from the dialog choices.
+
+        The caption line uses ``label`` when given; otherwise it is
+        composed from :attr:`reference_id`.
+        """
         cols = self.columns
         data_rows = self.rows
         header_row = self.has_header
 
-        header = "| " + " | ".join(f"Header {c+1}" for c in range(cols)) + " |"
-        sep = "| " + " | ".join("---" for _ in range(cols)) + " |"
+        header = (
+            "| "
+            + " | ".join(f"Header {c+1}" for c in range(cols))
+            + " |"
+        )
+        sep = (
+            "| " + " | ".join("---" for _ in range(cols)) + " |"
+        )
         body = "\n".join(
             "| " + " | ".join("" for _ in range(cols)) + " |"
             for _ in range(data_rows)
         )
+
+        effective_label = label if label else f"#tbl-{self.reference_id}"
 
         lines = [header] if header_row else []
         lines.append(sep)
@@ -94,6 +125,8 @@ class TableDialog(QDialog):
 
         if self.caption:
             lines.append("")
-            lines.append(f": {self.caption} {{{label}}}")
+            lines.append(
+                f": {self.caption} {{{effective_label}}}"
+            )
 
         return "\n".join(lines) + "\n"

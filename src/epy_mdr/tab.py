@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import shutil
 from pathlib import Path
 
@@ -22,12 +21,42 @@ from PySide6.QtWidgets import (
 
 from epy_mdr import snippets
 from epy_mdr.checklist_dialog import ChecklistDialog
+from epy_mdr.equation_dialog import EquationDialog
+from epy_mdr.figure_dialog import FigureDialog
 from epy_mdr.renderer import render_markdown
 from epy_mdr.table_dialog import TableDialog
 from epy_mdr.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
 UNTITLED = "untitled.md"
+
+
+def next_label_suffix(text: str, kind: str) -> str:
+    """Return the next sequential integer suffix for ``kind`` labels.
+
+    Scans all Quarto labels of the given kind in ``text`` (e.g.
+    ``fig``, ``tbl``, ``eq``, ``sec``).  Among suffixes that are pure
+    integers, returns ``str(max + 1)``.  When no integer suffix exists
+    the function returns ``"1"``.
+
+    Args:
+        text: Full Markdown buffer contents.
+        kind: Label kind — one of ``fig``, ``tbl``, ``eq``, ``sec``.
+
+    Returns:
+        Short sequential string, e.g. ``"3"`` when ``{#fig-1}`` and
+        ``{#fig-2}`` are already present.
+    """
+    labels = snippets.find_labels(text)
+    ints: list[int] = []
+    prefix = f"{kind}-"
+    for label in labels:
+        if label.kind != kind:
+            continue
+        suffix = label.name[len(prefix):]
+        if suffix.isdigit():
+            ints.append(int(suffix))
+    return str(max(ints) + 1) if ints else "1"
 
 
 class MarkdownTab(QWidget):
@@ -215,10 +244,20 @@ class MarkdownTab(QWidget):
         self.editor.setFocus()
 
     def insert_section_heading(self) -> None:
-        """Insert ``## Section title {#sec-LABEL}`` and select label."""
-        self._insert_template(
-            snippets.SECTION_HEADING_TEMPLATE, "LABEL"
+        """Prompt for heading text, insert with auto sec-N label."""
+        text, ok = QInputDialog.getText(
+            self, "Section heading", "Heading text:",
+            text="Section title",
         )
+        if not ok or not text:
+            text = "Section title"
+        suffix = self._next_label_suffix("sec")
+        md = f"## {text} {{#sec-{suffix}}}"
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_link(self) -> None:
         """Insert ``[text](url)``; uses the current selection as text."""
@@ -237,43 +276,27 @@ class MarkdownTab(QWidget):
             self._insert_template(snippets.LINK_TEMPLATE, "TEXT")
         self.editor.setFocus()
 
-    def _slugify(self, text: str, fallback: str) -> str:
-        """Lowercase, collapse non-alphanumeric to hyphens."""
-        slug = re.sub(r"[^a-z0-9-]+", "-", text.lower()).strip("-")
-        return slug if slug else fallback
+    def _next_label_suffix(self, kind: str) -> str:
+        """Return the next sequential integer suffix for ``kind``.
 
-    def _prompt_caption_and_insert(
-        self, template: str, label_prefix: str, prompt_title: str,
-        caption_token: str = "CAPTION", label_token: str = "LABEL",
-    ) -> None:
-        """Prompt for caption, auto-generate label, insert filled template.
-
-        If the user cancels, fall back to ``_insert_template`` with the
-        original placeholder tokens.
+        Delegates to the module-level :func:`next_label_suffix` so
+        the logic is unit-testable without a widget instance.
         """
-        caption, ok = QInputDialog.getText(
-            self, prompt_title, "Caption:",
-        )
-        if not ok or not caption:
-            self._insert_template(template, label_token)
-            return
-        label = self._slugify(caption, label_prefix)
-        filled = (
-            template
-            .replace(caption_token, caption)
-            .replace(label_token, label)
-        )
-        cursor = self.editor.textCursor()
-        if "\n" in filled and cursor.positionInBlock() != 0:
-            cursor.insertText("\n")
-        cursor.insertText(filled)
-        self.editor.setFocus()
+        return next_label_suffix(self.editor.toPlainText(), kind)
 
     def insert_figure(self) -> None:
-        """Insert a Quarto figure skeleton with caption dialog."""
-        self._prompt_caption_and_insert(
-            snippets.FIGURE_TEMPLATE, "fig", "Figure caption",
+        """Open FigureDialog; insert figure Markdown on accept."""
+        dialog = FigureDialog(
+            self, default_id=self._next_label_suffix("fig")
         )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_image_from_dialog(self) -> None:
         """Pick an image file, copy to figures/, insert at cursor."""
@@ -320,10 +343,8 @@ class MarkdownTab(QWidget):
             rel = dst
         md_path = str(rel).replace("\\", "/")
 
-        # Auto-generate label from filename
-        label = re.sub(r"[^a-z0-9-]+", "-", src.stem.lower()).strip("-")
-        if not label:
-            label = "image"
+        # Sequential label independent of filename
+        label = self._next_label_suffix("fig")
 
         # Caption: prompt user with filename as default
         caption, ok = QInputDialog.getText(
@@ -348,14 +369,13 @@ class MarkdownTab(QWidget):
 
     def insert_table(self) -> None:
         """Open table dialog, then insert pipe table with caption."""
-        dialog = TableDialog(self)
+        dialog = TableDialog(
+            self, default_id=self._next_label_suffix("tbl")
+        )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
-        caption = dialog.caption or "TABLE"
-        label = self._slugify(caption, "tbl")
-
-        md = dialog.build_markdown(f"#tbl-{label}")
+        md = dialog.build_markdown()
         cursor = self.editor.textCursor()
         if cursor.positionInBlock() != 0:
             cursor.insertText("\n")
@@ -377,8 +397,18 @@ class MarkdownTab(QWidget):
         self.editor.setFocus()
 
     def insert_equation(self) -> None:
-        """Insert a display equation with a ``{#eq-...}`` label."""
-        self._insert_template(snippets.EQUATION_TEMPLATE, "LABEL")
+        """Open EquationDialog; insert display equation on accept."""
+        dialog = EquationDialog(
+            self, default_id=self._next_label_suffix("eq")
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_code_block(self) -> None:
         """Insert a fenced Python code block skeleton."""
