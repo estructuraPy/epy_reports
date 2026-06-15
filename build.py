@@ -1,15 +1,14 @@
-"""Build a portable epy_mdr executable with PyInstaller.
+"""Build the epy_mdr application bundle for the installer.
 
 Run from the project root:
 
-    python build.py              # onedir build  -> dist/epy_mdr/
-    python build.py --onefile    # single .exe   -> dist/epy_mdr.exe
-    python build.py --zip        # also zip the onedir folder for sharing
+    python build.py              # build dist/epy_mdr/ (installer input)
 
-The onedir build is recommended: Qt WebEngine ships several support
-processes and resource files that work best when laid out next to the
-launcher in a folder. The onefile variant is convenient but has slower
-cold-start because it extracts to a temp dir on launch.
+This produces the PyInstaller onedir layout under ``dist/epy_mdr/``,
+which is the staging folder packaged by the Windows installer
+(``installer/windows/epy_mdr.iss``) and the Linux ``.deb`` builder.
+It is an intermediate build artifact, not a distributable app — the
+shipped deliverables are the ``setup.exe`` and the ``.deb``.
 """
 
 from __future__ import annotations
@@ -18,14 +17,12 @@ import argparse
 import shutil
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 SPEC = ROOT / "epy_mdr.spec"
-ENTRY = ROOT / "src" / "epy_mdr" / "__main__.py"
 APP_NAME = "epy_mdr"
 
 
@@ -54,51 +51,6 @@ def _build_onedir() -> Path:
     return target
 
 
-def _build_onefile() -> Path:
-    """Run PyInstaller in --onefile mode without using the spec."""
-    cmd = [
-        sys.executable,
-        "-m",
-        "PyInstaller",
-        "--noconfirm",
-        "--clean",
-        "--onefile",
-        "--windowed",
-        "--name",
-        APP_NAME,
-        "--paths",
-        "src",
-        "--collect-data",
-        "pypandoc",
-        "--collect-data",
-        "epy_mdr",
-        "--collect-submodules",
-        "pypandoc",
-        "--exclude-module",
-        "tkinter",
-        str(ENTRY),
-    ]
-    _run(cmd)
-    target = DIST / f"{APP_NAME}.exe"
-    if not target.exists():
-        sys.exit(f"PyInstaller did not produce {target}")
-    return target
-
-
-def _zip_folder(folder: Path) -> Path:
-    """Zip the produced onedir folder for easy distribution."""
-    archive = DIST / f"{APP_NAME}-portable.zip"
-    if archive.exists():
-        archive.unlink()
-    print(f"creating {archive}")
-    with zipfile.ZipFile(
-        archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6
-    ) as zf:
-        for path in folder.rglob("*"):
-            zf.write(path, path.relative_to(folder.parent))
-    return archive
-
-
 def _purge_build_artifacts() -> None:
     """Remove PyInstaller's staging ``build/`` after a successful run.
 
@@ -115,16 +67,6 @@ def _purge_build_artifacts() -> None:
 def main() -> int:
     """CLI entry point for the build script."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--onefile",
-        action="store_true",
-        help="Produce a single .exe instead of a portable folder.",
-    )
-    parser.add_argument(
-        "--zip",
-        action="store_true",
-        help="Zip the resulting folder (onedir mode only).",
-    )
     parser.add_argument(
         "--keep",
         action="store_true",
@@ -143,31 +85,13 @@ def main() -> int:
     if not args.keep:
         _clean()
 
-    if args.onefile:
-        produced = _build_onefile()
-    else:
-        produced = _build_onedir()
+    produced = _build_onedir()
 
     if not args.keep_build:
         _purge_build_artifacts()
 
-    if args.onefile:
-        print(f"\nDone. Portable executable: {produced}")
-        if args.zip:
-            print(
-                "warning: --zip has no effect with --onefile; "
-                "the file is already a single artifact."
-            )
-        return 0
-
-    print(f"\nDone. Portable folder: {produced}")
-    print(
-        "Tip: copy or zip the folder above and drop it on any "
-        "Windows machine — no Python required."
-    )
-    if args.zip:
-        archive = _zip_folder(produced)
-        print(f"Archive: {archive}")
+    print(f"\nDone. Installer input: {produced}")
+    print("Next: build the installer (installer/windows/epy_mdr.iss).")
     return 0
 
 
