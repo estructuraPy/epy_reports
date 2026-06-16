@@ -488,6 +488,24 @@ class MarkdownTab(QWidget):
         """Return the parsed BibTeX entries for the linked bib file."""
         return self._bib_entries_for_buffer(self.editor.toPlainText())
 
+    def bib_path(self) -> Path | None:
+        """Return the resolved path of the linked .bib, or ``None``.
+
+        Mirrors the resolution logic used to load the entries — the
+        path comes from the ``bibliography:`` YAML field, resolved
+        against the document's directory when relative. Existence is
+        not enforced; the caller can use the result as the *target*
+        of a write operation even when the file does not exist yet.
+        """
+        meta = snippets.parse_front_matter(self.editor.toPlainText())
+        value = meta.get("bibliography")
+        if not value:
+            return None
+        bib_path = Path(value)
+        if not bib_path.is_absolute() and self._path is not None:
+            bib_path = (self._path.parent / bib_path).resolve()
+        return bib_path
+
     # ------------------------------------------------- internals
 
     def _bib_entries_for_buffer(self, text: str) -> list:

@@ -335,6 +335,12 @@ class MarkdownWindow(QMainWindow):
         self.act_link_bib.setShortcut(QKeySequence("Ctrl+Shift+B"))
         self.act_link_bib.triggered.connect(self._link_bibliography)
 
+        self.act_new_bib_entry = QAction(
+            "New bibliography entry...", self
+        )
+        self.act_new_bib_entry.setShortcut(QKeySequence("Ctrl+Shift+N"))
+        self.act_new_bib_entry.triggered.connect(self._new_bib_entry)
+
     def _build_menu(self) -> None:
         """Build content menus as plain ``QMenu`` objects.
 
@@ -504,6 +510,7 @@ class MarkdownWindow(QMainWindow):
 
         menu.addSeparator()
         menu.addAction(self.act_link_bib)
+        menu.addAction(self.act_new_bib_entry)
         menu.addAction(self.act_cross_ref)
 
     def _insert_cross_ref_name(self, name: str) -> None:
@@ -578,6 +585,56 @@ class MarkdownWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Linked {bib_path.name} — {len(entries)} entries", 5000
         )
+
+    def _new_bib_entry(self) -> None:
+        """Open the BibEntryDialog and append the result to the linked .bib.
+
+        Walks four cases:
+
+        1. No active tab → silently ignored (the action is also hidden
+           in that branch of :meth:`_populate_references_menu`).
+        2. No linked bibliography → prompt the user to pick or create
+           one; the chosen file becomes the new ``bibliography:``
+           target written into the YAML front matter.
+        3. Linked .bib exists → open the dialog with its current keys
+           so the user is warned before re-using one.
+        4. Linked .bib path is set but the file does not exist yet →
+           the dialog accepts and the file is created on save.
+        """
+        from epy_mdr.bib_dialog import BibEntryDialog  # noqa: PLC0415
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+
+        bib_path = tab.bib_path()
+        if bib_path is None:
+            start = str(tab.path.parent) if tab.path is not None else ""
+            filename, _ = QFileDialog.getSaveFileName(
+                self,
+                "Bibliography target",
+                start,
+                "BibTeX (*.bib);;All files (*)",
+                options=QFileDialog.Option.DontConfirmOverwrite,
+            )
+            if not filename:
+                return
+            bib_path = Path(filename)
+            tab.link_bibliography(bib_path)
+
+        existing_keys = (
+            bib.keys_in_file(bib_path) if bib_path.exists() else set()
+        )
+        dlg = BibEntryDialog(self, existing_keys=existing_keys)
+        if dlg.exec() != BibEntryDialog.DialogCode.Accepted:
+            return
+        draft = dlg.build_draft()
+        bib.append_entry_to_file(bib_path, draft)
+        self.statusBar().showMessage(
+            f"Added @{draft.key} to {bib_path.name}", 5000
+        )
+        # Refresh the References dropdown so the new key shows up.
+        self._populate_references_menu()
 
     # ----------------------------------------------- export helpers
 

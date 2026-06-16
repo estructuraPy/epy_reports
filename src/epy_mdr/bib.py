@@ -1,15 +1,20 @@
-"""Lightweight BibTeX parser used by the editor's References dropdown.
+"""Lightweight BibTeX parser and writer used by the References dropdown.
 
-This is intentionally minimal — just enough to expose a list of
-citation keys (and an optional title) so the GUI can show what is
-available in the linked ``.bib`` file. The actual citation rendering
-is handled by Pandoc's bundled citeproc when the document is built.
+The reader side is intentionally minimal — just enough to expose a
+list of citation keys, types and short metadata so the GUI can show
+what is available in the linked ``.bib`` file. The writer side ships
+a draft dataclass and a serializer so the editor can generate new
+canonical entries and append them to the linked file. The actual
+citation rendering at export time is handled by Pandoc's bundled
+citeproc.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+import unicodedata
+from collections.abc import Iterator
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 _ENTRY_RE = re.compile(
@@ -111,3 +116,187 @@ def parse_bib_file(path: Path) -> list[BibEntry]:
     except OSError:
         return []
     return parse_bib_text(text)
+
+
+# ---------------------------------------------------------------------------
+# Writer side: draft → canonical BibTeX text → file append.
+# ---------------------------------------------------------------------------
+
+
+ENTRY_TYPES: tuple[str, ...] = (
+    "article",
+    "book",
+    "booklet",
+    "inproceedings",
+    "incollection",
+    "techreport",
+    "mastersthesis",
+    "phdthesis",
+    "manual",
+    "misc",
+    "online",
+)
+
+
+REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "article":       ("author", "title", "journal", "year"),
+    "book":          ("author", "title", "publisher", "year"),
+    "booklet":       ("title",),
+    "inproceedings": ("author", "title", "booktitle", "year"),
+    "incollection":  ("author", "title", "booktitle", "publisher", "year"),
+    "techreport":    ("author", "title", "institution", "year"),
+    "mastersthesis": ("author", "title", "school", "year"),
+    "phdthesis":     ("author", "title", "school", "year"),
+    "manual":        ("title",),
+    "misc":          (),
+    "online":        ("title", "url", "year"),
+}
+
+
+_FIELD_ORDER: tuple[str, ...] = (
+    "author", "editor", "title",
+    "journal", "booktitle", "publisher", "institution", "school",
+    "organization", "year", "month",
+    "volume", "number", "pages", "edition", "chapter",
+    "address", "howpublished",
+    "doi", "url", "urldate", "isbn", "note",
+)
+
+
+_ASCII_FOLD_RE = re.compile(r"[^a-z0-9]+")
+
+
+@dataclass
+class BibEntryDraft:
+    """Mutable draft of a BibTeX entry built by the editor dialog.
+
+    Every field maps directly to a canonical BibTeX field name. Empty
+    fields are skipped by :func:`serialize_draft`, so callers fill
+    only what is relevant to the chosen :attr:`type`.
+    """
+
+    type: str = "article"
+    key: str = ""
+    author: str = ""
+    editor: str = ""
+    title: str = ""
+    journal: str = ""
+    booktitle: str = ""
+    publisher: str = ""
+    institution: str = ""
+    school: str = ""
+    organization: str = ""
+    year: str = ""
+    month: str = ""
+    volume: str = ""
+    number: str = ""
+    pages: str = ""
+    edition: str = ""
+    chapter: str = ""
+    address: str = ""
+    howpublished: str = ""
+    doi: str = ""
+    url: str = ""
+    urldate: str = ""
+    isbn: str = ""
+    note: str = ""
+
+    def iter_filled_fields(self) -> Iterator[tuple[str, str]]:
+        """Yield ``(name, value)`` for every non-empty field, in canonical order."""
+        for name in _FIELD_ORDER:
+            value = getattr(self, name, "").strip()
+            if value:
+                yield name, value
+
+    def missing_required(self) -> list[str]:
+        """Return the names of required fields that are still empty."""
+        required = REQUIRED_FIELDS.get(self.type, ())
+        missing: list[str] = []
+        if not self.key.strip():
+            missing.append("key")
+        for name in required:
+            if not getattr(self, name, "").strip():
+                missing.append(name)
+        return missing
+
+
+def suggest_key(author: str, year: str) -> str:
+    """Generate a canonical BibTeX key from author and year.
+
+    Takes the family name of the first author, lowercases and
+    ASCII-folds it, and appends the year. Returns an empty string
+    when both inputs are blank, so the caller can defer suggestion
+    until the user has typed something.
+    """
+    cleaned_year = year.strip()
+    cleaned_author = author.strip()
+    if not cleaned_author and not cleaned_year:
+        return ""
+    first = cleaned_author.split(" and ")[0].strip() if cleaned_author else ""
+    if "," in first:
+        family = first.split(",", 1)[0].strip()
+    else:
+        family = first.split()[-1] if first else ""
+    family_norm = unicodedata.normalize("NFKD", family)
+    family_ascii = family_norm.encode("ascii", "ignore").decode("ascii")
+    family_slug = _ASCII_FOLD_RE.sub("", family_ascii.lower())
+    return f"{family_slug}{cleaned_year}".strip()
+
+
+def serialize_draft(draft: BibEntryDraft) -> str:
+    """Render *draft* as a canonical BibTeX entry string.
+
+    Output uses two-space indentation, aligned ``=`` signs at column
+    14, brace-delimited values, and a trailing newline so multiple
+    entries concatenate cleanly. Empty fields are skipped.
+    """
+    width = max(
+        (len(name) for name, _ in draft.iter_filled_fields()),
+        default=0,
+    )
+    lines = [f"@{draft.type}{{{draft.key.strip()},"]
+    body_lines: list[str] = []
+    for name, value in draft.iter_filled_fields():
+        body_lines.append(f"  {name:<{width}} = {{{value}}}")
+    lines.append(",\n".join(body_lines))
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def keys_in_file(path: Path) -> set[str]:
+    """Return the set of citation keys already defined in ``path``."""
+    return {entry.key for entry in parse_bib_file(path)}
+
+
+def append_entry_to_file(path: Path, draft: BibEntryDraft) -> None:
+    """Append *draft* (serialized) to ``path``, creating the file if needed.
+
+    A blank line is inserted between the existing content and the new
+    entry when the file ends without one, so adjacent entries stay
+    visually separated.
+    """
+    entry_text = serialize_draft(draft)
+    if path.exists():
+        existing = path.read_text(encoding="utf-8")
+        separator = "" if existing.endswith("\n\n") else (
+            "\n" if existing.endswith("\n") else "\n\n"
+        )
+        path.write_text(existing + separator + entry_text, encoding="utf-8")
+    else:
+        path.write_text(entry_text, encoding="utf-8")
+
+
+# Re-export the writer-side public surface alongside the reader API
+# already used by app.py / tab.py.
+__all__ = [
+    "BibEntry",
+    "BibEntryDraft",
+    "ENTRY_TYPES",
+    "REQUIRED_FIELDS",
+    "append_entry_to_file",
+    "keys_in_file",
+    "parse_bib_file",
+    "parse_bib_text",
+    "serialize_draft",
+    "suggest_key",
+]
