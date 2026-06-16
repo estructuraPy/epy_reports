@@ -44,6 +44,7 @@ hiddenimports += [
     "epy_mdr.assets.branding",
     "epy_mdr.assets.themes",
     "epy_mdr.assets.reference_docx",
+    "epy_mdr.assets.mathjax",
 ]
 
 a = Analysis(

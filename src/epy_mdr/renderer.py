@@ -12,6 +12,8 @@ installation.
 from __future__ import annotations
 
 import re
+import shutil
+import tempfile
 from pathlib import Path
 
 import pypandoc
@@ -387,6 +389,55 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
     return "".join(out_lines)
 
 
+_SVG_IMG_RE = re.compile(
+    r"(!\[[^\]]*\]\()([^)\s]+?\.svg)(\)[^\n]*)"
+)
+
+
+def _rasterize_svgs_for_docx(
+    source: str, base_dir: Path | None
+) -> tuple[str, Path | None]:
+    """Convert ``![alt](*.svg)`` refs into PNG copies in a temp dir.
+
+    Pandoc's DOCX writer needs ``rsvg-convert`` on PATH to embed SVG
+    images and silently drops them otherwise. Render each referenced
+    SVG into a high-resolution PNG via Qt's bundled SVG renderer
+    (already a dependency through PySide6) and rewrite the source to
+    point at the PNG. The caller is responsible for removing the temp
+    directory after Pandoc finishes.
+    """
+    if base_dir is None or "!" not in source:
+        return source, None
+    from PySide6.QtCore import QSize  # noqa: PLC0415
+    from PySide6.QtGui import QImage, QPainter  # noqa: PLC0415
+    from PySide6.QtSvg import QSvgRenderer  # noqa: PLC0415
+
+    tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_svg_"))
+
+    def repl(match: re.Match[str]) -> str:
+        prefix, ref, suffix = match.group(1), match.group(2), match.group(3)
+        svg_path = (base_dir / ref).resolve()
+        if not svg_path.is_file():
+            return match.group(0)
+        png_path = tmp_dir / (svg_path.stem + ".png")
+        try:
+            renderer = QSvgRenderer(str(svg_path))
+            default = renderer.defaultSize()
+            scale = 3  # ~300 DPI raster for crisp print
+            size = QSize(default.width() * scale, default.height() * scale)
+            image = QImage(size, QImage.Format.Format_ARGB32_Premultiplied)
+            image.fill(0xFFFFFFFF)
+            painter = QPainter(image)
+            renderer.render(painter)
+            painter.end()
+            image.save(str(png_path), "PNG")
+        except Exception:
+            return match.group(0)
+        return f"{prefix}{png_path.as_posix()}{suffix}"
+
+    return _SVG_IMG_RE.sub(repl, source), tmp_dir
+
+
 def export_docx(
     source: str,
     target: Path,
@@ -418,6 +469,7 @@ def export_docx(
     lang = metadata.get("lang", "en")
     prepared = _expand_quarto_callouts(source)
     prepared = _resolve_crossrefs(prepared, lang=lang)
+    prepared, svg_tmp = _rasterize_svgs_for_docx(prepared, base_dir)
 
     # tango matches the HTML preview so code chunks keep colored
     # tokens in Word; the reference-doc supplies the monospace
@@ -425,17 +477,23 @@ def export_docx(
     extra_args = ["--wrap=preserve", "--syntax-highlighting=tango"]
     if base_dir is not None:
         extra_args.append(f"--resource-path={base_dir}")
+        if svg_tmp is not None:
+            extra_args.append(f"--resource-path={svg_tmp}")
     extra_args += _bibliography_args(metadata, base_dir)
     if reference_doc is not None and reference_doc.is_file():
         extra_args.append(f"--reference-doc={reference_doc}")
 
-    pypandoc.convert_text(
-        prepared,
-        to="docx",
-        format=PANDOC_FORMAT,
-        outputfile=str(target),
-        extra_args=extra_args,
-    )
+    try:
+        pypandoc.convert_text(
+            prepared,
+            to="docx",
+            format=PANDOC_FORMAT,
+            outputfile=str(target),
+            extra_args=extra_args,
+        )
+    finally:
+        if svg_tmp is not None:
+            shutil.rmtree(svg_tmp, ignore_errors=True)
 
 
 def render_markdown(

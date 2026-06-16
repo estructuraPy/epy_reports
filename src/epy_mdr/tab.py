@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import tempfile
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl, Signal
@@ -616,7 +617,16 @@ class MarkdownTab(QWidget):
         self._render_now()
 
     def _render_now(self) -> None:
-        """Render synchronously (called on load and after Save As)."""
+        """Render synchronously and load via file:// to bypass setHtml's 2 MB cap.
+
+        The HTML embeds the entire MathJax bundle inline (~2 MB) so
+        equations render offline. ``setHtml`` truncates anything past
+        2 MB, which left MathJax untyped and equations stuck as raw
+        ``\\[ … \\]`` text. Writing to a per-tab temp file and using
+        ``view.load()`` removes the cap. The ``<base href>`` tag in
+        the rendered HTML still points at the document's directory,
+        so relative figures, bib files and links resolve correctly.
+        """
         text = self.editor.toPlainText()
         base_dir = self._path.parent if self._path is not None else None
         title = (
@@ -628,8 +638,17 @@ class MarkdownTab(QWidget):
             title=title,
             theme_css=self._theme_css,
         )
-        if base_dir is not None:
-            base_url = QUrl.fromLocalFile(str(base_dir) + "/")
-        else:
-            base_url = QUrl()
-        self.view.setHtml(html, base_url)
+        if not hasattr(self, "_preview_tmp_dir"):
+            self._preview_tmp_dir = Path(
+                tempfile.mkdtemp(prefix="epy_mdr_preview_")
+            )
+        preview_path = self._preview_tmp_dir / "preview.html"
+        preview_path.write_text(html, encoding="utf-8")
+        self.view.load(QUrl.fromLocalFile(str(preview_path.resolve())))
+
+    def cleanup_preview_tmp(self) -> None:
+        """Delete the temp dir backing the live preview (call on close)."""
+        tmp = getattr(self, "_preview_tmp_dir", None)
+        if tmp is not None:
+            shutil.rmtree(tmp, ignore_errors=True)
+            self._preview_tmp_dir = None

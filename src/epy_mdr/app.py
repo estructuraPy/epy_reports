@@ -1061,6 +1061,7 @@ class MarkdownWindow(QMainWindow):
         if not self._confirm_close(widget):
             return
         self.tabs.removeTab(index)
+        widget.cleanup_preview_tmp()
         widget.deleteLater()
         if self.tabs.count() == 0:
             self._open_welcome_tab()

@@ -5,19 +5,25 @@ from __future__ import annotations
 from importlib import resources
 from pathlib import Path
 
-_MATHJAX = """
+_MATHJAX_CONFIG = """
 <script>
 window.MathJax = {
   tex: {
     inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
     displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
-    processEscapes: true
+    processEscapes: true,
+    tags: 'none'
   },
-  svg: { fontCache: 'global' }
+  svg: { fontCache: 'global' },
+  startup: {
+    ready() {
+      MathJax.startup.defaultReady();
+      MathJax.startup.promise.then(() => {
+        window._mathjax_done = true;
+      });
+    }
+  }
 };
-</script>
-<script async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
 </script>
 """
 
@@ -29,6 +35,24 @@ def _load_base_css() -> str:
         .joinpath("style.css")
         .read_text(encoding="utf-8")
     )
+
+
+def _load_mathjax_script() -> str:
+    """Return the inline MathJax v3 bundle (tex-svg-full, ~2 MB).
+
+    Embedded inline so the preview, PDF and HTML export all work
+    offline. The CDN copy that lived here before is fragile when the
+    machine has no internet or the print fires before the script
+    finishes downloading — which manifested as ``\\[ ... \\]`` shown
+    as raw text in every export format.
+    """
+    js = (
+        resources.files("epy_mdr.assets")
+        .joinpath("mathjax")
+        .joinpath("tex-svg-full.js")
+        .read_text(encoding="utf-8")
+    )
+    return f"<script>{js}</script>"
 
 
 def _base_href(base_dir: Path | None) -> str:
@@ -94,7 +118,8 @@ def build_html_document(
         f"{base_css}\n"
         f"{theme_css}\n"
         "</style>\n"
-        f"{_MATHJAX}\n"
+        f"{_MATHJAX_CONFIG}\n"
+        f"{_load_mathjax_script()}\n"
         "</head>\n"
         "<body>\n"
         f"{header}\n"
