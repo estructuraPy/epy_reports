@@ -2,6 +2,17 @@
 
 Lightweight **Quarto / Markdown** editor with live preview, BibTeX-aware cross-references, snippets, and one-click PDF / HTML export. Standalone GUI of the **ePy Suite**.
 
+## Download
+
+Pre-built installers ship with every tagged release on the
+**[Releases page](https://github.com/estructuraPy/epy_mdr/releases/latest)** —
+no Python toolchain required:
+
+| Platform | Asset | Install |
+|----------|-------|---------|
+| Windows | `epy_mdr-setup-<version>.exe` | Run the Inno Setup installer |
+| Debian / Ubuntu | `epy-mdr_<version>_all.deb` | `sudo dpkg -i epy-mdr_<version>_all.deb` |
+
 ## Features
 
 | Area | What it does |
