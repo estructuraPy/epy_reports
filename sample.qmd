@@ -1,0 +1,174 @@
+---
+title: "Plantilla de documento técnico"
+subtitle: "Demostración de las capacidades de epy_mdr"
+author: "Ing. Angel Navarro-Mora M.Sc."
+date: "2026-06-15"
+lang: es
+bibliography: sample.bib
+abstract: |
+  Plantilla mínima que ejercita todas las capacidades del editor
+  epy_mdr: secciones referenciables, figuras y tablas con captions
+  numerados, ecuaciones con etiqueta, citas bibliográficas, callouts,
+  bloques de código y listas. Úselo como punto de partida para
+  informes, memorias de cálculo o artículos técnicos.
+---
+
+# Introducción {#sec-intro}
+
+Este archivo es una plantilla de demostración del editor **epy_mdr**.
+Cada sección ejercita una característica del render: navegación por
+@sec-formato, ecuaciones referenciables en @sec-matematica, figuras en
+@sec-figuras, tablas en @sec-tablas, código en @sec-codigo, los cinco
+tipos de callout en @sec-callouts, y citas bibliográficas en
+@sec-citas.
+
+Para construir su propio documento, abra el archivo, modifique el
+contenido, y exporte con `Ctrl+P` (PDF), `Ctrl+Shift+P` (HTML) o
+`Ctrl+Shift+D` (DOCX).
+
+# Formato de texto {#sec-formato}
+
+El cuerpo admite **negritas**, *itálicas*, ~~tachado~~, `código
+inline`, y enlaces a sitios externos como [Pandoc](https://pandoc.org).
+Los párrafos se separan con una línea en blanco, igual que en
+Markdown estándar.
+
+## Listas
+
+Lista no ordenada con anidación:
+
+- Análisis lineal estático
+- Análisis modal espectral
+  - Modos significativos
+  - Combinación CQC
+- Análisis tiempo-historia no lineal
+
+Lista ordenada:
+
+1. Definir geometría y materiales.
+2. Asignar cargas gravitacionales y laterales.
+3. Ejecutar el análisis seleccionado.
+4. Verificar derivas y demandas locales.
+
+Lista de tareas:
+
+- [x] Plantilla creada
+- [x] Secciones definidas
+- [ ] Reemplazar la figura de muestra
+- [ ] Sustituir las referencias bibliográficas
+
+# Matemática {#sec-matematica}
+
+Las expresiones cortas se escriben inline, como la conocida
+$E = m c^2$, o la fórmula de inercia de una sección rectangular
+$I = b h^{3}/12$.
+
+Las ecuaciones largas se colocan en bloques de display math con una
+etiqueta para poder referenciarlas:
+
+$$
+\sigma_{ij} = \lambda\, \delta_{ij}\, \epsilon_{kk} + 2 \mu\, \epsilon_{ij}
+$$ {#eq-hooke}
+
+$$
+M_{n} = A_{s}\, f_{y} \left( d - \frac{a}{2} \right)
+\qquad \text{con} \qquad a = \frac{A_{s}\, f_{y}}{0.85 \, f'_{c}\, b}
+$$ {#eq-flexion}
+
+La @eq-hooke es la ley de Hooke generalizada en notación indicial, y
+la @eq-flexion calcula el momento nominal de una sección de hormigón
+armado subreforzada según @aci318-2025.
+
+# Figuras {#sec-figuras}
+
+![Sección rectangular de hormigón armado con cuatro barras
+longitudinales. Reemplace `sample_diagram.svg` por la imagen de su
+documento.](sample_diagram.svg){#fig-seccion width=55%}
+
+La @fig-seccion ilustra la geometría adoptada como referencia para los
+cálculos de las ecuaciones @eq-hooke y @eq-flexion.
+
+# Tablas {#sec-tablas}
+
+| Parámetro              | Símbolo  |       Valor | Unidad |
+|------------------------|----------|------------:|--------|
+| Resistencia a compresión del concreto | $f'_{c}$ |        28 | MPa    |
+| Tensión de fluencia del acero         | $f_{y}$  |       420 | MPa    |
+| Módulo de elasticidad del acero       | $E_{s}$  |   200\,000 | MPa    |
+| Recubrimiento libre                   | $c_{c}$  |        40 | mm     |
+
+: Propiedades nominales de los materiales {#tbl-materiales}
+
+La @tbl-materiales resume los valores nominales adoptados para el
+ejemplo. Estos valores son típicos en proyectos académicos; un
+proyecto real debe ajustarse al estándar aplicable y al ensayo de
+materiales.
+
+# Código {#sec-codigo}
+
+Los bloques de código se exportan con resaltado de sintaxis
+preservado (estilo *tango*).
+
+```python
+"""Cálculo de la inercia de una sección rectangular."""
+
+def rectangular_inertia(b: float, h: float) -> float:
+    """Devuelve la inercia I = b * h^3 / 12 en mm^4."""
+    return b * h ** 3 / 12.0
+
+
+if __name__ == "__main__":
+    b, h = 300.0, 600.0  # mm
+    print(f"I = {rectangular_inertia(b, h):.2e} mm^4")
+```
+
+Para incluir comandos de shell, use el lenguaje correspondiente:
+
+```bash
+pip install -e ".[build]"
+python build.py
+```
+
+# Callouts {#sec-callouts}
+
+Los cinco tipos de callout están disponibles desde el menú **Insertar
+> Callout** y desde `Ctrl+Shift+C`.
+
+::: {.callout-note title="Nota"}
+Información complementaria que no interrumpe la lectura principal,
+pero que conviene tener en cuenta.
+:::
+
+::: {.callout-tip title="Sugerencia"}
+Recomendación práctica: revise la convergencia del análisis no lineal
+antes de aceptar los resultados como válidos.
+:::
+
+::: {.callout-warning title="Advertencia"}
+Limitación importante: las expresiones de la @sec-matematica suponen
+comportamiento elástico lineal del material.
+:::
+
+::: {.callout-important title="Importante"}
+Punto crítico: verifique siempre las unidades antes de exportar el
+informe final.
+:::
+
+::: {.callout-caution title="Precaución"}
+Atención: las propiedades de la @tbl-materiales son valores nominales,
+no de diseño. Aplique los factores de minoración correspondientes.
+:::
+
+# Citas bibliográficas {#sec-citas}
+
+Las disposiciones de diseño de hormigón armado siguen el código de
+@aci318-2025. La estructura de acero se verifica con
+@aisc360-2022. La teoría de dinámica de estructuras y combinación
+modal espectral está desarrollada con detalle en @chopra2017. Para
+deformaciones de servicio y efectos de larga duración, ver
+@ghali2009.
+
+# Referencias
+
+::: {#refs}
+:::

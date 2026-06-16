@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 180" font-family="serif" font-size="12">
+  <title>Sección rectangular de hormigón armado</title>
+  <rect x="80" y="30" width="90" height="120" fill="#f6f3ec" stroke="#222" stroke-width="2"/>
+  <circle cx="95" cy="45" r="4.5" fill="#222"/>
+  <circle cx="155" cy="45" r="4.5" fill="#222"/>
+  <circle cx="95" cy="135" r="4.5" fill="#222"/>
+  <circle cx="155" cy="135" r="4.5" fill="#222"/>
+  <line x1="80" y1="165" x2="170" y2="165" stroke="#222" stroke-width="1"/>
+  <line x1="80" y1="161" x2="80" y2="169" stroke="#222" stroke-width="1"/>
+  <line x1="170" y1="161" x2="170" y2="169" stroke="#222" stroke-width="1"/>
+  <text x="125" y="178" text-anchor="middle" font-style="italic">b</text>
+  <line x1="185" y1="30" x2="185" y2="150" stroke="#222" stroke-width="1"/>
+  <line x1="181" y1="30" x2="189" y2="30" stroke="#222" stroke-width="1"/>
+  <line x1="181" y1="150" x2="189" y2="150" stroke="#222" stroke-width="1"/>
+  <text x="195" y="93" font-style="italic">h</text>
+  <text x="125" y="22" text-anchor="middle">Sección rectangular</text>
+</svg>
