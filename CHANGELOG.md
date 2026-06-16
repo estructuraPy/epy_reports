@@ -4,22 +4,6 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Fixed
-- Equation cross-references now create a real anchor and do not leak
-  their label. The closing `$$ {#eq-x}` is rewritten as
-  `\tag{N} $$ []{#eq-x}`, where the trailing bracketed span becomes
-  `<span id="eq-x"></span>` in the HTML, so `[Equation N](#eq-x)`
-  links target an actual element. Previously the `{#eq-x}` token
-  leaked as visible prose and `id="eq-x"` was never emitted.
-
-### Added
-- `examples/sample.md` + `examples/sample_diagram.svg`: self-contained
-  showcase document that exercises every editor feature (cross-refs,
-  figures, tables, equations, callouts, code, citations) and renders
-  cleanly out of the box.
-
 ## [0.3.1] — 2026-06-11
 
 ### Added
@@ -34,8 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dialogs (new `FigureDialog`, `EquationDialog`). IDs are now short and
   independent of the caption (auto-numbered `fig-1`, `tbl-1`, `eq-1`,
   editable), replacing the previous caption-slug ids.
+- `examples/sample.md` + `examples/sample_diagram.svg`: self-contained
+  showcase document that exercises every editor feature (cross-refs,
+  figures, tables, equations, callouts, code, citations) and renders
+  cleanly out of the box.
 
 ### Fixed
+- Equation cross-references now create a real anchor and do not leak
+  their label. The closing `$$ {#eq-x}` is rewritten as
+  `\tag{N} $$ []{#eq-x}`, where the trailing bracketed span becomes
+  `<span id="eq-x"></span>` in the HTML, so `[Equation N](#eq-x)`
+  links target an actual element. Previously the `{#eq-x}` token
+  leaked as visible prose and `id="eq-x"` was never emitted.
 - Table captions now render **above** the table (academic convention);
   figure captions remain below. Was a `caption-side: bottom` rule in the
   base stylesheet.

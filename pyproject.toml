@@ -2,7 +2,12 @@
 name = "epy_mdr"
 version = "0.3.1"
 description = "Quarto/Markdown editor with live preview and one-click PDF export."
-authors = [{ name = "Ing. Angel Navarro-Mora M.Sc." }]
+authors = [
+    { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },
+]
+maintainers = [
+    { name = "ANM Ingeniería", email = "ahnavarro@anmingenieria.com" },
+]
 license = {text = "MIT"}
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -15,6 +20,12 @@ dependencies = [
     "PySide6>=6.6",
     "pypandoc-binary>=1.13",
 ]
+
+[project.urls]
+Homepage = "https://www.anmingenieria.com/"
+Repository = "https://github.com/estructuraPy/epy_mdr"
+Issues = "https://github.com/estructuraPy/epy_mdr/issues"
+Changelog = "https://github.com/estructuraPy/epy_mdr/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.6"]
