@@ -330,17 +330,26 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
     eq_state = [False]  # mutable so nested _tag_eq can read it
 
     def _tag_eq(line: str) -> str:
-        r"""Inject ``\tag{N}`` into display-math closing line."""
+        r"""Inject ``\tag{N}`` and an anchor span on the eq closing line.
+
+        Replaces ``$$ {#eq-x}`` with ``\tag{N} $$ []{#eq-x}``. The
+        bracketed span (``+bracketed_spans``) becomes
+        ``<span id="eq-x"></span>`` in the rendered output, so prose
+        references like ``[Equation N](#eq-x)`` resolve to a real
+        anchor. Without it the label would leak as visible text and
+        the link target would not exist.
+        """
 
         def repl(m: re.Match[str]) -> str:
             label = m.group("label")
             n = numbers.get(label)
             if n is None:
                 return m.group(0)
-            # Don't inject if the block body already has \tag{.
+            anchor = f"[]{{#{label}}}"
             if eq_state[0]:
-                return m.group(0)
-            return f"\\tag{{{n}}} {m.group(1)} {m.group(2)}"
+                # \tag already in the body — only inject the anchor.
+                return f"{m.group(1)} {anchor}"
+            return f"\\tag{{{n}}} {m.group(1)} {anchor}"
 
         return _EQ_CLOSE_RE.sub(repl, line)
 

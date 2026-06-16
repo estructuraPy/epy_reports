@@ -182,6 +182,33 @@ def test_equation_no_double_tag():
     assert out.count(r"\tag{") == 1
 
 
+def test_equation_emits_anchor_span():
+    """The closing line must emit a bracketed-span anchor.
+
+    Without it the label leaks as visible prose and prose references
+    like [Equation 1](#eq-x) target a non-existent element.
+    """
+    src = (
+        "$$\nE = mc^2\n$$ {#eq-einstein}\n\n"
+        "@eq-einstein.\n"
+    )
+    out = resolve(src)
+    assert "[]{#eq-einstein}" in out
+
+
+def test_render_markdown_equation_anchor_exists():
+    """End-to-end: the rendered HTML must contain id=\"eq-x\"."""
+    src = (
+        "---\ntitle: Test\n---\n\n"
+        "$$\nE = mc^2\n$$ {#eq-einstein}\n\n"
+        "From @eq-einstein the energy follows.\n"
+    )
+    html = render_markdown(src)
+    assert 'id="eq-einstein"' in html
+    assert "{#eq-einstein}" not in html
+    assert '<a href="#eq-einstein">Equation 1</a>' in html
+
+
 # ---------------------------------------------------------------------------
 # Reference BEFORE its definition still resolves (PASS A scans all first)
 # ---------------------------------------------------------------------------
