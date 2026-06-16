@@ -14,12 +14,48 @@ from __future__ import annotations
 import re
 import shutil
 import tempfile
+from importlib import resources
 from pathlib import Path
 
 import pypandoc
 
 from epy_mdr.snippets import parse_front_matter
 from epy_mdr.template import build_html_document
+
+# Citation Style Language: short names users can type in YAML (``csl:
+# ieee``) or pick from the View > Citation style menu, mapped to the
+# bundled .csl file under ``epy_mdr/assets/csl/``.
+CSL_STYLES: dict[str, str] = {
+    "ieee":    "ieee.csl",
+    "apa":     "apa.csl",
+    "chicago": "chicago-author-date.csl",
+}
+DEFAULT_CSL_STYLE = "ieee"
+
+
+def _resolve_csl(
+    csl_value: str | None, base_dir: Path | None
+) -> Path | None:
+    """Resolve a YAML ``csl:`` value to an existing ``.csl`` file.
+
+    The value may be (1) a short name like ``ieee`` / ``apa`` /
+    ``chicago`` that maps to a bundled stylesheet, (2) a relative path
+    to a ``.csl`` next to the document, or (3) an absolute path.
+    ``None`` or an empty value selects the bundled default (IEEE) so
+    every document picks up a styled bibliography without setup.
+    """
+    key = (csl_value or DEFAULT_CSL_STYLE).strip().lower()
+    if key in CSL_STYLES:
+        try:
+            anchor = resources.files("epy_mdr.assets.csl")
+            target = anchor.joinpath(CSL_STYLES[key])
+            with resources.as_file(target) as path:
+                if Path(path).is_file():
+                    return Path(path)
+        except (FileNotFoundError, ModuleNotFoundError):
+            return None
+        return None
+    return _resolve_doc_path(csl_value or "", base_dir)
 
 PANDOC_FORMAT = (
     "markdown"
@@ -103,11 +139,9 @@ def _bibliography_args(
         "--citeproc",
         f"--bibliography={bib_path}",
     ]
-    csl_value = metadata.get("csl")
-    if csl_value:
-        csl_path = _resolve_doc_path(csl_value, base_dir)
-        if csl_path is not None:
-            extra.append(f"--csl={csl_path}")
+    csl_path = _resolve_csl(metadata.get("csl"), base_dir)
+    if csl_path is not None:
+        extra.append(f"--csl={csl_path}")
     return extra
 
 

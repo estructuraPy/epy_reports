@@ -45,6 +45,7 @@ hiddenimports += [
     "epy_mdr.assets.themes",
     "epy_mdr.assets.reference_docx",
     "epy_mdr.assets.mathjax",
+    "epy_mdr.assets.csl",
 ]
 
 a = Analysis(

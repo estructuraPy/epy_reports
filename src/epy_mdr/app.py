@@ -341,6 +341,20 @@ class MarkdownWindow(QMainWindow):
         self.act_new_bib_entry.setShortcut(QKeySequence("Ctrl+Shift+N"))
         self.act_new_bib_entry.triggered.connect(self._new_bib_entry)
 
+        # Citation style — IEEE by default, APA / Chicago selectable.
+        from epy_mdr.renderer import CSL_STYLES  # noqa: PLC0415
+
+        self.csl_group = QActionGroup(self)
+        self.csl_group.setExclusive(True)
+        self.csl_actions: dict[str, QAction] = {}
+        for key in CSL_STYLES:
+            act = QAction(key.upper(), self, checkable=True)
+            act.triggered.connect(
+                lambda _checked=False, k=key: self._set_csl_style(k)
+            )
+            self.csl_group.addAction(act)
+            self.csl_actions[key] = act
+
     def _build_menu(self) -> None:
         """Build content menus as plain ``QMenu`` objects.
 
@@ -511,6 +525,11 @@ class MarkdownWindow(QMainWindow):
         menu.addSeparator()
         menu.addAction(self.act_link_bib)
         menu.addAction(self.act_new_bib_entry)
+        style_sub = menu.addMenu("Citation style")
+        current_style = self._current_csl_key_from_tab(tab)
+        for key, act in self.csl_actions.items():
+            act.setChecked(key == current_style)
+            style_sub.addAction(act)
         menu.addAction(self.act_cross_ref)
 
     def _insert_cross_ref_name(self, name: str) -> None:
@@ -584,6 +603,43 @@ class MarkdownWindow(QMainWindow):
         entries = bib.parse_bib_file(bib_path)
         self.statusBar().showMessage(
             f"Linked {bib_path.name} — {len(entries)} entries", 5000
+        )
+
+    def _current_csl_key_from_tab(self, tab) -> str:
+        """Return the bundled-style key the active document currently uses.
+
+        The YAML ``csl:`` field is checked first. A short name that
+        matches a bundled style wins; anything else (custom path or
+        absent) maps to the IEEE default so the menu always reflects
+        an effective state.
+        """
+        from epy_mdr.renderer import CSL_STYLES, DEFAULT_CSL_STYLE  # noqa: PLC0415
+
+        if tab is None:
+            return DEFAULT_CSL_STYLE
+        meta = snippets.parse_front_matter(tab.editor.toPlainText())
+        value = (meta.get("csl") or "").strip().lower()
+        return value if value in CSL_STYLES else DEFAULT_CSL_STYLE
+
+    def _set_csl_style(self, key: str) -> None:
+        """Write ``csl: <key>`` into the active tab's YAML front matter."""
+        tab = self._current_tab()
+        if tab is None:
+            return
+        text = tab.editor.toPlainText()
+        updated = snippets.set_metadata_field(text, "csl", key)
+        if updated == text:
+            self.statusBar().showMessage(
+                f"Citation style: {key.upper()} (no change)", 3000
+            )
+            return
+        cursor = tab.editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.select(cursor.SelectionType.Document)
+        cursor.insertText(updated)
+        cursor.endEditBlock()
+        self.statusBar().showMessage(
+            f"Citation style: {key.upper()}", 3000
         )
 
     def _new_bib_entry(self) -> None:
