@@ -1,4 +1,4 @@
-"""Theme catalogue assembled from the ePy_docs layouts (``.epyson``).
+"""Theme catalogue assembled from the epy_docs layouts (``.epyson``).
 
 Every theme — for both the Qt chrome and the rendered preview — is
 derived from a layout file under ``assets/themes/*.epyson`` so that

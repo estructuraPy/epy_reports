@@ -174,9 +174,14 @@ pre {
     padding: 1em 1.1em;
     border-radius: 8px;
     overflow-x: auto;
-    line-height: 1.5;
+    line-height: 1.35;
     border: 1px solid var(--border-soft);
     border-left: 4px solid var(--heading-rule);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    page-break-inside: avoid;
+    break-inside: avoid;
 }
 
 pre code {
@@ -246,8 +251,9 @@ table th {
 }
 table tr:nth-child(even) td { background: var(--bg-stripe); }
 table caption {
-    caption-side: bottom;
-    padding: 0.5em 0;
+    /* Academic convention: table captions sit ABOVE the table. */
+    caption-side: top;
+    padding: 0 0 0.5em;
     color: var(--fg-muted);
     font-size: var(--caption-size);
     text-align: left;
@@ -256,13 +262,23 @@ table caption {
 
 /* ---------- Figures ---------- */
 
-figure { text-align: center; }
+figure {
+    display: block;
+    text-align: center;
+    margin: 1.2em auto;
+    clear: both;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
 figure img {
+    display: block;
+    margin: 0 auto;
     max-width: 100%;
     height: auto;
     border-radius: var(--img-radius);
 }
 figure figcaption {
+    display: block;
     color: var(--fg-muted);
     font-size: var(--caption-size);
     margin-top: 0.5em;

@@ -1,7 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for epy_mdr: portable onedir build.
 
+from pathlib import Path as _Path
 import pypandoc
+
+_ICON = str(_Path("assets_build/epy_mdr.ico"))
 from PyInstaller.utils.hooks import (
     collect_data_files,
     collect_dynamic_libs,
@@ -10,7 +13,16 @@ from PyInstaller.utils.hooks import (
 
 datas = []
 datas += collect_data_files("pypandoc", include_py_files=False)
-datas += collect_data_files("epy_mdr", include_py_files=False)
+# epy_mdr is built from src/ via pathex (it may not be pip-installed), so
+# collect_data_files cannot resolve it reliably — bundle the assets tree
+# explicitly. Keeping the epy_mdr/assets/... layout preserves
+# importlib.resources lookups at runtime.
+_ASSETS = _Path("src/epy_mdr/assets")
+datas += [
+    (str(p), str(_Path("epy_mdr") / p.relative_to("src/epy_mdr").parent))
+    for p in _ASSETS.rglob("*")
+    if p.is_file() and p.suffix != ".py"
+]
 
 binaries = []
 binaries += collect_dynamic_libs("pypandoc")
@@ -25,6 +37,16 @@ binaries.append((_pandoc, "pypandoc/files"))
 
 hiddenimports = []
 hiddenimports += collect_submodules("pypandoc")
+# importlib.resources.files("epy_mdr.assets.themes") imports these packages
+# dynamically; PyInstaller cannot detect that statically.
+hiddenimports += [
+    "epy_mdr.assets",
+    "epy_mdr.assets.branding",
+    "epy_mdr.assets.themes",
+    "epy_mdr.assets.reference_docx",
+    "epy_mdr.assets.mathjax",
+    "epy_mdr.assets.csl",
+]
 
 a = Analysis(
     ["src/epy_mdr/__main__.py"],
@@ -39,6 +61,16 @@ a = Analysis(
         "tkinter",
         "test",
         "unittest",
+        # The build env may carry other Qt bindings (PyQt5 via matplotlib,
+        # pulled in by sibling libs). epy_mdr uses PySide6 exclusively.
+        "PyQt5",
+        "PyQt6",
+        # Heavy scientific stack reachable through optional epy_docs paths;
+        # never imported by the frozen editor itself.
+        "matplotlib",
+        "pandas",
+        "numpy",
+        "epy_docs",
     ],
     noarchive=False,
 )
@@ -57,7 +89,7 @@ exe = EXE(
     upx=False,
     console=False,
     disable_windowed_traceback=False,
-    icon=None,
+    icon=_ICON,
 )
 
 coll = COLLECT(

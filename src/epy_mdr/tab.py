@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl, Signal
@@ -9,6 +11,8 @@ from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
+    QFileDialog,
+    QInputDialog,
     QMessageBox,
     QPlainTextEdit,
     QSplitter,
@@ -17,11 +21,43 @@ from PySide6.QtWidgets import (
 )
 
 from epy_mdr import snippets
+from epy_mdr.checklist_dialog import ChecklistDialog
+from epy_mdr.equation_dialog import EquationDialog
+from epy_mdr.figure_dialog import FigureDialog
 from epy_mdr.renderer import render_markdown
+from epy_mdr.table_dialog import TableDialog
 from epy_mdr.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
 UNTITLED = "untitled.md"
+
+
+def next_label_suffix(text: str, kind: str) -> str:
+    """Return the next sequential integer suffix for ``kind`` labels.
+
+    Scans all Quarto labels of the given kind in ``text`` (e.g.
+    ``fig``, ``tbl``, ``eq``, ``sec``).  Among suffixes that are pure
+    integers, returns ``str(max + 1)``.  When no integer suffix exists
+    the function returns ``"1"``.
+
+    Args:
+        text: Full Markdown buffer contents.
+        kind: Label kind — one of ``fig``, ``tbl``, ``eq``, ``sec``.
+
+    Returns:
+        Short sequential string, e.g. ``"3"`` when ``{#fig-1}`` and
+        ``{#fig-2}`` are already present.
+    """
+    labels = snippets.find_labels(text)
+    ints: list[int] = []
+    prefix = f"{kind}-"
+    for label in labels:
+        if label.kind != kind:
+            continue
+        suffix = label.name[len(prefix):]
+        if suffix.isdigit():
+            ints.append(int(suffix))
+    return str(max(ints) + 1) if ints else "1"
 
 
 class MarkdownTab(QWidget):
@@ -209,10 +245,20 @@ class MarkdownTab(QWidget):
         self.editor.setFocus()
 
     def insert_section_heading(self) -> None:
-        """Insert ``## Section title {#sec-LABEL}`` and select label."""
-        self._insert_template(
-            snippets.SECTION_HEADING_TEMPLATE, "LABEL"
+        """Prompt for heading text, insert with auto sec-N label."""
+        text, ok = QInputDialog.getText(
+            self, "Section heading", "Heading text:",
+            text="Section title",
         )
+        if not ok or not text:
+            text = "Section title"
+        suffix = self._next_label_suffix("sec")
+        md = f"## {text} {{#sec-{suffix}}}"
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_link(self) -> None:
         """Insert ``[text](url)``; uses the current selection as text."""
@@ -231,27 +277,155 @@ class MarkdownTab(QWidget):
             self._insert_template(snippets.LINK_TEMPLATE, "TEXT")
         self.editor.setFocus()
 
+    def _next_label_suffix(self, kind: str) -> str:
+        """Return the next sequential integer suffix for ``kind``.
+
+        Delegates to the module-level :func:`next_label_suffix` so
+        the logic is unit-testable without a widget instance.
+        """
+        return next_label_suffix(self.editor.toPlainText(), kind)
+
     def insert_figure(self) -> None:
-        """Insert a Quarto figure skeleton and select its label."""
-        self._insert_template(snippets.FIGURE_TEMPLATE, "LABEL")
+        """Open FigureDialog; insert figure Markdown on accept."""
+        dialog = FigureDialog(
+            self, default_id=self._next_label_suffix("fig")
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
+
+    def insert_image_from_dialog(self) -> None:
+        """Pick an image file, copy to figures/, insert at cursor."""
+        start_dir = (
+            str(self._path.parent)
+            if self._path is not None
+            else ""
+        )
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Insert image",
+            start_dir,
+            "Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp)"
+            ";;All files (*)",
+        )
+        if not filename:
+            return
+
+        src = Path(filename)
+
+        # Determine figures/ directory
+        if self._path is not None:
+            figures_dir = self._path.parent / "figures"
+        else:
+            figures_dir = Path.cwd() / "figures"
+        figures_dir.mkdir(parents=True, exist_ok=True)
+
+        # Resolve name collision
+        dst = figures_dir / src.name
+        if dst.exists():
+            stem = src.stem
+            suffix = src.suffix
+            counter = 1
+            while dst.exists():
+                dst = figures_dir / f"{stem}-{counter}{suffix}"
+                counter += 1
+
+        shutil.copy2(str(src), str(dst))
+
+        # Build relative path for markdown
+        if self._path is not None:
+            rel = dst.relative_to(self._path.parent)
+        else:
+            rel = dst
+        md_path = str(rel).replace("\\", "/")
+
+        # Sequential label independent of filename
+        label = self._next_label_suffix("fig")
+
+        # Caption: prompt user with filename as default
+        caption, ok = QInputDialog.getText(
+            self,
+            "Image caption",
+            "Caption:",
+            text=src.stem,
+        )
+        if not ok:
+            caption = src.stem
+        caption = caption or src.stem
+
+        md = snippets.IMAGE_MARKDOWN.format(
+            caption=caption, path=md_path, label=label
+        )
+
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_table(self) -> None:
-        """Insert a 3-column pipe table with caption and select label."""
-        self._insert_template(snippets.TABLE_TEMPLATE, "LABEL")
+        """Open table dialog, then insert pipe table with caption."""
+        dialog = TableDialog(
+            self, default_id=self._next_label_suffix("tbl")
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md)
+        self.editor.setFocus()
+
+    def insert_checklist(self) -> None:
+        """Open checklist dialog, then insert task-list items at cursor."""
+        dialog = ChecklistDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        # build_markdown already starts with a blank line, so we only
+        # need to move to a new line when we are not at the start of
+        # the document and the leading blank line is not enough.
+        cursor.insertText(md)
+        self.editor.setFocus()
 
     def insert_equation(self) -> None:
-        """Insert a display equation with a ``{#eq-...}`` label."""
-        self._insert_template(snippets.EQUATION_TEMPLATE, "LABEL")
+        """Open EquationDialog; insert display equation on accept."""
+        dialog = EquationDialog(
+            self, default_id=self._next_label_suffix("eq")
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(md + "\n")
+        self.editor.setFocus()
 
     def insert_code_block(self) -> None:
         """Insert a fenced Python code block skeleton."""
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")
 
     def insert_callout(self, kind: str = "note") -> None:
-        """Insert a Quarto fenced callout of the given ``kind``."""
+        """Insert a Quarto fenced callout, with title prompt if needed."""
         template = snippets.CALLOUT_TEMPLATES.get(
             kind, snippets.CALLOUT_TEMPLATES["note"]
         )
+        if "TITLE" in template:
+            title, ok = QInputDialog.getText(
+                self, "Callout title", "Title:", text=kind.title(),
+            )
+            if ok and title:
+                template = template.replace("TITLE", title)
         token = "TITLE" if "TITLE" in template else "BODY"
         self._insert_template(template, token)
 
@@ -314,6 +488,24 @@ class MarkdownTab(QWidget):
     def bib_entries(self) -> list:
         """Return the parsed BibTeX entries for the linked bib file."""
         return self._bib_entries_for_buffer(self.editor.toPlainText())
+
+    def bib_path(self) -> Path | None:
+        """Return the resolved path of the linked .bib, or ``None``.
+
+        Mirrors the resolution logic used to load the entries — the
+        path comes from the ``bibliography:`` YAML field, resolved
+        against the document's directory when relative. Existence is
+        not enforced; the caller can use the result as the *target*
+        of a write operation even when the file does not exist yet.
+        """
+        meta = snippets.parse_front_matter(self.editor.toPlainText())
+        value = meta.get("bibliography")
+        if not value:
+            return None
+        bib_path = Path(value)
+        if not bib_path.is_absolute() and self._path is not None:
+            bib_path = (self._path.parent / bib_path).resolve()
+        return bib_path
 
     # ------------------------------------------------- internals
 
@@ -425,7 +617,16 @@ class MarkdownTab(QWidget):
         self._render_now()
 
     def _render_now(self) -> None:
-        """Render synchronously (called on load and after Save As)."""
+        """Render synchronously and load via file:// to bypass setHtml's 2 MB cap.
+
+        The HTML embeds the entire MathJax bundle inline (~2 MB) so
+        equations render offline. ``setHtml`` truncates anything past
+        2 MB, which left MathJax untyped and equations stuck as raw
+        ``\\[ … \\]`` text. Writing to a per-tab temp file and using
+        ``view.load()`` removes the cap. The ``<base href>`` tag in
+        the rendered HTML still points at the document's directory,
+        so relative figures, bib files and links resolve correctly.
+        """
         text = self.editor.toPlainText()
         base_dir = self._path.parent if self._path is not None else None
         title = (
@@ -437,8 +638,17 @@ class MarkdownTab(QWidget):
             title=title,
             theme_css=self._theme_css,
         )
-        if base_dir is not None:
-            base_url = QUrl.fromLocalFile(str(base_dir) + "/")
-        else:
-            base_url = QUrl()
-        self.view.setHtml(html, base_url)
+        if not hasattr(self, "_preview_tmp_dir"):
+            self._preview_tmp_dir = Path(
+                tempfile.mkdtemp(prefix="epy_mdr_preview_")
+            )
+        preview_path = self._preview_tmp_dir / "preview.html"
+        preview_path.write_text(html, encoding="utf-8")
+        self.view.load(QUrl.fromLocalFile(str(preview_path.resolve())))
+
+    def cleanup_preview_tmp(self) -> None:
+        """Delete the temp dir backing the live preview (call on close)."""
+        tmp = getattr(self, "_preview_tmp_dir", None)
+        if tmp is not None:
+            shutil.rmtree(tmp, ignore_errors=True)
+            self._preview_tmp_dir = None

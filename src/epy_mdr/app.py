@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import argparse
+import importlib.resources
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtGui import QAction, QActionGroup, QKeySequence
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QCursor,
+    QIcon,
+    QKeySequence,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -22,7 +29,9 @@ from PySide6.QtWidgets import (
 )
 
 from epy_mdr import bib, snippets, themes
-from epy_mdr.renderer import render_markdown
+from epy_mdr.about_dialog import _load_branding_pixmap
+from epy_mdr.docs_bridge import epy_docs_available
+from epy_mdr.renderer import export_docx, render_markdown
 from epy_mdr.tab import MarkdownTab
 
 APP_NAME = "epy_mdr"
@@ -32,44 +41,57 @@ SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
 
 WELCOME_TEXT = (
-    "# epy_mdr\n\n"
+    "# Welcome to epy_mdr\n\n"
     "A small **Quarto / Markdown** editor with live preview and "
     "one-click PDF export.\n\n"
-    "## File\n\n"
-    "- `Ctrl+N` — new tab\n"
-    "- `Ctrl+O` — open a file (`.qmd`, `.md`, `.markdown`)\n"
-    "- `Ctrl+S` — save (`Ctrl+Shift+S` to save as)\n"
-    "- `Ctrl+W` — close the current tab\n"
-    "- `F5`     — reload from disk (discards unsaved changes)\n\n"
-    "## Text\n\n"
-    "- `Ctrl+1` … `Ctrl+6` — heading levels H1–H6 on current line\n"
-    "- `Ctrl+0` — strip heading on current line\n"
-    "- `Ctrl+B` — **bold**\n"
-    "- `Ctrl+I` — *italic*\n"
-    "- `Ctrl+E` — `inline code`\n"
-    "- `Ctrl+K` — link `[text](url)`\n\n"
-    "## Elements\n\n"
-    "- `Ctrl+Shift+H` — Section heading with `{#sec-...}` label\n"
-    "- `Ctrl+Shift+F` — Figure with `{#fig-...}` label\n"
-    "- `Ctrl+Shift+T` — Table with caption and `{#tbl-...}` label\n"
-    "- `Ctrl+Shift+Q` — Display equation with `{#eq-...}` label\n"
-    "- `Ctrl+Shift+K` — Fenced code block\n"
-    "- `Ctrl+Shift+C` — Callout (note variant; more in Elements menu)\n\n"
-    "## References\n\n"
-    "- `Ctrl+R` — Open the cross-reference picker (`@label`)\n"
-    "- `Ctrl+Shift+B` — Link a BibTeX file (writes `bibliography:` "
-    "into the YAML front matter, Quarto-style)\n"
-    "- Once linked, the *References* dropdown shows the buffer "
-    "labels and a *Citations* submenu with every entry from "
-    "the `.bib` — click to insert `@key`. The rendered preview "
-    "and the PDF/HTML export add the bibliography at the end "
-    "automatically via Pandoc's citeproc.\n\n"
-    "## Export\n\n"
-    "- `Ctrl+P`       — Export as PDF\n"
-    "- `Ctrl+Shift+P` — Export as HTML\n"
-    "- `Ctrl+Alt+P`   — Print\n\n"
-    "> Drop `.qmd` / `.md` files anywhere on the window to open "
-    "them as tabs.\n"
+    "**Author:** Ing. Angel Navarro-Mora M.Sc.\n\n"
+    "Follow these steps to build your first document.\n\n"
+    "## Step 1 — Create or open a document\n\n"
+    "1. Press `Ctrl+N` for a new tab, or `Ctrl+O` to open an "
+    "existing `.qmd`, `.md` or `.markdown` file.\n"
+    "2. You can also drag and drop files anywhere on the window — "
+    "each one opens as a tab.\n"
+    "3. Save early with `Ctrl+S` (`Ctrl+Shift+S` to save as). "
+    "`Ctrl+W` closes the tab and `F5` reloads from disk.\n\n"
+    "## Step 2 — Write and format text\n\n"
+    "1. Put the cursor on a line and press `Ctrl+1` … `Ctrl+6` to "
+    "make it a heading H1–H6 (`Ctrl+0` strips the heading).\n"
+    "2. Select text and apply `Ctrl+B` for **bold**, `Ctrl+I` for "
+    "*italic*, `Ctrl+E` for `inline code`.\n"
+    "3. Press `Ctrl+K` to insert a link `[text](url)`.\n\n"
+    "## Step 3 — Insert structured elements\n\n"
+    "Every element gets a label so you can cross-reference it later:\n\n"
+    "1. `Ctrl+Shift+H` — section heading with `{#sec-...}` label.\n"
+    "2. `Ctrl+Shift+F` — figure with `{#fig-...}` label "
+    "(picks the image file and copies it next to your document).\n"
+    "3. `Ctrl+Shift+T` — table: choose columns, rows, header and "
+    "caption; the `{#tbl-...}` label is added for you.\n"
+    "4. `Ctrl+Shift+L` — checklist: choose item count and an optional "
+    "title; inserts GitHub-flavoured task-list items `- [ ]`.\n"
+    "5. `Ctrl+Shift+Q` — display equation with `{#eq-...}` label.\n"
+    "6. `Ctrl+Shift+K` — fenced code block.\n"
+    "7. `Ctrl+Shift+C` — callout box (note, tip, warning, caution, "
+    "important — see the Elements menu).\n\n"
+    "## Step 4 — Cite and cross-reference\n\n"
+    "1. Press `Ctrl+Shift+B` once to link your BibTeX file; this "
+    "writes `bibliography:` into the YAML front matter.\n"
+    "2. Press `Ctrl+R` to open the cross-reference picker and "
+    "insert `@sec-...`, `@fig-...`, `@tbl-...`, `@eq-...` or a "
+    "`@citation` from the linked `.bib`.\n"
+    "3. The bibliography is appended automatically to the preview "
+    "and to every export (Pandoc citeproc).\n\n"
+    "## Step 5 — Export your document\n\n"
+    "1. `Ctrl+P` exports the rendered preview as PDF.\n"
+    "2. `Ctrl+Shift+P` exports as HTML and `Ctrl+Shift+D` as Word "
+    "(.docx); `Ctrl+Alt+P` prints.\n"
+    "3. For publication-quality output, use *Export > Export via "
+    "epy_docs...* to render with professional layouts (requires the "
+    "commercial epy_docs backend by ANM Ingenieria, plus Quarto).\n\n"
+    "::: {.callout-tip}\n"
+    "## Make it yours\n"
+    "Change the editor and preview theme from the *View* menu — "
+    "nine layouts are available, from academic to handwritten.\n"
+    ":::\n"
 )
 
 
@@ -110,6 +132,11 @@ class MarkdownWindow(QMainWindow):
         self._current_theme: themes.Theme = themes.get(saved_theme)
         self._apply_theme(self._current_theme.id, persist=False)
 
+        # Window icon (title bar + taskbar).
+        logo_pix = _load_branding_pixmap("epy_mdr.png")
+        if not logo_pix.isNull():
+            self.setWindowIcon(QIcon(logo_pix))
+
         self._open_welcome_tab()
 
     # ------------------------------------------------- actions/menus
@@ -148,6 +175,10 @@ class MarkdownWindow(QMainWindow):
         self.act_export_html.setShortcut(QKeySequence("Ctrl+Shift+P"))
         self.act_export_html.triggered.connect(self._export_html)
 
+        self.act_export_docx = QAction("Export as DOCX...", self)
+        self.act_export_docx.setShortcut(QKeySequence("Ctrl+Shift+D"))
+        self.act_export_docx.triggered.connect(self._export_docx)
+
         self.act_print = QAction("Print...", self)
         self.act_print.setShortcut(QKeySequence("Ctrl+Alt+P"))
         self.act_print.triggered.connect(self._print_document)
@@ -155,6 +186,20 @@ class MarkdownWindow(QMainWindow):
         self.act_quit = QAction("Quit", self)
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_quit.triggered.connect(self.close)
+
+        self.act_about = QAction("About epy_mdr…", self)
+        self.act_about.triggered.connect(self._show_about)
+
+        self.act_docs_export = QAction("Export via epy_docs...", self)
+        if epy_docs_available():
+            self.act_docs_export.triggered.connect(
+                self._export_via_docs
+            )
+        else:
+            self.act_docs_export.setEnabled(False)
+            self.act_docs_export.setToolTip(
+                "Requires the epy-docs package"
+            )
 
         # Theme actions (one per registered theme, exclusive group).
         self.theme_group = QActionGroup(self)
@@ -230,16 +275,28 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_section_heading")
         )
 
-        self.act_ins_figure = QAction("Figure", self)
+        self.act_ins_figure = QAction("Figure (skeleton)", self)
         self.act_ins_figure.setShortcut(QKeySequence("Ctrl+Shift+F"))
         self.act_ins_figure.triggered.connect(
             lambda: self._on_active_tab("insert_figure")
+        )
+
+        self.act_ins_image = QAction("Image from file...", self)
+        self.act_ins_image.setShortcut(QKeySequence("Ctrl+Shift+I"))
+        self.act_ins_image.triggered.connect(
+            lambda: self._on_active_tab("insert_image_from_dialog")
         )
 
         self.act_ins_table = QAction("Table", self)
         self.act_ins_table.setShortcut(QKeySequence("Ctrl+Shift+T"))
         self.act_ins_table.triggered.connect(
             lambda: self._on_active_tab("insert_table")
+        )
+
+        self.act_ins_checklist = QAction("Checklist", self)
+        self.act_ins_checklist.setShortcut(QKeySequence("Ctrl+Shift+L"))
+        self.act_ins_checklist.triggered.connect(
+            lambda: self._on_active_tab("insert_checklist")
         )
 
         self.act_ins_equation = QAction("Equation", self)
@@ -278,6 +335,26 @@ class MarkdownWindow(QMainWindow):
         self.act_link_bib.setShortcut(QKeySequence("Ctrl+Shift+B"))
         self.act_link_bib.triggered.connect(self._link_bibliography)
 
+        self.act_new_bib_entry = QAction(
+            "New bibliography entry...", self
+        )
+        self.act_new_bib_entry.setShortcut(QKeySequence("Ctrl+Shift+N"))
+        self.act_new_bib_entry.triggered.connect(self._new_bib_entry)
+
+        # Citation style — IEEE by default, APA / Chicago selectable.
+        from epy_mdr.renderer import CSL_STYLES  # noqa: PLC0415
+
+        self.csl_group = QActionGroup(self)
+        self.csl_group.setExclusive(True)
+        self.csl_actions: dict[str, QAction] = {}
+        for key in CSL_STYLES:
+            act = QAction(key.upper(), self, checkable=True)
+            act.triggered.connect(
+                lambda _checked=False, k=key: self._set_csl_style(k)
+            )
+            self.csl_group.addAction(act)
+            self.csl_actions[key] = act
+
     def _build_menu(self) -> None:
         """Build content menus as plain ``QMenu`` objects.
 
@@ -315,7 +392,10 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addAction(self.act_ins_section)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_figure)
+        self.elements_menu.addAction(self.act_ins_image)
+        self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_table)
+        self.elements_menu.addAction(self.act_ins_checklist)
         self.elements_menu.addAction(self.act_ins_equation)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_code_block)
@@ -332,13 +412,19 @@ class MarkdownWindow(QMainWindow):
         self.export_menu = QMenu("E&xport", self)
         self.export_menu.addAction(self.act_pdf)
         self.export_menu.addAction(self.act_export_html)
+        self.export_menu.addAction(self.act_export_docx)
         self.export_menu.addSeparator()
         self.export_menu.addAction(self.act_print)
+        self.export_menu.addSeparator()
+        self.export_menu.addAction(self.act_docs_export)
 
         self.view_menu = QMenu("&View", self)
         theme_sub = self.view_menu.addMenu("Theme")
         for act in self.theme_group.actions():
             theme_sub.addAction(act)
+
+        self.help_menu = QMenu("&Help", self)
+        self.help_menu.addAction(self.act_about)
 
     def _build_toolbar(self) -> None:
         """Toolbar: five dropdowns + reload."""
@@ -352,6 +438,7 @@ class MarkdownWindow(QMainWindow):
         self._add_dropdown(bar, "References", self.references_menu)
         self._add_dropdown(bar, "Export", self.export_menu)
         self._add_dropdown(bar, "View", self.view_menu)
+        self._add_dropdown(bar, "Help", self.help_menu)
 
         bar.addSeparator()
         bar.addAction(self.act_reload)
@@ -437,6 +524,12 @@ class MarkdownWindow(QMainWindow):
 
         menu.addSeparator()
         menu.addAction(self.act_link_bib)
+        menu.addAction(self.act_new_bib_entry)
+        style_sub = menu.addMenu("Citation style")
+        current_style = self._current_csl_key_from_tab(tab)
+        for key, act in self.csl_actions.items():
+            act.setChecked(key == current_style)
+            style_sub.addAction(act)
         menu.addAction(self.act_cross_ref)
 
     def _insert_cross_ref_name(self, name: str) -> None:
@@ -480,6 +573,13 @@ class MarkdownWindow(QMainWindow):
                 f"Theme: {theme.display_name}", 2000
             )
 
+    def _show_about(self) -> None:
+        """Open the About epy_mdr dialog modally."""
+        from epy_mdr.about_dialog import AboutDialog  # noqa: PLC0415
+
+        dlg = AboutDialog(self)
+        dlg.exec()
+
     def _link_bibliography(self) -> None:
         """Pick a .bib file and write it into the YAML front matter."""
         tab = self._current_tab()
@@ -505,7 +605,160 @@ class MarkdownWindow(QMainWindow):
             f"Linked {bib_path.name} — {len(entries)} entries", 5000
         )
 
+    def _current_csl_key_from_tab(self, tab) -> str:
+        """Return the bundled-style key the active document currently uses.
+
+        The YAML ``csl:`` field is checked first. A short name that
+        matches a bundled style wins; anything else (custom path or
+        absent) maps to the IEEE default so the menu always reflects
+        an effective state.
+        """
+        from epy_mdr.renderer import CSL_STYLES, DEFAULT_CSL_STYLE  # noqa: PLC0415
+
+        if tab is None:
+            return DEFAULT_CSL_STYLE
+        meta = snippets.parse_front_matter(tab.editor.toPlainText())
+        value = (meta.get("csl") or "").strip().lower()
+        return value if value in CSL_STYLES else DEFAULT_CSL_STYLE
+
+    def _set_csl_style(self, key: str) -> None:
+        """Write ``csl: <key>`` into the active tab's YAML front matter."""
+        tab = self._current_tab()
+        if tab is None:
+            return
+        text = tab.editor.toPlainText()
+        updated = snippets.set_metadata_field(text, "csl", key)
+        if updated == text:
+            self.statusBar().showMessage(
+                f"Citation style: {key.upper()} (no change)", 3000
+            )
+            return
+        cursor = tab.editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.select(cursor.SelectionType.Document)
+        cursor.insertText(updated)
+        cursor.endEditBlock()
+        self.statusBar().showMessage(
+            f"Citation style: {key.upper()}", 3000
+        )
+
+    def _new_bib_entry(self) -> None:
+        """Open the BibEntryDialog and append the result to the linked .bib.
+
+        Walks four cases:
+
+        1. No active tab → silently ignored (the action is also hidden
+           in that branch of :meth:`_populate_references_menu`).
+        2. No linked bibliography → prompt the user to pick or create
+           one; the chosen file becomes the new ``bibliography:``
+           target written into the YAML front matter.
+        3. Linked .bib exists → open the dialog with its current keys
+           so the user is warned before re-using one.
+        4. Linked .bib path is set but the file does not exist yet →
+           the dialog accepts and the file is created on save.
+        """
+        from epy_mdr.bib_dialog import BibEntryDialog  # noqa: PLC0415
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+
+        bib_path = tab.bib_path()
+        if bib_path is None:
+            start = str(tab.path.parent) if tab.path is not None else ""
+            filename, _ = QFileDialog.getSaveFileName(
+                self,
+                "Bibliography target",
+                start,
+                "BibTeX (*.bib);;All files (*)",
+                options=QFileDialog.Option.DontConfirmOverwrite,
+            )
+            if not filename:
+                return
+            bib_path = Path(filename)
+            tab.link_bibliography(bib_path)
+
+        existing_keys = (
+            bib.keys_in_file(bib_path) if bib_path.exists() else set()
+        )
+        dlg = BibEntryDialog(self, existing_keys=existing_keys)
+        if dlg.exec() != BibEntryDialog.DialogCode.Accepted:
+            return
+        draft = dlg.build_draft()
+        bib.append_entry_to_file(bib_path, draft)
+        self.statusBar().showMessage(
+            f"Added @{draft.key} to {bib_path.name}", 5000
+        )
+        # Refresh the References dropdown so the new key shows up.
+        self._populate_references_menu()
+
     # ----------------------------------------------- export helpers
+
+    def _resolve_reference_doc(self, theme_id: str) -> Path | None:
+        """Return the bundled DOCX reference template for ``theme_id``.
+
+        Resolves via ``importlib.resources`` so it works both from a
+        source install and from a frozen PyInstaller build.  Returns
+        ``None`` when the asset is missing so the caller can fall back
+        to a default Pandoc export.
+
+        Args:
+            theme_id: Theme identifier, e.g. ``"corporate"``.
+
+        Returns:
+            Resolved :class:`~pathlib.Path` to the ``.docx`` template,
+            or ``None`` if the file cannot be found.
+        """
+        try:
+            pkg = importlib.resources.files(
+                "epy_mdr.assets.reference_docx"
+            )
+            ref = pkg / f"{theme_id}.docx"
+            # Materialise the resource as a real path (works for both
+            # installed and frozen builds; raises FileNotFoundError when
+            # the file is absent inside the zip/bundle).
+            with importlib.resources.as_file(ref) as p:
+                if p.is_file():
+                    return p
+        except (FileNotFoundError, TypeError, ModuleNotFoundError):
+            pass
+        return None
+
+    def _export_docx(self) -> None:
+        """Save the current document as a Word (.docx) file."""
+        tab = self._current_tab()
+        if tab is None:
+            return
+        default = (
+            str(tab.path.with_suffix(".docx"))
+            if tab.path is not None
+            else "untitled.docx"
+        )
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Export DOCX", default, "Word document (*.docx)"
+        )
+        if not filename:
+            return
+        target = Path(filename)
+        if target.suffix == "":
+            target = target.with_suffix(".docx")
+        text = tab.editor.toPlainText()
+        base_dir = tab.path.parent if tab.path is not None else None
+        reference_doc = self._resolve_reference_doc(
+            self._current_theme.id
+        )
+        try:
+            export_docx(
+                text, target, base_dir=base_dir, reference_doc=reference_doc
+            )
+        except (OSError, RuntimeError) as exc:
+            QMessageBox.critical(
+                self, "Export DOCX failed", str(exc)
+            )
+            return
+        self.statusBar().showMessage(
+            f"Exported {target.name}", 5000
+        )
 
     def _export_html(self) -> None:
         """Save the current preview as a standalone HTML file."""
@@ -528,7 +781,12 @@ class MarkdownWindow(QMainWindow):
         text = tab.editor.toPlainText()
         base_dir = tab.path.parent if tab.path is not None else None
         title = tab.path.name if tab.path is not None else "untitled"
-        html = render_markdown(text, base_dir=base_dir, title=title)
+        html = render_markdown(
+            text,
+            base_dir=base_dir,
+            title=title,
+            theme_css=self._current_theme.to_css(),
+        )
         target.write_text(html, encoding="utf-8")
         self.statusBar().showMessage(f"Saved HTML: {target}", 3000)
 
@@ -751,6 +1009,85 @@ class MarkdownWindow(QMainWindow):
                 self, APP_NAME, f"Failed to write PDF:\n{path}"
             )
 
+    def _export_via_docs(self) -> None:
+        """Launch the epy_docs export dialog and render in a worker."""
+        from epy_mdr.docs_export_dialog import (  # noqa: PLC0415
+            DocsExportDialog,
+            _RenderWorker,
+        )
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+
+        # Require the buffer to be saved on disk.
+        if tab.path is None or tab.dirty:
+            choice = QMessageBox.question(
+                self,
+                APP_NAME,
+                "The document must be saved before exporting via "
+                "epy_docs. Save now?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if choice != QMessageBox.StandardButton.Save:
+                return
+            if not self._save_current():
+                return
+
+        if tab.path is None:
+            return
+
+        dialog = DocsExportDialog(tab.path, parent=self)
+        if dialog.exec() != DocsExportDialog.DialogCode.Accepted:
+            return
+
+        dialog.persist_settings()
+
+        source = tab.path
+        layout = dialog.layout_name
+        doc_type = dialog.document_type
+        out_dir = dialog.output_dir
+        want_pdf = dialog.export_pdf
+        want_html = dialog.export_html
+        want_docx = dialog.export_docx
+
+        QApplication.setOverrideCursor(
+            QCursor(Qt.CursorShape.WaitCursor)
+        )
+        self.statusBar().showMessage("Exporting via epy_docs…", 0)
+
+        self._docs_worker = _RenderWorker(
+            source_path=source,
+            layout=layout,
+            document_type=doc_type,
+            output_dir=out_dir,
+            pdf=want_pdf,
+            html=want_html,
+            docx=want_docx,
+        )
+        self._docs_worker.finished_ok.connect(self._on_docs_done_ok)
+        self._docs_worker.finished_err.connect(self._on_docs_done_err)
+        self._docs_worker.start()
+
+    def _on_docs_done_ok(self, out_dir: str) -> None:
+        """Handle a successful epy_docs render."""
+        QApplication.restoreOverrideCursor()
+        self.statusBar().showMessage(
+            f"Exported to {out_dir}", 5000
+        )
+
+    def _on_docs_done_err(self, message: str) -> None:
+        """Handle a failed epy_docs render."""
+        QApplication.restoreOverrideCursor()
+        self.statusBar().clearMessage()
+        QMessageBox.critical(
+            self,
+            APP_NAME,
+            f"epy_docs export failed:\n\n{message}",
+        )
+
     # ------------------------------------------------ closing logic
 
     def _confirm_close(self, tab: MarkdownTab) -> bool:
@@ -770,9 +1107,7 @@ class MarkdownWindow(QMainWindow):
         if choice == QMessageBox.StandardButton.Save:
             self.tabs.setCurrentWidget(tab)
             return self._save_current()
-        if choice == QMessageBox.StandardButton.Discard:
-            return True
-        return False
+        return choice == QMessageBox.StandardButton.Discard
 
     def _close_tab_at(self, index: int) -> None:
         """Handle the close button on a specific tab."""
@@ -782,6 +1117,7 @@ class MarkdownWindow(QMainWindow):
         if not self._confirm_close(widget):
             return
         self.tabs.removeTab(index)
+        widget.cleanup_preview_tmp()
         widget.deleteLater()
         if self.tabs.count() == 0:
             self._open_welcome_tab()
@@ -821,6 +1157,12 @@ class MarkdownWindow(QMainWindow):
 def _run_gui(files: list[str]) -> int:
     """Boot the Qt application and open ``files`` in tabs."""
     app = QApplication(sys.argv)
+
+    # Set the application-level icon (taskbar / OS task switcher).
+    logo_pix = _load_branding_pixmap("epy_mdr.png")
+    if not logo_pix.isNull():
+        app.setWindowIcon(QIcon(logo_pix))
+
     window = MarkdownWindow()
     window.show()
     for raw in files:

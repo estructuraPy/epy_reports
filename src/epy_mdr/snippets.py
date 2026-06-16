@@ -78,6 +78,8 @@ CODE_BLOCK_TEMPLATE = "```python\nCODE\n```"
 
 LINK_TEMPLATE = "[TEXT](URL)"
 
+IMAGE_MARKDOWN = "![{caption}]({path}){{#fig-{label}}}"
+
 SECTION_HEADING_TEMPLATE = "## Section title {#sec-LABEL}"
 
 CALLOUT_TEMPLATES: dict[str, str] = {
