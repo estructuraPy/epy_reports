@@ -484,6 +484,35 @@ body.paged .page-break::before {
     white-space: nowrap;
 }
 
+/* ---------- CSL bibliography (Pandoc citeproc) ---------- */
+
+/* Each reference entry: number/label + text side by side. */
+div.csl-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin: 0.35em 0;
+    line-height: 1.5;
+}
+/* Left column: bracket number [1], author-date key, etc. */
+div.csl-left-margin {
+    flex-shrink: 0;
+    min-width: 2em;
+    text-align: right;
+}
+/* Right column: full reference text. */
+div.csl-right-inline {
+    flex: 1;
+}
+/* Hanging indent for styles that use it (APA, Chicago…). */
+div.csl-indent {
+    margin-left: 2em;
+}
+/* Outer refs container spacing. */
+div#refs {
+    margin-top: 0.5em;
+}
+
 /* ---------- Cover page ---------- */
 
 section.cover-page {
