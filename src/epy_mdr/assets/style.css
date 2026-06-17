@@ -407,7 +407,39 @@ nav.toc a,
 nav.list-of-figures a,
 nav.list-of-tables a,
 nav.list-of-equations a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+    text-decoration: none;
+    color: inherit;
+}
+nav.toc a:hover,
+nav.list-of-figures a:hover,
+nav.list-of-tables a:hover,
+nav.list-of-equations a:hover {
     color: var(--link);
+}
+.toc-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
+}
+.toc-dots {
+    flex: 1;
+    min-width: 1.5em;
+    border-bottom: 1px dotted var(--border, #ccc);
+    margin-bottom: 0.25em;
+    align-self: flex-end;
+}
+.page-num {
+    flex-shrink: 0;
+    min-width: 1.5em;
+    text-align: right;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88em;
 }
 nav.toc .toc-level-2 { padding-left: 1.2em; }
 nav.toc .toc-level-3 { padding-left: 2.4em; }

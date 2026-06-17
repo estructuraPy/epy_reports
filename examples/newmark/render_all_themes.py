@@ -4,9 +4,23 @@ Demonstrates the full epy_mdr publishing pipeline on a feature-complete
 document: YAML front matter with cover page, TOC/LOF/LOT/LOE index markers,
 page breaks, footnotes, IEEE bibliography, Quarto cross-references
 (``@sec-``/``@fig-``/``@eq-``), titled callouts, figures, tables and
-display equations. Each theme is rendered with its own ``:root { … }`` block
+display equations.  Each theme is rendered with its own ``:root { … }`` block
 (``Theme.to_css()``), then printed to PDF via Qt WebEngine after MathJax
 finishes typesetting.
+
+The export pipeline uses two passes to inject accurate page numbers into the
+index blocks (TOC, LOF, LOT, LOE):
+
+1. **Pass 1** — render with ``paged=False`` (print-ready layout), export to a
+   temporary PDF, then extract the anchor→page-number mapping from the PDF's
+   named destinations using :mod:`pypdf`.
+2. **Pass 2** — inject the page numbers into the HTML, reload, and export the
+   final PDF.
+
+After the final PDF is written, the ``footer`` and ``page-numbers`` front-matter
+values are applied as a :mod:`reportlab` overlay via
+:func:`epy_mdr._pdf_footer.add_footer`, and the ``header`` cells (if present)
+via :func:`epy_mdr._pdf_footer.add_header`.
 
 Run it from this directory::
 
@@ -17,19 +31,20 @@ Output lands in ``_render/themes/`` (git-ignored).
 Typography note
 ---------------
 The PDFs use the fonts each theme requests **only when those font families
-are installed on the machine doing the render**. On a PC missing a given
+are installed on the machine doing the render**.  On a PC missing a given
 family, Qt/Pandoc fall back to the nearest available font, so the same
-document may look slightly different across machines. Layout, colors,
+document may look slightly different across machines.  Layout, colors,
 spacing and structure are theme-defined and stable; only the glyph shapes
 depend on locally available fonts.
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QMarginsF, QTimer, QUrl
+from PySide6.QtCore import QMarginsF, QTimer, QUrl, Qt
 from PySide6.QtGui import QPageLayout, QPageSize
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication
@@ -41,13 +56,21 @@ ROOT = Path(__file__).resolve().parent
 try:
     from epy_mdr import themes
     from epy_mdr.renderer import render_markdown
+    from epy_mdr.snippets import parse_front_matter
+    from epy_mdr.renderer import normalize_page_size
+    from epy_mdr._pdf_footer import add_footer, add_header
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
     from epy_mdr import themes
     from epy_mdr.renderer import render_markdown
+    from epy_mdr.snippets import parse_front_matter
+    from epy_mdr.renderer import normalize_page_size
+    from epy_mdr._pdf_footer import add_footer, add_header
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
+
+_PAGE_NUM_RE = re.compile(r'<span class="page-num" data-ref="([^"]+)"></span>')
 
 WAIT_FOR_MATHJAX_JS = r"""
 (function () {
@@ -68,84 +91,215 @@ WAIT_FOR_MATHJAX_JS = r"""
 })();
 """
 
+_PAGE_SIZE_IDS = {
+    "letter": QPageSize.PageSizeId.Letter,
+    "a4": QPageSize.PageSizeId.A4,
+    "legal": QPageSize.PageSizeId.Legal,
+}
+
+
+def _page_layout(page_size: str) -> QPageLayout:
+    size_id = _PAGE_SIZE_IDS.get(normalize_page_size(page_size), _PAGE_SIZE_IDS["letter"])
+    return QPageLayout(
+        QPageSize(size_id),
+        QPageLayout.Orientation.Portrait,
+        QMarginsF(15.0, 15.0, 15.0, 15.0),
+        QPageLayout.Unit.Millimeter,
+    )
+
+
+def _extract_page_numbers(pdf_path: Path) -> dict[str, int]:
+    """Return anchor → 1-based page number from a Qt-generated PDF.
+
+    Qt WebEngine records HTML element ids as PDF named destinations.  If
+    pypdf finds none (older Qt or missing deps), returns an empty dict so
+    the caller can skip pass 2 gracefully.
+    """
+    try:
+        from pypdf import PdfReader  # noqa: PLC0415
+        reader = PdfReader(str(pdf_path))
+        result: dict[str, int] = {}
+        for name, dest in reader.named_destinations.items():
+            name_clean = name.lstrip("/")
+            try:
+                page_num = reader.get_destination_page_number(dest) + 1
+                result[name_clean] = page_num
+            except Exception:  # noqa: BLE001
+                pass
+        return result
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _inject_page_numbers(html: str, anchor_to_page: dict[str, int]) -> str:
+    """Fill ``<span class="page-num" data-ref="…"></span>`` with page numbers."""
+    def replace(m: re.Match) -> str:
+        ref = m.group(1)
+        page = anchor_to_page.get(ref, anchor_to_page.get(ref.lstrip("/"), 0))
+        if page:
+            return f'<span class="page-num" data-ref="{ref}">{page}</span>'
+        return m.group(0)
+    return _PAGE_NUM_RE.sub(replace, html)
+
 
 class ThemeExporter:
-    """Render one theme to HTML + PDF, then call ``on_done``."""
+    """Render one theme: two-pass HTML→PDF with page number injection."""
 
-    def __init__(self, theme_id: str, source: str, on_done) -> None:
+    MAX_WAIT_MS = 25_000
+    POLL_MS = 300
+
+    def __init__(self, theme_id: str, source: str, meta: dict, on_done) -> None:
         self.theme_id = theme_id
         self.source = source
+        self.meta = meta
         self.on_done = on_done
+
         self.html_path = OUT_DIR / f"newmark_{theme_id}.html"
         self.pdf_path = OUT_DIR / f"newmark_{theme_id}.pdf"
-        self.live_html = ROOT / f"_preview_newmark_{theme_id}.html"
-        self.elapsed_ms = 0
-        self.max_wait_ms = 25_000
-        self.poll_interval_ms = 300
+        self._pass1_pdf = OUT_DIR / f"_p1_{theme_id}.pdf"
+        self._tmp_html = ROOT / f"_tmp_{theme_id}.html"
+
+        self._elapsed_ms = 0
+        self._pending_pdf: Path | None = None
+        self._pending_after = None
+
         self.view = QWebEngineView()
         self.view.resize(900, 1200)
-        self.view.loadFinished.connect(self._on_load)
+
+    # ------------------------------------------------------------------
+    # Public entry point
+    # ------------------------------------------------------------------
 
     def go(self) -> None:
         print(f"\n=== theme: {self.theme_id} ===")
         theme = themes.get(self.theme_id)
+        page_size = normalize_page_size(self.meta.get("page-size"))
         html = render_markdown(
             self.source,
             base_dir=ROOT,
             theme_css=theme.to_css(),
-            paged=True,
-            page_size="letter",
+            paged=False,
+            page_size=page_size,
         )
         self.html_path.write_text(html, encoding="utf-8")
-        print(f"  HTML -> {self.html_path.name}  ({len(html)} chars)")
-        # setHtml() is capped at ~2 MB and the inline MathJax bundle blows
-        # past it; load via file:// so relative svg/jpg also resolve.
-        self.live_html.write_text(html, encoding="utf-8")
-        self.view.load(QUrl.fromLocalFile(str(self.live_html.resolve())))
+        self._pass1_html = html
+        print(f"  HTML  -> {self.html_path.name}  ({len(html):,} chars)")
+        self._load_and_print(html, self._pass1_pdf, self._after_pass1)
+
+    # ------------------------------------------------------------------
+    # Shared async printing machinery
+    # ------------------------------------------------------------------
+
+    def _load_and_print(self, html: str, pdf_path: Path, after_print) -> None:
+        self._pending_pdf = pdf_path
+        self._pending_after = after_print
+        self._elapsed_ms = 0
+        self._tmp_html.write_text(html, encoding="utf-8")
+        self.view.loadFinished.connect(
+            self._on_load, Qt.ConnectionType.SingleShotConnection
+        )
+        self.view.load(QUrl.fromLocalFile(str(self._tmp_html.resolve())))
 
     def _on_load(self, ok: bool) -> None:
         if not ok:
-            print("  PDF  -> load failed")
-            self._finish()
+            print(f"  [{self.theme_id}] load failed")
+            if self._pending_after:
+                self._pending_after(False)
             return
         self.view.page().runJavaScript(WAIT_FOR_MATHJAX_JS)
-        QTimer.singleShot(self.poll_interval_ms, self._poll)
+        QTimer.singleShot(self.POLL_MS, self._poll)
 
     def _poll(self) -> None:
-        self.elapsed_ms += self.poll_interval_ms
+        self._elapsed_ms += self.POLL_MS
         self.view.page().runJavaScript(
             "window._mathjax_done === true", self._on_poll_result
         )
 
     def _on_poll_result(self, done: bool) -> None:
-        if done:
-            print(f"  MathJax ready after {self.elapsed_ms} ms")
-            QTimer.singleShot(300, self._print_pdf)
-            return
-        if self.elapsed_ms >= self.max_wait_ms:
-            print(f"  MathJax timeout {self.elapsed_ms} ms — printing anyway")
-            self._print_pdf()
-            return
-        QTimer.singleShot(self.poll_interval_ms, self._poll)
+        if done or self._elapsed_ms >= self.MAX_WAIT_MS:
+            if not done:
+                print(f"  [{self.theme_id}] MathJax timeout — printing anyway")
+            else:
+                print(f"  [{self.theme_id}] MathJax ready after {self._elapsed_ms} ms")
+            QTimer.singleShot(self.POLL_MS, self._do_print)
+        else:
+            QTimer.singleShot(self.POLL_MS, self._poll)
 
-    def _print_pdf(self) -> None:
-        page = self.view.page()
-        page.pdfPrintingFinished.connect(self._on_pdf_done)
-        layout = QPageLayout(
-            QPageSize(QPageSize.PageSizeId.Letter),
-            QPageLayout.Orientation.Portrait,
-            QMarginsF(15, 15, 15, 15),
+    def _do_print(self) -> None:
+        self.view.page().pdfPrintingFinished.connect(
+            self._on_printed, Qt.ConnectionType.SingleShotConnection
         )
-        page.printToPdf(str(self.pdf_path), layout)
+        self.view.page().printToPdf(
+            str(self._pending_pdf),
+            _page_layout(self.meta.get("page-size", "letter")),
+        )
 
-    def _on_pdf_done(self, path: str, ok: bool) -> None:
-        size = self.pdf_path.stat().st_size if self.pdf_path.exists() else 0
-        print(f"  PDF  -> {self.pdf_path.name}  ok={ok}  ({size} bytes)")
+    def _on_printed(self, _path: str, ok: bool) -> None:
+        size = self._pending_pdf.stat().st_size if self._pending_pdf.exists() else 0
+        label = "pass1" if self._pending_pdf == self._pass1_pdf else "pass2"
+        print(f"  PDF ({label}) -> {self._pending_pdf.name}  ok={ok}  ({size:,} bytes)")
+        if self._pending_after:
+            self._pending_after(ok)
+
+    # ------------------------------------------------------------------
+    # Two-pass logic
+    # ------------------------------------------------------------------
+
+    def _after_pass1(self, ok: bool) -> None:
+        if not ok:
+            self._finish()
+            return
+
+        anchor_to_page = _extract_page_numbers(self._pass1_pdf)
+        if anchor_to_page:
+            print(f"  [{self.theme_id}] extracted {len(anchor_to_page)} anchors — running pass 2")
+            html2 = _inject_page_numbers(self._pass1_html, anchor_to_page)
+            # Update saved HTML with page numbers
+            self.html_path.write_text(html2, encoding="utf-8")
+            self._load_and_print(html2, self.pdf_path, self._after_pass2)
+        else:
+            print(f"  [{self.theme_id}] no named destinations — skipping pass 2")
+            import shutil
+            shutil.copy(self._pass1_pdf, self.pdf_path)
+            self._apply_overlays_and_finish(ok=True)
+
+    def _after_pass2(self, ok: bool) -> None:
+        self._apply_overlays_and_finish(ok)
+
+    def _apply_overlays_and_finish(self, ok: bool) -> None:
+        if ok and self.pdf_path.exists():
+            header_raw = self.meta.get("header") or []
+            header_cells = (
+                list(header_raw) if isinstance(header_raw, list) else [str(header_raw)]
+            )
+            footer_text = str(self.meta.get("footer", "") or "")
+            page_numbers_flag = str(self.meta.get("page-numbers", "")).lower() in (
+                "true", "yes", "1",
+            )
+            lang = str(self.meta.get("lang", "en"))
+            try:
+                if any(header_cells):
+                    add_header(self.pdf_path, header_cells, lang=lang)
+                    print(f"  [{self.theme_id}] header stamped")
+                if footer_text or page_numbers_flag:
+                    add_footer(
+                        self.pdf_path,
+                        footer_text,
+                        page_numbers=page_numbers_flag,
+                        lang=lang,
+                    )
+                    print(f"  [{self.theme_id}] footer stamped")
+            except RuntimeError as exc:
+                print(f"  [{self.theme_id}] overlay error: {exc}")
         self._finish()
 
     def _finish(self) -> None:
         try:
-            self.live_html.unlink()
+            self._pass1_pdf.unlink(missing_ok=True)
+        except OSError:
+            pass
+        try:
+            self._tmp_html.unlink(missing_ok=True)
         except OSError:
             pass
         self.on_done()
@@ -154,6 +308,8 @@ class ThemeExporter:
 def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     source = SOURCE.read_text(encoding="utf-8")
+    meta = parse_front_matter(source)
+
     app = QApplication.instance() or QApplication(sys.argv)
     remaining = list(themes.THEMES.keys())
 
@@ -163,7 +319,7 @@ def main() -> int:
             app.quit()
             return
         theme_id = remaining.pop(0)
-        exporter = ThemeExporter(theme_id, source, on_done=kick_next)
+        exporter = ThemeExporter(theme_id, source, meta, on_done=kick_next)
         main._current = exporter  # type: ignore[attr-defined]
         exporter.go()
 

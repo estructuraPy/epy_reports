@@ -278,18 +278,24 @@ class MarkdownTab(QWidget):
         page_numbers = is_truthy(meta.get("page-numbers"))
         lang = meta.get("lang", "en")
         page_size = normalize_page_size(meta.get("page-size"))
+        raw_header = meta.get("header") or []
+        header_cells = (
+            list(raw_header) if isinstance(raw_header, list) else [str(raw_header)]
+        )
 
         tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
         tmp_pdf = tmp_dir / "export.pdf"
 
         def finalize(_path: str, ok: bool) -> None:
-            """Stamp footers, move into place, then notify the caller."""
+            """Stamp header/footer overlays, move into place, then notify."""
             result_ok = ok
             try:
                 if ok:
-                    if footer_text or page_numbers:
-                        from epy_mdr import _pdf_footer  # noqa: PLC0415
+                    from epy_mdr import _pdf_footer  # noqa: PLC0415
 
+                    if any(header_cells):
+                        _pdf_footer.add_header(tmp_pdf, header_cells, lang=lang)
+                    if footer_text or page_numbers:
                         _pdf_footer.add_footer(
                             tmp_pdf,
                             footer_text,

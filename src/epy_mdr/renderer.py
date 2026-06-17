@@ -726,7 +726,11 @@ def build_toc_html(
     title = _INDEX_TITLES[key]["toc"]
     items = [
         f'<li class="toc-level-{level}">'
-        f'<a href="#{anchor}">{_escape_html(text)}</a></li>'
+        f'<a href="#{anchor}">'
+        f'<span class="toc-text">{_escape_html(text)}</span>'
+        f'<span class="toc-dots"></span>'
+        f'<span class="page-num" data-ref="{anchor}"></span>'
+        f'</a></li>'
         for level, text, anchor in headings
     ]
     return (
@@ -747,8 +751,11 @@ def _build_caption_list_html(
     if not entries:
         return ""
     items = [
-        f'<li><a href="#{label}">{word} {n}: '
-        f"{_escape_html(caption)}</a></li>"
+        f'<li><a href="#{label}">'
+        f'<span class="toc-text">{word} {n}: {_escape_html(caption)}</span>'
+        f'<span class="toc-dots"></span>'
+        f'<span class="page-num" data-ref="{label}"></span>'
+        f'</a></li>'
         for n, caption, label in entries
     ]
     return (
@@ -817,7 +824,11 @@ def build_equation_list_html(entries: list, lang: str = "en") -> str:
     word = _WORDS.get(key, _WORDS["en"])["eq"]
     title = _INDEX_TITLES[key]["loe"]
     items = [
-        f'<li><a href="#{label}">{word} {n}</a></li>'
+        f'<li><a href="#{label}">'
+        f'<span class="toc-text">{word} {n}</span>'
+        f'<span class="toc-dots"></span>'
+        f'<span class="page-num" data-ref="{label}"></span>'
+        f'</a></li>'
         for n, label in entries
     ]
     return (
@@ -880,6 +891,13 @@ def _expand_page_breaks(source: str) -> str:
     return "".join(out_lines)
 
 
+def _with_page_break(html: str) -> str:
+    """Append a page-break div after a non-empty index block."""
+    if html.strip():
+        return html + '\n<div class="page-break"></div>'
+    return html
+
+
 def _expand_index_markers(body: str, source: str, lang: str) -> str:
     """Replace TOC / list marker paragraphs in *body* with HTML blocks.
 
@@ -898,16 +916,16 @@ def _expand_index_markers(body: str, source: str, lang: str) -> str:
     headings = collect_headings(source)
     entries = collect_index_entries(source, lang=lang)
     body = _TOC_P_RE.sub(
-        lambda _m: build_toc_html(headings, lang), body
+        lambda _m: _with_page_break(build_toc_html(headings, lang)), body
     )
     body = _LOF_P_RE.sub(
-        lambda _m: build_figure_list_html(entries["fig"], lang), body
+        lambda _m: _with_page_break(build_figure_list_html(entries["fig"], lang)), body
     )
     body = _LOT_P_RE.sub(
-        lambda _m: build_table_list_html(entries["tbl"], lang), body
+        lambda _m: _with_page_break(build_table_list_html(entries["tbl"], lang)), body
     )
     body = _LOE_P_RE.sub(
-        lambda _m: build_equation_list_html(entries["eq"], lang), body
+        lambda _m: _with_page_break(build_equation_list_html(entries["eq"], lang)), body
     )
     return body
 
