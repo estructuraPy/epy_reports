@@ -4,6 +4,38 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-06-17
+
+### Added
+- **Page numbers in index blocks.** TOC, LOF, LOT and LOE entries now show the
+  page number of the referenced content. Numbers are resolved via a two-pass
+  PDF export: pass 1 extracts the anchor→page mapping from the PDF's named
+  destinations (Qt WebEngine preserves HTML `id` attributes), pass 2 injects
+  the numbers and re-exports.
+- **6-cell running page header.** Documents can declare a `header:` list of up
+  to 6 strings in YAML front matter. The header is stamped as a 2-row × 3-column
+  grid (left / center / right columns) in the top margin of every page using
+  a `reportlab` overlay — the same pipeline already used for footers.
+- **Cover page isolation.** When `cover: true` is set, the cover page is
+  excluded from the header and footer overlay (`start_page: 2`). The cover
+  remains a standalone page with no running elements.
+
+### Fixed
+- **PDF page sizing.** The render script was using `paged=True` (preview mode),
+  which produces a wide continuous layout unsuitable for `printToPdf`. Switched
+  to `paged=False` so the page layout matches the app's own PDF export.
+- **`{.unnumbered}` and other Pandoc class attributes leaked as literal text**
+  in rendered headings and TOC entries. The heading scanner now strips all
+  `{…}` attribute blocks from the collected text and merges any existing
+  attributes with the injected `{#toc-h-N}` id into a single block so Pandoc
+  parses it correctly.
+- **IEEE (and all CSL) bibliography entries were split across two lines.** Pandoc
+  generates `<div class="csl-left-margin">` (bracket number) and
+  `<div class="csl-right-inline">` (reference text) as sibling block elements.
+  Added `display: flex` on `div.csl-entry` so number and text appear side by
+  side on the same line. `div.csl-indent` is also handled for APA/Chicago
+  hanging-indent styles.
+
 ## [0.5.0] — 2026-06-17
 
 ### Added

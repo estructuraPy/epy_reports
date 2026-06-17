@@ -92,3 +92,35 @@ jobs:
           name: epy_mdr-ubuntu-deb
           path: installer/dist/epy-mdr_*.deb
           retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # GitHub Release: publish both installers when triggered by a version tag
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish GitHub Release
+    needs: [windows-installer, ubuntu-deb]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: epy_mdr-windows-installer
+          path: dist/windows
+
+      - name: Download Ubuntu .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: epy_mdr-ubuntu-deb
+          path: dist/linux
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/windows/epy_mdr-setup-*.exe
+            dist/linux/epy-mdr_*.deb
+          generate_release_notes: true
