@@ -33,7 +33,7 @@ from epy_mdr.checklist_dialog import ChecklistDialog
 from epy_mdr.equation_dialog import EquationDialog
 from epy_mdr.figure_dialog import FigureDialog
 from epy_mdr.footnote_dialog import FootnoteDialog
-from epy_mdr.renderer import render_markdown
+from epy_mdr.renderer import normalize_page_size, render_markdown
 from epy_mdr.table_dialog import TableDialog
 from epy_mdr.template import is_truthy
 from epy_mdr.xref_dialog import CrossRefDialog
@@ -115,6 +115,7 @@ class MarkdownTab(QWidget):
         self._dirty = False
         self._suppress_change = False
         self._theme_css: str = ""
+        self._paged = False
 
         self.editor = QPlainTextEdit(self)
         self._setup_editor()
@@ -234,6 +235,19 @@ class MarkdownTab(QWidget):
         self._theme_css = css
         self._render_now()
 
+    def set_paged(self, value: bool) -> None:
+        """Toggle the A4 page-view preview and re-render immediately.
+
+        Preview-only: PDF/HTML/DOCX exports are unaffected. The PDF
+        export path forces a non-paged render before printing so the
+        gray backdrop never leaks into the exported file.
+
+        Args:
+            value: ``True`` to show the content as an A4 sheet.
+        """
+        self._paged = value
+        self._render_now()
+
     def export_pdf(
         self,
         target: Path,
@@ -242,13 +256,16 @@ class MarkdownTab(QWidget):
         """Export the current preview to ``target`` as a PDF file.
 
         The export is a strict improvement over a bare
-        ``printToPdf``: it (a) waits for MathJax to finish typesetting
-        so equations are rendered, (b) prints with an explicit A4
-        portrait page layout with ~15 mm margins, and (c) when the
-        document front matter declares a ``footer`` text or a truthy
-        ``page-numbers`` value, stamps every page via
-        :func:`epy_mdr._pdf_footer.add_footer` before delivering the
-        final file.
+        ``printToPdf``: it (a) renders a fresh, non-paged export page
+        into the view and gates printing on the view's ``loadFinished``
+        so the print never fires against a stale page, (b) waits for
+        MathJax to finish typesetting so equations are rendered, (c)
+        prints with an explicit portrait page layout (page size taken
+        from the document's ``page-size`` front matter, default Letter)
+        with ~15 mm margins, and (d) when the document front matter
+        declares a ``footer`` text or a truthy ``page-numbers`` value,
+        stamps every page via :func:`epy_mdr._pdf_footer.add_footer`
+        before delivering the final file.
 
         Args:
             target: Destination ``.pdf`` path.
@@ -260,6 +277,7 @@ class MarkdownTab(QWidget):
         footer_text = meta.get("footer", "")
         page_numbers = is_truthy(meta.get("page-numbers"))
         lang = meta.get("lang", "en")
+        page_size = normalize_page_size(meta.get("page-size"))
 
         tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
         tmp_pdf = tmp_dir / "export.pdf"
@@ -284,26 +302,60 @@ class MarkdownTab(QWidget):
                 result_ok = False
             finally:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
+                # Always restore the user's live preview (re-applying
+                # the current paged + page-size state) on both paths.
+                self._render_now()
             if on_done is not None:
                 on_done(target, result_ok)
 
         def do_print() -> None:
-            """Print to the temp file with an A4 portrait layout."""
+            """Print the loaded export page to the temp file."""
             self.view.page().pdfPrintingFinished.connect(
                 finalize, Qt.ConnectionType.SingleShotConnection
             )
             self.view.page().printToPdf(
-                str(tmp_pdf), self._a4_page_layout()
+                str(tmp_pdf), self._page_layout(page_size)
             )
 
-        self._wait_for_mathjax(do_print)
+        def on_loaded(ok: bool) -> None:
+            """Run after the fresh export page finishes loading."""
+            if not ok:
+                # Load failed — finalize as failure (also restores
+                # the live preview via the finalize cleanup path).
+                finalize("", False)
+                return
+            self._wait_for_mathjax(do_print)
+
+        # Always render a FRESH, non-paged export page into the view.
+        # Connect the one-shot loadFinished BEFORE loading so the signal
+        # can never be missed; SingleShotConnection keeps it from
+        # leaking into later preview reloads.
+        self.view.loadFinished.connect(
+            on_loaded, Qt.ConnectionType.SingleShotConnection
+        )
+        self._render_into_view(paged=False, page_size=page_size)
 
     @staticmethod
-    def _a4_page_layout() -> QPageLayout:
-        """Return an A4 portrait page layout with ~15 mm margins."""
+    def _page_layout(page_size: str) -> QPageLayout:
+        """Return a portrait page layout with ~15 mm margins.
+
+        Args:
+            page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
+                Unknown or missing values fall back to Letter.
+
+        Returns:
+            A :class:`QPageLayout` using the matching
+            :class:`QPageSize.PageSizeId`.
+        """
+        ids = {
+            "letter": QPageSize.PageSizeId.Letter,
+            "a4":     QPageSize.PageSizeId.A4,
+            "legal":  QPageSize.PageSizeId.Legal,
+        }
+        size_id = ids.get(normalize_page_size(page_size), ids["letter"])
         margins = QMarginsF(15.0, 15.0, 15.0, 15.0)
         return QPageLayout(
-            QPageSize(QPageSize.PageSizeId.A4),
+            QPageSize(size_id),
             QPageLayout.Orientation.Portrait,
             margins,
             QPageLayout.Unit.Millimeter,
@@ -493,8 +545,18 @@ class MarkdownTab(QWidget):
             caption = src.stem
         caption = caption or src.stem
 
+        # Width: prompt the user; blank or cancel falls back to 80%.
+        width, ok = QInputDialog.getText(
+            self,
+            "Image width",
+            "Width (e.g. 80%, 300px):",
+            text="80%",
+        )
+        if not ok or not width.strip():
+            width = "80%"
+
         md = snippets.IMAGE_MARKDOWN.format(
-            caption=caption, path=md_path, label=label
+            caption=caption, path=md_path, label=label, width=width
         )
 
         cursor = self.editor.textCursor()
@@ -796,7 +858,28 @@ class MarkdownTab(QWidget):
         the rendered HTML still points at the document's directory,
         so relative figures, bib files and links resolve correctly.
         """
+        self._render_into_view(paged=self._paged)
+
+    def _render_into_view(
+        self, *, paged: bool, page_size: str | None = None
+    ) -> None:
+        """Render the buffer into the preview, forcing ``paged`` state.
+
+        Shared by the live preview (``_render_now``) and the PDF export
+        path, which needs to force a non-paged render before printing.
+        The page size comes from the document's ``page-size`` front
+        matter (default Letter) unless ``page_size`` overrides it, so
+        the preview sheet matches what the export will produce.
+
+        Args:
+            paged: Whether to render the paged-preview sheet.
+            page_size: Explicit page-size key. ``None`` reads it from
+                the buffer's front matter.
+        """
         text = self.editor.toPlainText()
+        if page_size is None:
+            meta = snippets.parse_front_matter(text)
+            page_size = normalize_page_size(meta.get("page-size"))
         base_dir = self._path.parent if self._path is not None else None
         title = (
             self._path.name if self._path is not None else UNTITLED
@@ -806,6 +889,8 @@ class MarkdownTab(QWidget):
             base_dir=base_dir,
             title=title,
             theme_css=self._theme_css,
+            paged=paged,
+            page_size=page_size,
         )
         if not hasattr(self, "_preview_tmp_dir"):
             self._preview_tmp_dir = Path(

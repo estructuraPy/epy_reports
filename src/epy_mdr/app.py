@@ -132,6 +132,13 @@ class MarkdownWindow(QMainWindow):
         self._current_theme: themes.Theme = themes.get(saved_theme)
         self._apply_theme(self._current_theme.id, persist=False)
 
+        # Restore the persisted A4 page-view preference and apply it.
+        self._paged_enabled = (
+            str(self._settings.value("paged", "false")).lower() == "true"
+        )
+        self.act_page_view.setChecked(self._paged_enabled)
+        self._apply_paged(self._paged_enabled)
+
         # Window icon (title bar + taskbar).
         logo_pix = _load_branding_pixmap("epy_mdr.png")
         if not logo_pix.isNull():
@@ -190,6 +197,10 @@ class MarkdownWindow(QMainWindow):
         self.act_about = QAction("About epy_mdr…", self)
         self.act_about.triggered.connect(self._show_about)
 
+        self.act_page_view = QAction("Page view", self, checkable=True)
+        self.act_page_view.setShortcut(QKeySequence("Ctrl+Shift+A"))
+        self.act_page_view.toggled.connect(self._toggle_page_view)
+
         self.act_docs_export = QAction("Export via epy_docs...", self)
         if epy_docs_available():
             self.act_docs_export.triggered.connect(
@@ -212,6 +223,23 @@ class MarkdownWindow(QMainWindow):
             self.theme_actions[theme.id] = act
         self.theme_group.triggered.connect(
             lambda action: self._apply_theme(action.data())
+        )
+
+        # Page-size actions (Letter default, exclusive group). The key
+        # is stored as action data and written into the document's
+        # ``page-size`` front matter when chosen.
+        from epy_mdr.renderer import PAGE_SIZES  # noqa: PLC0415
+
+        self.page_size_group = QActionGroup(self)
+        self.page_size_group.setExclusive(True)
+        self.page_size_actions: dict[str, QAction] = {}
+        for key in PAGE_SIZES:
+            act = QAction(key.title(), self, checkable=True)
+            act.setData(key)
+            self.page_size_group.addAction(act)
+            self.page_size_actions[key] = act
+        self.page_size_group.triggered.connect(
+            lambda action: self._set_page_size(action.data())
         )
 
     def _on_active_tab(self, fn_name: str, *args) -> None:
@@ -437,6 +465,16 @@ class MarkdownWindow(QMainWindow):
         theme_sub = self.view_menu.addMenu("Theme")
         for act in self.theme_group.actions():
             theme_sub.addAction(act)
+        self.view_menu.addSeparator()
+        self.view_menu.addAction(self.act_page_view)
+        self.page_size_menu = self.view_menu.addMenu("Page size")
+        for act in self.page_size_group.actions():
+            self.page_size_menu.addAction(act)
+        # Tick the radio matching the current document each time the
+        # submenu opens, mirroring the Citation-style pattern.
+        self.page_size_menu.aboutToShow.connect(
+            self._sync_page_size_menu
+        )
 
         self._build_templates_menu()
 
@@ -590,6 +628,60 @@ class MarkdownWindow(QMainWindow):
             self.statusBar().showMessage(
                 f"Theme: {theme.display_name}", 2000
             )
+
+    def _toggle_page_view(self, enabled: bool) -> None:
+        """Toggle A4 page view on every tab and persist the choice."""
+        self._paged_enabled = enabled
+        self._apply_paged(enabled)
+        self._settings.setValue("paged", "true" if enabled else "false")
+        self.statusBar().showMessage(
+            f"Page view: {'on' if enabled else 'off'}", 2000
+        )
+
+    def _apply_paged(self, enabled: bool) -> None:
+        """Forward the page-view flag to every open tab."""
+        for i in range(self.tabs.count()):
+            widget = self.tabs.widget(i)
+            if isinstance(widget, MarkdownTab):
+                widget.set_paged(enabled)
+
+    def _current_page_size_from_tab(self) -> str:
+        """Return the active document's page-size key (default Letter)."""
+        from epy_mdr.renderer import (  # noqa: PLC0415
+            DEFAULT_PAGE_SIZE,
+            normalize_page_size,
+        )
+
+        tab = self._current_tab()
+        if tab is None:
+            return DEFAULT_PAGE_SIZE
+        meta = snippets.parse_front_matter(tab.editor.toPlainText())
+        return normalize_page_size(meta.get("page-size"))
+
+    def _sync_page_size_menu(self) -> None:
+        """Check the radio matching the current document's page size."""
+        current = self._current_page_size_from_tab()
+        for key, act in self.page_size_actions.items():
+            act.setChecked(key == current)
+
+    def _set_page_size(self, key: str) -> None:
+        """Write ``page-size: <key>`` into the active tab and re-render."""
+        tab = self._current_tab()
+        if tab is None:
+            return
+        text = tab.editor.toPlainText()
+        updated = snippets.set_metadata_field(text, "page-size", key)
+        if updated == text:
+            self.statusBar().showMessage(
+                f"Page size: {key.title()} (no change)", 3000
+            )
+            return
+        cursor = tab.editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.select(cursor.SelectionType.Document)
+        cursor.insertText(updated)
+        cursor.endEditBlock()
+        self.statusBar().showMessage(f"Page size: {key.title()}", 3000)
 
     def _show_about(self) -> None:
         """Open the About epy_mdr dialog modally."""
@@ -999,6 +1091,7 @@ class MarkdownWindow(QMainWindow):
         """Instantiate a new MarkdownTab and wire its signals."""
         tab = MarkdownTab(self)
         tab.set_theme_css(self._current_theme.to_css())
+        tab.set_paged(self._paged_enabled)
         tab.dirtyChanged.connect(
             lambda _flag, t=tab: self._refresh_tab_title(t)
         )

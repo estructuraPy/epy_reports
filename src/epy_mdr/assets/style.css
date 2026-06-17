@@ -86,6 +86,11 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 
+/* Content wrapper. In normal mode it is a transparent passthrough so
+   the body's centered max-width layout is preserved. In paged mode it
+   becomes the white A4 sheet (see ``body.paged`` below). */
+.doc-content { display: block; }
+
 body {
     font-family: var(--font-family-text);
     font-size: var(--body-size);
@@ -458,6 +463,25 @@ section.cover-page .cover-date {
     color: var(--fg-muted);
     font-style: italic;
 }
+
+/* ---------- A4 page view (preview only) ---------- */
+
+body.paged {
+    max-width: none;
+    margin: 0;
+    padding: 24px 0;
+    background: #8a9099;
+}
+body.paged .doc-content {
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 25mm;
+    background: var(--bg, #ffffff);
+    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.4);
+}
+body.paged.size-letter .doc-content { width: 215.9mm; min-height: 279.4mm; }
+body.paged.size-a4 .doc-content     { width: 210mm;   min-height: 297mm; }
+body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
 
 /* ---------- Print / PDF tuning ---------- */
 

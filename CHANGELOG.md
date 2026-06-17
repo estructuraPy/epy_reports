@@ -4,7 +4,7 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] — 2026-06-17
 
 ### Added
 - Auto-generated document indexes. Type a marker on its own line and it
@@ -28,8 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (CSL, footer, page numbers, cover, logo) as a named template and apply it
   to any document in one click (Templates menu). Templates are stored as
   JSON under the user config directory.
+- Selectable page size via the `page-size:` front matter and a View > Page
+  size menu (Letter — the default — A4, Legal). It drives both the exported
+  PDF page layout and the page-view sheet.
+- Page view: a View menu toggle (`Ctrl+Shift+A`) that previews the document
+  as a paper sheet at the selected page size (width and margins). Preview
+  only — the exported PDF is never affected by it.
+- The image quick-insert (`Ctrl+Shift+I`) now prompts for the image width
+  (default `80%`) so figures can be sized as they are inserted.
 - The PDF export now waits for MathJax to finish typesetting and prints with
-  an explicit A4 portrait layout, so equations render reliably in the output.
+  an explicit page layout at the selected size, so equations render reliably
+  in the output.
 
 ## [0.3.1] — 2026-06-11
 

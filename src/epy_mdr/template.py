@@ -65,6 +65,11 @@ def _base_href(base_dir: Path | None) -> str:
     return f'<base href="{uri}">'
 
 
+# Valid paged-preview size keys. Kept local to avoid importing from
+# ``renderer`` (which imports this module) — the canonical source of
+# truth for dimensions lives in ``renderer.PAGE_SIZES``.
+_PAGE_SIZE_KEYS = {"letter", "a4", "legal"}
+
 _TRUTHY_VALUES = {"true", "yes", "1", "on"}
 
 
@@ -142,6 +147,9 @@ def build_html_document(
     title: str,
     metadata: dict[str, str] | None = None,
     theme_css: str = "",
+    *,
+    paged: bool = False,
+    page_size: str = "letter",
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -154,6 +162,14 @@ def build_html_document(
         theme_css: Optional ``:root { … }`` block that overrides the
             base stylesheet's custom properties. Empty for the Light
             theme (the base stylesheet already encodes its values).
+        paged: When ``True``, mark the ``<body>`` with the ``paged``
+            class so the preview renders the content as a page sheet.
+            Preview-only; it must not be set for any export.
+        page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
+            Emitted as a ``size-<key>`` body class so the paged-preview
+            CSS picks the right sheet dimensions. Unknown or missing
+            values fall back to Letter. The class is always emitted (it
+            is harmless when not paged).
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -164,6 +180,12 @@ def build_html_document(
         header = _cover_page_block(meta)
     else:
         header = _front_matter_block(meta)
+    size_key = (page_size or "").strip().lower()
+    if size_key not in _PAGE_SIZE_KEYS:
+        size_key = "letter"
+    classes = ["paged"] if paged else []
+    classes.append(f"size-{size_key}")
+    body_class = f' class="{" ".join(classes)}"'
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'
@@ -178,9 +200,11 @@ def build_html_document(
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
         "</head>\n"
-        "<body>\n"
+        f"<body{body_class}>\n"
+        '<main class="doc-content">\n'
         f"{header}\n"
         f"{body}\n"
+        "</main>\n"
         "</body>\n"
         "</html>\n"
     )
