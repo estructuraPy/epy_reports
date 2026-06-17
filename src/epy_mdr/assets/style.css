@@ -85,6 +85,10 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+/* Propagate the theme's page background to the html root so Chromium/Qt
+   WebEngine fills the physical paper margins (outside body) with the
+   same color instead of leaving them white in PDF export. */
+html { background: var(--bg, #ffffff); }
 
 /* Content wrapper. In normal mode it is a transparent passthrough so
    the body's centered max-width layout is preserved. In paged mode it
