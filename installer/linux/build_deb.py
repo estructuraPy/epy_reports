@@ -250,9 +250,13 @@ def _build_data_tar(png_path: Path) -> bytes:
             _tar_add_dir(tf, d)
 
         # /usr/bin/epy_mdr launcher shell script
+        # Use the system interpreter explicitly: PySide6 is installed by the
+        # postinst into /usr/bin/python3's environment.  A bare "python3" would
+        # pick up whatever is first on PATH (e.g. an activated virtualenv that
+        # lacks PySide6) and fail to launch.
         launcher = textwrap.dedent("""\
             #!/bin/sh
-            exec python3 -c "import sys; sys.path.insert(0, '/usr/lib/epy-mdr'); from epy_mdr.app import main; sys.exit(main())" "$@"
+            exec /usr/bin/python3 -c "import sys; sys.path.insert(0, '/usr/lib/epy-mdr'); from epy_mdr.app import main; sys.exit(main())" "$@"
         """)
         _tar_add_data(tf, f"./usr/bin/{PKG_NAME}", launcher.encode(),
                       mode=0o755)

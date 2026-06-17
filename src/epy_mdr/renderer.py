@@ -123,7 +123,7 @@ PANDOC_FORMAT = (
 
 PANDOC_ARGS = [
     "--mathjax",
-    "--syntax-highlighting=tango",
+    "--highlight-style=tango",
     "--section-divs",
     "--wrap=preserve",
 ]
@@ -1001,7 +1001,7 @@ def export_docx(
     # tango matches the HTML preview so code chunks keep colored
     # tokens in Word; the reference-doc supplies the monospace
     # "Source Code" paragraph style.
-    extra_args = ["--wrap=preserve", "--syntax-highlighting=tango"]
+    extra_args = ["--wrap=preserve", "--highlight-style=tango"]
     if base_dir is not None:
         extra_args.append(f"--resource-path={base_dir}")
         if svg_tmp is not None:
