@@ -311,6 +311,18 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_code_block")
         )
 
+        self.act_ins_footnote = QAction("Footnote", self)
+        self.act_ins_footnote.setShortcut(QKeySequence("Ctrl+Shift+O"))
+        self.act_ins_footnote.triggered.connect(
+            lambda: self._on_active_tab("insert_footnote")
+        )
+
+        self.act_ins_page_break = QAction("Page break", self)
+        self.act_ins_page_break.setShortcut(QKeySequence("Ctrl+Shift+G"))
+        self.act_ins_page_break.triggered.connect(
+            lambda: self._on_active_tab("insert_page_break")
+        )
+
         self.callout_actions: list[QAction] = []
         for kind in ("note", "tip", "warning", "important", "caution"):
             act = QAction(f"Callout: {kind.title()}", self)
@@ -397,11 +409,14 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addAction(self.act_ins_table)
         self.elements_menu.addAction(self.act_ins_checklist)
         self.elements_menu.addAction(self.act_ins_equation)
+        self.elements_menu.addAction(self.act_ins_footnote)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_code_block)
         callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
             callout_sub.addAction(act)
+        self.elements_menu.addSeparator()
+        self.elements_menu.addAction(self.act_ins_page_break)
 
         self.references_menu = QMenu("&References", self)
         self.references_menu.aboutToShow.connect(
@@ -423,6 +438,8 @@ class MarkdownWindow(QMainWindow):
         for act in self.theme_group.actions():
             theme_sub.addAction(act)
 
+        self._build_templates_menu()
+
         self.help_menu = QMenu("&Help", self)
         self.help_menu.addAction(self.act_about)
 
@@ -438,6 +455,7 @@ class MarkdownWindow(QMainWindow):
         self._add_dropdown(bar, "References", self.references_menu)
         self._add_dropdown(bar, "Export", self.export_menu)
         self._add_dropdown(bar, "View", self.view_menu)
+        self._add_dropdown(bar, "Templates", self.templates_menu)
         self._add_dropdown(bar, "Help", self.help_menu)
 
         bar.addSeparator()
@@ -580,6 +598,165 @@ class MarkdownWindow(QMainWindow):
         dlg = AboutDialog(self)
         dlg.exec()
 
+    # ----------------------------------------------- config templates
+
+    def _build_templates_menu(self) -> None:
+        """Build the Templates dropdown (save / apply / delete)."""
+        self.templates_menu = QMenu("&Templates", self)
+
+        self.act_save_template = QAction(
+            "Save current settings as template…", self
+        )
+        self.act_save_template.triggered.connect(self._save_template)
+
+        self.apply_template_menu = QMenu("Apply template", self)
+        self.delete_template_menu = QMenu("Delete template", self)
+
+        self.templates_menu.addAction(self.act_save_template)
+        self.templates_menu.addSeparator()
+        self.templates_menu.addMenu(self.apply_template_menu)
+        self.templates_menu.addMenu(self.delete_template_menu)
+
+        # Rebuild the dynamic submenus right before they are shown so
+        # newly saved templates appear without restarting the app.
+        self.apply_template_menu.aboutToShow.connect(
+            self._populate_apply_template_menu
+        )
+        self.delete_template_menu.aboutToShow.connect(
+            self._populate_delete_template_menu
+        )
+
+    def _populate_apply_template_menu(self) -> None:
+        """Rebuild the Apply-template submenu from disk."""
+        from epy_mdr import templates  # noqa: PLC0415
+
+        menu = self.apply_template_menu
+        menu.clear()
+        names = templates.list_templates()
+        if not names:
+            placeholder = menu.addAction("(no templates saved)")
+            placeholder.setEnabled(False)
+            return
+        for name in names:
+            act = menu.addAction(name)
+            act.triggered.connect(
+                lambda _checked=False, n=name: self._apply_template(n)
+            )
+
+    def _populate_delete_template_menu(self) -> None:
+        """Rebuild the Delete-template submenu from disk."""
+        from epy_mdr import templates  # noqa: PLC0415
+
+        menu = self.delete_template_menu
+        menu.clear()
+        names = templates.list_templates()
+        if not names:
+            placeholder = menu.addAction("(no templates saved)")
+            placeholder.setEnabled(False)
+            return
+        for name in names:
+            act = menu.addAction(name)
+            act.triggered.connect(
+                lambda _checked=False, n=name: self._delete_template(n)
+            )
+
+    def _save_template(self) -> None:
+        """Capture current config and save it under a chosen name."""
+        from PySide6.QtWidgets import QInputDialog  # noqa: PLC0415
+
+        from epy_mdr import templates  # noqa: PLC0415
+
+        name, ok = QInputDialog.getText(
+            self, "Save template", "Template name:"
+        )
+        if not ok or not name.strip():
+            return
+        tab = self._current_tab()
+        meta = (
+            snippets.parse_front_matter(tab.editor.toPlainText())
+            if tab is not None
+            else {}
+        )
+        data = {
+            "theme": self._current_theme.id,
+            "csl": meta.get("csl", ""),
+            "footer": meta.get("footer", ""),
+            "page_numbers": meta.get("page-numbers", ""),
+            "cover": meta.get("cover", ""),
+            "logo": meta.get("logo", ""),
+        }
+        try:
+            templates.save_template(name, data)
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, APP_NAME, str(exc))
+            return
+        self.statusBar().showMessage(
+            f"Saved template: {name.strip()}", 3000
+        )
+
+    def _apply_template(self, name: str) -> None:
+        """Apply a saved template: theme + front-matter keys."""
+        from epy_mdr import templates  # noqa: PLC0415
+
+        try:
+            tpl = templates.load_template(name)
+        except (OSError, FileNotFoundError, ValueError) as exc:
+            QMessageBox.warning(self, APP_NAME, str(exc))
+            return
+
+        theme_id = tpl.get("theme")
+        if theme_id:
+            self._apply_theme(theme_id)
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+        # Map template keys to the front-matter field names.
+        field_map = {
+            "csl": "csl",
+            "footer": "footer",
+            "page_numbers": "page-numbers",
+            "cover": "cover",
+            "logo": "logo",
+        }
+        text = tab.editor.toPlainText()
+        updated = text
+        for key, field in field_map.items():
+            value = tpl.get(key)
+            if value in (None, ""):
+                continue
+            updated = snippets.set_metadata_field(
+                updated, field, str(value)
+            )
+        if updated != text:
+            cursor = tab.editor.textCursor()
+            cursor.beginEditBlock()
+            cursor.select(cursor.SelectionType.Document)
+            cursor.insertText(updated)
+            cursor.endEditBlock()
+        self.statusBar().showMessage(
+            f"Applied template: {name}", 3000
+        )
+
+    def _delete_template(self, name: str) -> None:
+        """Delete a saved template after confirmation."""
+        from epy_mdr import templates  # noqa: PLC0415
+
+        choice = QMessageBox.question(
+            self,
+            "Delete template",
+            f"Delete template '{name}'?",
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if choice != QMessageBox.StandardButton.Yes:
+            return
+        templates.delete_template(name)
+        self.statusBar().showMessage(
+            f"Deleted template: {name}", 3000
+        )
+
     def _link_bibliography(self) -> None:
         """Pick a .bib file and write it into the YAML front matter."""
         tab = self._current_tab()
@@ -613,7 +790,10 @@ class MarkdownWindow(QMainWindow):
         absent) maps to the IEEE default so the menu always reflects
         an effective state.
         """
-        from epy_mdr.renderer import CSL_STYLES, DEFAULT_CSL_STYLE  # noqa: PLC0415
+        from epy_mdr.renderer import (  # noqa: PLC0415
+            CSL_STYLES,
+            DEFAULT_CSL_STYLE,
+        )
 
         if tab is None:
             return DEFAULT_CSL_STYLE
@@ -993,13 +1173,9 @@ class MarkdownWindow(QMainWindow):
         if target.suffix == "":
             target = target.with_suffix(".pdf")
         self.statusBar().showMessage("Exporting PDF...", 0)
-        tab.view.page().pdfPrintingFinished.connect(
-            self._on_pdf_done,
-            Qt.ConnectionType.SingleShotConnection,
-        )
-        tab.export_pdf(target)
+        tab.export_pdf(target, self._on_pdf_done)
 
-    def _on_pdf_done(self, path: str, ok: bool) -> None:
+    def _on_pdf_done(self, path: Path, ok: bool) -> None:
         """Report the result of an asynchronous PDF export."""
         if ok:
             self.statusBar().showMessage(f"Saved PDF: {path}", 5000)
