@@ -32,6 +32,40 @@ CSL_STYLES: dict[str, str] = {
 }
 DEFAULT_CSL_STYLE = "ieee"
 
+# Page sizes — single source of truth shared by the paged preview
+# (CSS sheet dimensions) and the PDF export (QPageLayout). Each value
+# is ``(width_mm, height_mm)`` in portrait orientation.
+PAGE_SIZES: dict[str, tuple[float, float]] = {
+    "letter": (215.9, 279.4),
+    "a4":     (210.0, 297.0),
+    "legal":  (215.9, 355.6),
+}
+DEFAULT_PAGE_SIZE = "letter"
+
+
+def normalize_page_size(value: str | None) -> str:
+    """Return a valid page-size key, falling back to the default.
+
+    Args:
+        value: Raw ``page-size`` front-matter value (any case), or
+            ``None`` when the key is absent.
+
+    Returns:
+        One of ``"letter"``, ``"a4"`` or ``"legal"``. Missing or
+        unknown values normalize to :data:`DEFAULT_PAGE_SIZE`.
+    """
+    key = (value or "").strip().lower()
+    return key if key in PAGE_SIZES else DEFAULT_PAGE_SIZE
+
+
+def page_size_dimensions(value: str | None) -> tuple[float, float]:
+    """Return the ``(width_mm, height_mm)`` for a page-size value.
+
+    The value is normalized first, so unknown or missing values map to
+    the default page size's dimensions.
+    """
+    return PAGE_SIZES[normalize_page_size(value)]
+
 
 def _resolve_csl(
     csl_value: str | None, base_dir: Path | None
@@ -995,6 +1029,8 @@ def render_markdown(
     *,
     title: str = "epy_mdr",
     theme_css: str = "",
+    paged: bool = False,
+    page_size: str = "letter",
 ) -> str:
     """Render Quarto/Pandoc Markdown ``source`` to a full HTML page.
 
@@ -1016,6 +1052,12 @@ def render_markdown(
         theme_css: Optional ``:root { … }`` block that overrides the
             base stylesheet's custom properties — supplied by the
             active visual theme.
+        paged: When ``True``, render the content as a page sheet
+            (sheet width + margins on a gray backdrop). Preview-only —
+            it does not affect any export.
+        page_size: Page-size key (``letter`` / ``a4`` / ``legal``)
+            controlling the paged-preview sheet dimensions. Unknown or
+            missing values fall back to Letter.
 
     Returns:
         A standalone HTML5 document ready for the preview pane or to
@@ -1049,4 +1091,6 @@ def render_markdown(
         title=title,
         metadata=metadata,
         theme_css=theme_css,
+        paged=paged,
+        page_size=page_size,
     )

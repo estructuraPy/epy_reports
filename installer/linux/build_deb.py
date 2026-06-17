@@ -34,7 +34,7 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 PKG_NAME = "epy-mdr"
-PKG_VERSION = "0.3.1"
+PKG_VERSION = "0.4.0"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
@@ -159,12 +159,14 @@ def _build_control_tar() -> bytes:
             #!/bin/sh
             set -e
 
-            # Install PySide6 via pip (not available as system package on Ubuntu 24.04+).
+            # Install the pip-only runtime dependencies (not available as
+            # system packages on Ubuntu 24.04+): PySide6 (GUI), and pypdf +
+            # reportlab (PDF footer / page-number stamping).
             if command -v pip3 >/dev/null 2>&1; then
-                pip3 install PySide6
+                pip3 install PySide6 pypdf reportlab
             else
-                echo "WARNING: pip3 not found — PySide6 must be installed manually" >&2
-                echo "  Run: sudo apt install python3-pip && sudo pip3 install PySide6" >&2
+                echo "WARNING: pip3 not found — install the runtime deps manually" >&2
+                echo "  Run: sudo apt install python3-pip && sudo pip3 install PySide6 pypdf reportlab" >&2
             fi
 
             # Update system MIME database so .qmd type is recognized.

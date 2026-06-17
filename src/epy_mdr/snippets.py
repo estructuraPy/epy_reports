@@ -78,7 +78,7 @@ CODE_BLOCK_TEMPLATE = "```python\nCODE\n```"
 
 LINK_TEMPLATE = "[TEXT](URL)"
 
-IMAGE_MARKDOWN = "![{caption}]({path}){{#fig-{label}}}"
+IMAGE_MARKDOWN = "![{caption}]({path}){{#fig-{label} width={width}}}"
 
 SECTION_HEADING_TEMPLATE = "## Section title {#sec-LABEL}"
 
