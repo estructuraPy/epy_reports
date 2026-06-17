@@ -14,7 +14,7 @@ Run from the project root:
     python installer/linux/build_deb.py
 
 Output:
-    installer/dist/epy-mdr_0.4.0_all.deb
+    installer/dist/epy-mdr_0.4.1_all.deb
 
 The script prints a verification listing of the ar members at the end.
 """
@@ -34,7 +34,7 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 PKG_NAME = "epy-mdr"
-PKG_VERSION = "0.4.0"
+PKG_VERSION = "0.4.1"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
