@@ -4,6 +4,23 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-06-17
+
+### Added
+- **Elements > Indexes** submenu with one-click insertion of all four index
+  markers: Table of contents (`Ctrl+Shift+U`), List of figures, List of tables,
+  List of equations. Previously these had to be typed manually.
+- **Visible page breaks in paged view.** When Page view is active, `[[pagebreak]]`
+  markers now render as a gray inter-page gap with a "page break" label — exactly
+  like the space between sheets in Word or Google Docs. In normal mode and PDF
+  export the element remains invisible (`break-after: page`).
+
+### Changed
+- Newmark example (`examples/newmark/`) updated to demonstrate the full
+  publishing pipeline: cover page, TOC + LOF + LOT + LOE indexes, per-chapter
+  `[[pagebreak]]` markers, two footnotes, Letter page size, footer and page
+  numbers. The render script now outputs paged HTML and Letter-size PDFs.
+
 ## [0.4.1] — 2026-06-17
 
 ### Fixed
