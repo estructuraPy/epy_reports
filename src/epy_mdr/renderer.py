@@ -520,6 +520,8 @@ _HEADING_RE = re.compile(
     r"^(?P<hashes>#{1,6})\s+(?P<text>.*?)\s*$"
 )
 _HEADING_ID_RE = re.compile(r"\{#(?P<id>[A-Za-z0-9_-]+)[^}]*\}")
+# Matches any Pandoc attribute block {…} in a heading (class, id, key=val).
+_HEADING_ATTR_BLOCK_RE = re.compile(r"\{[^}]+\}")
 
 # Standalone index markers on their own line (pre-pandoc form).
 _TOC_MARKER_RE = re.compile(r"^\s*\[\[\s*toc\s*\]\]\s*$", re.IGNORECASE)
@@ -668,15 +670,28 @@ def _scan_headings(
         id_m = _HEADING_ID_RE.search(body)
         if id_m is not None:
             anchor = id_m.group("id")
-            text = _HEADING_ID_RE.sub("", body).strip()
+            # Strip ALL attr blocks so {.class} siblings don't leak into text.
+            text = _HEADING_ATTR_BLOCK_RE.sub("", body).strip()
             headings.append((level, text, anchor))
             out_lines.append(line)
             continue
         counter += 1
         anchor = f"toc-h-{counter}"
-        text = body.strip()
+        # Strip ALL attr blocks (e.g. {.unnumbered}) from displayed text.
+        text = _HEADING_ATTR_BLOCK_RE.sub("", body).strip()
         newline = "\n" if line.endswith("\n") else ""
-        injected = f"{m.group('hashes')} {text} {{#{anchor}}}{newline}"
+        # If there were existing attr blocks (like {.unnumbered}), merge them
+        # with the new id into a single Pandoc attribute block so Pandoc
+        # doesn't treat the first block as literal text.
+        existing_attrs = [
+            blk[1:-1].strip()
+            for blk in _HEADING_ATTR_BLOCK_RE.findall(body)
+        ]
+        if existing_attrs:
+            merged = "{" + " ".join(existing_attrs) + f" #{anchor}" + "}"
+        else:
+            merged = f"{{#{anchor}}}"
+        injected = f"{m.group('hashes')} {text} {merged}{newline}"
         headings.append((level, text, anchor))
         out_lines.append(injected)
     return headings, out_lines
