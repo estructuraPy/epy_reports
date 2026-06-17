@@ -4,6 +4,20 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-06-17
+
+### Fixed
+- Ubuntu `.deb` launcher now calls the system interpreter explicitly
+  (`/usr/bin/python3`) so it no longer fails when a virtualenv without
+  PySide6 is active on `PATH`.
+- Pandoc code highlighting uses `--highlight-style`, which is accepted by
+  both older pandoc (e.g. the `apt` package on Ubuntu) and pandoc 3.x, so
+  exports work across the pandoc versions found on Windows and Ubuntu.
+
+### Changed
+- Installer docs: dropped `apt-get install -f` from the `.deb` steps
+  (`dpkg -i` is sufficient; the `postinst` pip-installs the Python deps).
+
 ## [0.4.0] — 2026-06-17
 
 ### Added

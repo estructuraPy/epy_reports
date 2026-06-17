@@ -6,8 +6,8 @@ epy_mdr ships two installer formats:
 
 | Platform | File | Tool |
 |----------|------|------|
-| Windows 10/11 | `installer/dist/epy_mdr-setup-0.4.0.exe` | Inno Setup |
-| Ubuntu / Debian | `installer/dist/epy-mdr_0.4.0_all.deb` | pure-Python .deb assembler |
+| Windows 10/11 | `installer/dist/epy_mdr-setup-0.4.1.exe` | Inno Setup |
+| Ubuntu / Debian | `installer/dist/epy-mdr_0.4.1_all.deb` | pure-Python .deb assembler |
 
 Both install the application and register it for `.md`, `.markdown`, and `.qmd` files.
 
@@ -79,7 +79,7 @@ or if system-wide:
 "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" installer\windows\epy_mdr.iss
 ```
 
-Output: `installer/dist/epy_mdr-setup-0.4.0.exe`
+Output: `installer/dist/epy_mdr-setup-0.4.1.exe`
 
 #### What the Windows installer does
 
@@ -118,14 +118,14 @@ launches `ms-settings:defaultapps` as a convenience shortcut.
 python installer/linux/build_deb.py
 ```
 
-Output: `installer/dist/epy-mdr_0.4.0_all.deb`
+Output: `installer/dist/epy-mdr_0.4.1_all.deb`
 
 The script is pure Python (stdlib + pypandoc), runs on Windows or Linux.
 
 #### Install on Ubuntu/Debian
 
 ```bash
-sudo dpkg -i installer/dist/epy-mdr_0.4.0_all.deb
+sudo dpkg -i installer/dist/epy-mdr_0.4.1_all.deb
 ```
 
 `dpkg -i` is enough — the package's `postinst` pip-installs the Python
