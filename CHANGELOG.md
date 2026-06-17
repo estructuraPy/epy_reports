@@ -4,6 +4,15 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] — 2026-06-17
+
+### Fixed
+- **PDF page margins now match the document background color.** Chromium/Qt
+  WebEngine fills the physical paper margins using the `html` element's
+  background, not `body`. Added `html { background: var(--bg) }` so colored
+  themes (e.g. `technical` with `#F0F5FA`) no longer leave white strips at
+  the page edges.
+
 ## [0.6.1] — 2026-06-17
 
 ### Fixed
