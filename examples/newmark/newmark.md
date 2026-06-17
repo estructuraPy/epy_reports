@@ -13,19 +13,32 @@ abstract: |
   persona, profesional y profesor, y delinea el alcance de
   su legado.
 bibliography: newmark.bib
+cover: true
 csl: ieee
-lang: es
 date: 2026-06-15
 author: Ing. Angel Navarro-Mora M.Sc.
+footer: "Nathan M. Newmark (1910–1981) — ANM Ingeniería"
+lang: es
+page-numbers: true
+page-size: letter
 subtitle: Vida, obra y legado del fundador de la ingeniería sísmica moderna
 title: Nathan M. Newmark (1910–1981)
-
 ---
+
+[[toc]]
+
+[[lof]]
+
+[[lot]]
+
+[[loe]]
+
+[[pagebreak]]
 
 # Introducción {#sec-intro}
 
 
-A principios del siglo XX, las ciudades enfrentaban los sismos casi sin defensa técnica. Los terremotos se interpretaban como catástrofes caprichosas; las estructuras buscaban resistir por rigidez bruta, una estrategia que el suelo desmentía con cada evento. Nathan Mortimore Newmark (1910–1981) lideró el cambio de paradigma: del muro rígido a la **estructura dinámica resiliente**, capaz de **gestionar la energía** del movimiento en lugar de oponerse a él. Como *Padre de la Ingeniería Sísmica* [@vargas2021newmark], su obra no solo evitó colapsos: devolvió a la humanidad la confianza para habitar verticalmente un planeta en vibración constante.
+A principios del siglo XX, las ciudades enfrentaban los sismos casi sin defensa técnica. Los terremotos se interpretaban como catástrofes caprichosas; las estructuras buscaban resistir por rigidez bruta, una estrategia que el suelo desmentía con cada evento. Nathan Mortimore Newmark (1910–1981) lideró el cambio de paradigma: del muro rígido a la **estructura dinámica resiliente**, capaz de **gestionar la energía** del movimiento en lugar de oponerse a él. Como *Padre de la Ingeniería Sísmica* [@vargas2021newmark], su obra no solo evitó colapsos: devolvió a la humanidad la confianza para habitar verticalmente un planeta en vibración constante.[^fn-1]
 
 Antes de Newmark, *diseño sísmico* significaba aplicar un coeficiente lateral estático del 8 al 10 % del peso a la estructura y verificar resistencia elástica. Después de Newmark, el diseño sísmico pasó a apoyarse en el espectro de respuesta, en integración temporal de la ecuación dinámica del movimiento, en la ductilidad como recurso de diseño y en la verificación de derivas. Esa transición no fue gradual ni anónima: está sostenida por cuarenta años de publicaciones de una sola persona y de su escuela en Urbana [@hall1991memoir].
 
@@ -37,6 +50,11 @@ El recorrido continúa por su formación y vida personal en @sec-formacion, su p
 La integración temporal del método β y el espectro de respuesta de @newmarkHall1982 son la base computacional de prácticamente todo software de análisis estructural moderno (SAP2000, ETABS, OpenSees, ANSYS, ABAQUS). Cuando un ingeniero corre un *time-history* hoy, está ejecutando un algoritmo escrito por Newmark en 1959.
 :::
 
+
+[^fn-1]: La denominación "Padre de la Ingeniería Sísmica" es de uso extendido en la comunidad académica hispanohablante; en la literatura técnica anglosajona se prefiere "founder of earthquake engineering as an academic discipline" [@hall1991memoir].
+
+
+[[pagebreak]]
 
 # Vida y formación {#sec-formacion}
 
@@ -54,6 +72,8 @@ En el ámbito personal, su vida estuvo anclada por su esposa **Anne May Cohen** 
 Es inusual que un ingeniero de su estatura haya pasado toda su carrera en una sola institución. Recibió ofertas constantes de Berkeley, Stanford, MIT y Caltech; las declinó todas. Urbana era, en sus palabras, *el lugar donde puedo trabajar sin distracciones*.
 :::
 
+
+[[pagebreak]]
 
 # Trayectoria profesional {#sec-profesional}
 
@@ -88,6 +108,8 @@ El 28 de julio de 1957 un terremoto de magnitud 7.7 con epicentro en Guerrero go
 - **~70 plantas de energía nuclear** (Atomic Energy Commission) más múltiples instalaciones de **gas natural licuado (GNL)** durante sus últimos diecisiete años de carrera [@hall1991memoir]. Su criterio de diseño *Safe Shutdown Earthquake* todavía sobrevive en la regulación nuclear.
 
 
+[[pagebreak]]
+
 # El profesor {#sec-profesor}
 
 
@@ -116,6 +138,8 @@ Hall lo recuerda así: *Nathan no enseñaba fórmulas; enseñaba a derivarlas. S
 :::
 
 
+[[pagebreak]]
+
 # El método β {#sec-metodo}
 
 
@@ -137,7 +161,7 @@ $$
 m\,\ddot u(t) + c\,\dot u(t) + k\,u(t) = -\,m\,\ddot u_{g}(t)
 $$ {#eq-eom}
 
-Newmark planteó la solución temporal mediante aproximaciones truncadas en serie de Taylor para la velocidad y el desplazamiento en el paso $n+1$:
+Newmark planteó la solución temporal mediante aproximaciones truncadas en serie de Taylor para la velocidad y el desplazamiento en el paso $n+1$:[^fn-2]
 
 
 $$
@@ -149,6 +173,9 @@ u_{n+1} \;=\; u_{n} + \Delta t\,\dot u_{n} + \frac{\Delta t^{2}}{2}\,\bigl[ (1-2
 $$ {#eq-disp}
 
 @eq-vel y @eq-disp definen la familia β. La aceleración en $n+1$ se obtiene sustituyendo en @eq-eom y resolviendo un sistema lineal en $\ddot u_{n+1}$.
+
+
+[^fn-2]: La derivación completa, con prueba de consistencia y estimación de error de truncamiento, se encuentra en el artículo original [@newmark1959method, pp. 67–94].
 
 
 ## Variantes clásicas {#sec-variantes}
@@ -208,6 +235,8 @@ def newmark_step(m, c, k, u, v, a, p_next, dt, beta=0.25, gamma=0.5):
 Este patrón —reescribir el sistema dinámico como una ecuación pseudo-estática con rigidez efectiva $k^{*}$ y carga efectiva $p^{*}$— es la forma canónica que aparece en todos los textos modernos [@chopra2017dynamics; @bathe2014fem].
 
 
+[[pagebreak]]
+
 # Otros aportes {#sec-otros}
 
 
@@ -246,6 +275,8 @@ Newmark formalizó las dos hipótesis fundamentales del diseño dúctil:
 Ambas, derivadas de simulaciones con @veletsosNewmark1960, son el fundamento del concepto moderno de **factor de reducción de respuesta R** que aparece en el ASCE 7, el Eurocódigo 8 y la mayoría de los códigos sísmicos.
 
 
+[[pagebreak]]
+
 # Reconocimientos {#sec-reconocimientos}
 
 
@@ -277,6 +308,8 @@ Como resume @hall1991memoir en su *Biographical Memoir* para la National Academy
 
 > *"Casi todo ingeniero estructural en ejercicio en algún lugar del mundo usa diariamente, sin saberlo, una idea de Nathan Newmark. Esa es, probablemente, la forma más honesta de medir su legado."*
 
+
+[[pagebreak]]
 
 # Referencias {.unnumbered}
 

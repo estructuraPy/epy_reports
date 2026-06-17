@@ -1,7 +1,8 @@
 """Render ``newmark.md`` once per epy_mdr theme to HTML + PDF.
 
-Demonstrates the full epy_mdr pipeline on a real, feature-complete document:
-YAML front matter, an IEEE bibliography, Quarto cross-references
+Demonstrates the full epy_mdr publishing pipeline on a feature-complete
+document: YAML front matter with cover page, TOC/LOF/LOT/LOE index markers,
+page breaks, footnotes, IEEE bibliography, Quarto cross-references
 (``@sec-``/``@fig-``/``@eq-``), titled callouts, figures, tables and
 display equations. Each theme is rendered with its own ``:root { … }`` block
 (``Theme.to_css()``), then printed to PDF via Qt WebEngine after MathJax
@@ -92,6 +93,8 @@ class ThemeExporter:
             self.source,
             base_dir=ROOT,
             theme_css=theme.to_css(),
+            paged=True,
+            page_size="letter",
         )
         self.html_path.write_text(html, encoding="utf-8")
         print(f"  HTML -> {self.html_path.name}  ({len(html)} chars)")
@@ -129,7 +132,7 @@ class ThemeExporter:
         page = self.view.page()
         page.pdfPrintingFinished.connect(self._on_pdf_done)
         layout = QPageLayout(
-            QPageSize(QPageSize.PageSizeId.A4),
+            QPageSize(QPageSize.PageSizeId.Letter),
             QPageLayout.Orientation.Portrait,
             QMarginsF(15, 15, 15, 15),
         )

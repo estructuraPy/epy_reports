@@ -351,6 +351,27 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_page_break")
         )
 
+        self.act_ins_toc = QAction("Table of contents  [[toc]]", self)
+        self.act_ins_toc.setShortcut(QKeySequence("Ctrl+Shift+U"))
+        self.act_ins_toc.triggered.connect(
+            lambda: self._on_active_tab("insert_index_marker", "toc")
+        )
+
+        self.act_ins_lof = QAction("List of figures  [[lof]]", self)
+        self.act_ins_lof.triggered.connect(
+            lambda: self._on_active_tab("insert_index_marker", "lof")
+        )
+
+        self.act_ins_lot = QAction("List of tables  [[lot]]", self)
+        self.act_ins_lot.triggered.connect(
+            lambda: self._on_active_tab("insert_index_marker", "lot")
+        )
+
+        self.act_ins_loe = QAction("List of equations  [[loe]]", self)
+        self.act_ins_loe.triggered.connect(
+            lambda: self._on_active_tab("insert_index_marker", "loe")
+        )
+
         self.callout_actions: list[QAction] = []
         for kind in ("note", "tip", "warning", "important", "caution"):
             act = QAction(f"Callout: {kind.title()}", self)
@@ -445,6 +466,11 @@ class MarkdownWindow(QMainWindow):
             callout_sub.addAction(act)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
+        indexes_sub = self.elements_menu.addMenu("Indexes")
+        indexes_sub.addAction(self.act_ins_toc)
+        indexes_sub.addAction(self.act_ins_lof)
+        indexes_sub.addAction(self.act_ins_lot)
+        indexes_sub.addAction(self.act_ins_loe)
 
         self.references_menu = QMenu("&References", self)
         self.references_menu.aboutToShow.connect(

@@ -642,6 +642,14 @@ class MarkdownTab(QWidget):
         cursor.insertText("[[pagebreak]]\n")
         self.editor.setFocus()
 
+    def insert_index_marker(self, kind: str) -> None:
+        """Insert a ``[[kind]]`` auto-index marker on its own line."""
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText(f"[[{kind}]]\n")
+        self.editor.setFocus()
+
     def insert_code_block(self) -> None:
         """Insert a fenced Python code block skeleton."""
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")

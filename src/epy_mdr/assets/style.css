@@ -418,11 +418,38 @@ nav.toc .toc-level-6 { padding-left: 6em; }
 /* ---------- Page break ---------- */
 
 .page-break {
+    display: block;
     break-after: page;
     height: 0;
     margin: 0;
     padding: 0;
     border: 0;
+}
+
+/* In paged preview: render page breaks as a visible inter-page gap. */
+body.paged .page-break {
+    height: 32px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: -25mm;
+    margin-right: -25mm;
+    background: #8a9099;
+    border-top: 2px solid rgba(0, 0, 0, 0.18);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.18);
+    position: relative;
+}
+body.paged .page-break::before {
+    content: '— page break —';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 9px;
+    font-family: var(--font-family-text);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
 /* ---------- Cover page ---------- */
