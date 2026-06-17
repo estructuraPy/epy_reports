@@ -5,6 +5,58 @@ from __future__ import annotations
 from importlib import resources
 from pathlib import Path
 
+_FOOTNOTE_REFLOW_SCRIPT = """
+<script>
+(function () {
+  var BLOCK_TAGS = ['P','LI','BLOCKQUOTE','DIV','H1','H2','H3','H4','H5','H6','TD','TH','FIGCAPTION'];
+  function reflowFootnotes() {
+    var fnSection = document.querySelector('section.footnotes');
+    if (!fnSection) return;
+    var refs = document.querySelectorAll('a.footnote-ref');
+    refs.forEach(function (ref) {
+      var href = ref.getAttribute('href');
+      var fnId = href ? href.replace(/^#/, '') : null;
+      if (!fnId) return;
+      var fnEl = document.getElementById(fnId);
+      if (!fnEl) return;
+
+      // Clone content; strip the back-link arrow.
+      var clone = fnEl.cloneNode(true);
+      clone.querySelectorAll('.footnote-back').forEach(function (el) { el.remove(); });
+
+      // Walk up to the nearest block-level ancestor.
+      var anchor = ref;
+      while (anchor.parentElement && !BLOCK_TAGS.includes(anchor.parentElement.tagName)) {
+        anchor = anchor.parentElement;
+      }
+      var blockParent = anchor.parentElement || ref.parentElement;
+
+      // Build inline footnote block.
+      var block = document.createElement('div');
+      block.className = 'fn-inline-block';
+      var numSup = document.createElement('sup');
+      numSup.className = 'fn-number';
+      numSup.textContent = ref.textContent.trim();
+      block.appendChild(numSup);
+      block.appendChild(document.createTextNode(' '));
+      var pEl = clone.querySelector('p');
+      var source = pEl || clone;
+      while (source.firstChild) { block.appendChild(source.firstChild); }
+
+      if (blockParent && blockParent.parentElement) {
+        blockParent.parentElement.insertBefore(block, blockParent.nextSibling);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reflowFootnotes);
+  } else {
+    reflowFootnotes();
+  }
+})();
+</script>
+"""
+
 _MATHJAX_CONFIG = """
 <script>
 window.MathJax = {
@@ -197,6 +249,7 @@ def build_html_document(
         f"{base_css}\n"
         f"{theme_css}\n"
         "</style>\n"
+        f"{_FOOTNOTE_REFLOW_SCRIPT}\n"
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
         "</head>\n"

@@ -484,6 +484,31 @@ body.paged .page-break::before {
     white-space: nowrap;
 }
 
+/* ---------- Footnotes (inline reflow) ---------- */
+
+/* Inserted by the footnote-reflow script after the referencing paragraph. */
+.fn-inline-block {
+    display: block;
+    border-top: 0.5pt solid var(--border, #ccc);
+    margin-top: 0.5em;
+    padding-top: 0.2em;
+    font-size: 0.8em;
+    line-height: 1.45;
+    color: var(--fg-muted, #555);
+    break-inside: avoid;
+}
+.fn-inline-block .fn-number {
+    font-size: 0.75em;
+    vertical-align: super;
+    margin-right: 0.15em;
+}
+
+/* In print (PDF export) hide the original end-of-document footnote section;
+   the inline blocks already carry the content on the correct page. */
+@media print {
+    section.footnotes { display: none; }
+}
+
 /* ---------- CSL bibliography (Pandoc citeproc) ---------- */
 
 /* Each reference entry: number/label + text side by side. */
