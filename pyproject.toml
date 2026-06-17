@@ -1,6 +1,6 @@
 [project]
 name = "epy_mdr"
-version = "0.6.0"
+version = "0.6.1"
 description = "Quarto/Markdown editor with live preview and one-click PDF export."
 authors = [
     { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },

@@ -4,6 +4,16 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] — 2026-06-17
+
+### Fixed
+- **Footnotes now appear on the page where they are referenced**, not at the
+  end of the document. A JavaScript reflow script runs at `DOMContentLoaded`
+  and moves each footnote's content into an inline `div.fn-inline-block`
+  inserted immediately after the paragraph that contains the reference. In
+  `@media print` (PDF export), the original `section.footnotes` is hidden so
+  only the per-page inline versions are rendered. Screen view shows both.
+
 ## [0.6.0] — 2026-06-17
 
 ### Added
