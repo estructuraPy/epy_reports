@@ -277,18 +277,24 @@ class ThemeExporter:
                 "true", "yes", "1",
             )
             lang = str(self.meta.get("lang", "en"))
+            has_cover = str(self.meta.get("cover", "")).lower() in ("true", "yes", "1")
+            overlay_start = 2 if has_cover else 1
             try:
                 if any(header_cells):
-                    add_header(self.pdf_path, header_cells, lang=lang)
-                    print(f"  [{self.theme_id}] header stamped")
+                    add_header(
+                        self.pdf_path, header_cells,
+                        lang=lang, start_page=overlay_start,
+                    )
+                    print(f"  [{self.theme_id}] header stamped (from page {overlay_start})")
                 if footer_text or page_numbers_flag:
                     add_footer(
                         self.pdf_path,
                         footer_text,
                         page_numbers=page_numbers_flag,
                         lang=lang,
+                        start_page=overlay_start,
                     )
-                    print(f"  [{self.theme_id}] footer stamped")
+                    print(f"  [{self.theme_id}] footer stamped (from page {overlay_start})")
             except RuntimeError as exc:
                 print(f"  [{self.theme_id}] overlay error: {exc}")
         self._finish()

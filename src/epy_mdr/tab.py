@@ -282,6 +282,8 @@ class MarkdownTab(QWidget):
         header_cells = (
             list(raw_header) if isinstance(raw_header, list) else [str(raw_header)]
         )
+        has_cover = is_truthy(meta.get("cover"))
+        overlay_start = 2 if has_cover else 1
 
         tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
         tmp_pdf = tmp_dir / "export.pdf"
@@ -294,13 +296,17 @@ class MarkdownTab(QWidget):
                     from epy_mdr import _pdf_footer  # noqa: PLC0415
 
                     if any(header_cells):
-                        _pdf_footer.add_header(tmp_pdf, header_cells, lang=lang)
+                        _pdf_footer.add_header(
+                            tmp_pdf, header_cells,
+                            lang=lang, start_page=overlay_start,
+                        )
                     if footer_text or page_numbers:
                         _pdf_footer.add_footer(
                             tmp_pdf,
                             footer_text,
                             page_numbers=page_numbers,
                             lang=lang,
+                            start_page=overlay_start,
                         )
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(tmp_pdf), str(target))

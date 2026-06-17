@@ -44,25 +44,23 @@ def add_footer(
     *,
     page_numbers: bool,
     lang: str = "en",
+    start_page: int = 1,
 ) -> None:
-    """Stamp every page of ``pdf_path`` with a footer, in place.
+    """Stamp pages of ``pdf_path`` with a footer, in place.
 
-    Draws ``footer_text`` at the bottom-left of every page and, when
-    ``page_numbers`` is ``True``, a localized "Page X of Y" string at
-    the bottom-right. The font is small and muted gray, with ~15 mm
-    margins. Page sizes are read per page so mixed-size documents keep
-    their layout.
+    Draws ``footer_text`` at the bottom-left and, when ``page_numbers`` is
+    ``True``, a localized "Page X of Y" string at the bottom-right.
 
     Args:
-        pdf_path: Path to an existing PDF; overwritten with the stamped
-            version.
-        footer_text: Static text drawn at the bottom-left. May be empty.
+        pdf_path: Path to an existing PDF; overwritten with the stamped version.
+        footer_text: Static text drawn at the bottom-left.  May be empty.
         page_numbers: When ``True``, draw "Page X of Y" at bottom-right.
         lang: Two-letter language tag selecting the page-number wording.
+        start_page: First 1-based page number to stamp.  Pages before this
+            (e.g. a cover page) are passed through unchanged.
 
     Raises:
-        RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not
-            installed.
+        RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not installed.
     """
     try:
         from pypdf import PdfReader, PdfWriter  # noqa: PLC0415
@@ -82,22 +80,23 @@ def add_footer(
     margin = _MARGIN_MM * _MM_TO_PT
 
     for index, page in enumerate(reader.pages, start=1):
-        width = float(page.mediabox.width)
-        height = float(page.mediabox.height)
-        buffer = io.BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=(width, height))
-        pdf.setFont(_FONT_NAME, _FONT_SIZE)
-        pdf.setFillGray(_GRAY)
-        if footer_text:
-            pdf.drawString(margin, margin, footer_text)
-        if page_numbers:
-            label = _page_label(lang, index, total)
-            pdf.drawRightString(width - margin, margin, label)
-        pdf.showPage()
-        pdf.save()
-        buffer.seek(0)
-        overlay = PdfReader(buffer).pages[0]
-        page.merge_page(overlay)
+        if index >= start_page:
+            width = float(page.mediabox.width)
+            height = float(page.mediabox.height)
+            buffer = io.BytesIO()
+            pdf = canvas.Canvas(buffer, pagesize=(width, height))
+            pdf.setFont(_FONT_NAME, _FONT_SIZE)
+            pdf.setFillGray(_GRAY)
+            if footer_text:
+                pdf.drawString(margin, margin, footer_text)
+            if page_numbers:
+                label = _page_label(lang, index, total)
+                pdf.drawRightString(width - margin, margin, label)
+            pdf.showPage()
+            pdf.save()
+            buffer.seek(0)
+            overlay = PdfReader(buffer).pages[0]
+            page.merge_page(overlay)
         writer.add_page(page)
 
     with pdf_path.open("wb") as handle:
@@ -115,8 +114,9 @@ def add_header(
     cells: list[str],
     *,
     lang: str = "en",  # noqa: ARG001 — reserved for future l10n
+    start_page: int = 1,
 ) -> None:
-    """Stamp a 2-row × 3-column grid header onto every page of ``pdf_path``.
+    """Stamp a 2-row × 3-column grid header onto pages of ``pdf_path``.
 
     Up to 6 strings may be provided.  Cells are filled in row-major order::
 
@@ -133,6 +133,8 @@ def add_header(
         cells: Up to 6 strings for the header grid.  Missing cells default to
             empty strings.
         lang: Two-letter language tag (reserved; not used currently).
+        start_page: First 1-based page number to stamp.  Pages before this
+            (e.g. a cover page) are passed through unchanged.
 
     Raises:
         RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not installed.
@@ -160,7 +162,10 @@ def add_header(
     margin = _MARGIN_MM * _MM_TO_PT
     row_h = _HEADER_ROW_H_PT
 
-    for page in reader.pages:
+    for page_index, page in enumerate(reader.pages, start=1):
+        if page_index < start_page:
+            writer.add_page(page)
+            continue
         width = float(page.mediabox.width)
         height = float(page.mediabox.height)
         buffer = io.BytesIO()
