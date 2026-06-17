@@ -14,7 +14,7 @@ Run from the project root:
     python installer/linux/build_deb.py
 
 Output:
-    installer/dist/epy-mdr_0.2.0_all.deb
+    installer/dist/epy-mdr_0.4.0_all.deb
 
 The script prints a verification listing of the ar members at the end.
 """

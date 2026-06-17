@@ -1,10 +1,10 @@
 ; Inno Setup script for epy_mdr
-; Version 0.2.0
+; Version 0.4.0
 ;
 ; Build from the project root AFTER running `python build.py`:
 ;   ISCC.exe installer\windows\epy_mdr.iss
 ;
-; Output: installer\dist\epy_mdr-setup-0.2.0.exe
+; Output: installer\dist\epy_mdr-setup-0.4.0.exe
 ;
 ; Design decisions:
 ;   - PrivilegesRequired=lowest  -> per-user install; no UAC prompt.
