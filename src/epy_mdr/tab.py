@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
+from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import (
+    QFont,
+    QFontDatabase,
+    QPageLayout,
+    QPageSize,
+    QTextCursor,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
@@ -24,12 +32,21 @@ from epy_mdr import snippets
 from epy_mdr.checklist_dialog import ChecklistDialog
 from epy_mdr.equation_dialog import EquationDialog
 from epy_mdr.figure_dialog import FigureDialog
+from epy_mdr.footnote_dialog import FootnoteDialog
 from epy_mdr.renderer import render_markdown
 from epy_mdr.table_dialog import TableDialog
+from epy_mdr.template import is_truthy
 from epy_mdr.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
 UNTITLED = "untitled.md"
+
+# Matches the integer suffix of a ``[^fn-N]`` footnote marker.
+_FOOTNOTE_RE = re.compile(r"\[\^fn-(\d+)\]")
+
+# MathJax typeset-completion poll: how long to wait before giving up.
+_MATHJAX_TIMEOUT_MS = 20_000
+_MATHJAX_POLL_MS = 100
 
 
 def next_label_suffix(text: str, kind: str) -> str:
@@ -57,6 +74,25 @@ def next_label_suffix(text: str, kind: str) -> str:
         suffix = label.name[len(prefix):]
         if suffix.isdigit():
             ints.append(int(suffix))
+    return str(max(ints) + 1) if ints else "1"
+
+
+def next_footnote_suffix(text: str) -> str:
+    """Return the next sequential integer suffix for ``[^fn-N]`` markers.
+
+    Scans every ``[^fn-N]`` footnote marker in ``text`` whose suffix is
+    a pure integer and returns ``str(max + 1)``. When none exist the
+    function returns ``"1"``. Kept module-level so it is unit-testable
+    without a widget instance, mirroring :func:`next_label_suffix`.
+
+    Args:
+        text: Full Markdown buffer contents.
+
+    Returns:
+        Short sequential string, e.g. ``"3"`` when ``[^fn-1]`` and
+        ``[^fn-2]`` are already present.
+    """
+    ints = [int(m) for m in _FOOTNOTE_RE.findall(text)]
     return str(max(ints) + 1) if ints else "1"
 
 
@@ -198,9 +234,108 @@ class MarkdownTab(QWidget):
         self._theme_css = css
         self._render_now()
 
-    def export_pdf(self, target: Path) -> None:
-        """Print the current preview to ``target`` as a PDF file."""
-        self.view.page().printToPdf(str(target))
+    def export_pdf(
+        self,
+        target: Path,
+        on_done: Callable[[Path, bool], None] | None = None,
+    ) -> None:
+        """Export the current preview to ``target`` as a PDF file.
+
+        The export is a strict improvement over a bare
+        ``printToPdf``: it (a) waits for MathJax to finish typesetting
+        so equations are rendered, (b) prints with an explicit A4
+        portrait page layout with ~15 mm margins, and (c) when the
+        document front matter declares a ``footer`` text or a truthy
+        ``page-numbers`` value, stamps every page via
+        :func:`epy_mdr._pdf_footer.add_footer` before delivering the
+        final file.
+
+        Args:
+            target: Destination ``.pdf`` path.
+            on_done: Optional callback ``(target, ok)`` invoked when the
+                export finishes (success or failure). ``target`` is the
+                final destination path so the caller can report it.
+        """
+        meta = snippets.parse_front_matter(self.editor.toPlainText())
+        footer_text = meta.get("footer", "")
+        page_numbers = is_truthy(meta.get("page-numbers"))
+        lang = meta.get("lang", "en")
+
+        tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
+        tmp_pdf = tmp_dir / "export.pdf"
+
+        def finalize(_path: str, ok: bool) -> None:
+            """Stamp footers, move into place, then notify the caller."""
+            result_ok = ok
+            try:
+                if ok:
+                    if footer_text or page_numbers:
+                        from epy_mdr import _pdf_footer  # noqa: PLC0415
+
+                        _pdf_footer.add_footer(
+                            tmp_pdf,
+                            footer_text,
+                            page_numbers=page_numbers,
+                            lang=lang,
+                        )
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(tmp_pdf), str(target))
+            except (OSError, RuntimeError):
+                result_ok = False
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            if on_done is not None:
+                on_done(target, result_ok)
+
+        def do_print() -> None:
+            """Print to the temp file with an A4 portrait layout."""
+            self.view.page().pdfPrintingFinished.connect(
+                finalize, Qt.ConnectionType.SingleShotConnection
+            )
+            self.view.page().printToPdf(
+                str(tmp_pdf), self._a4_page_layout()
+            )
+
+        self._wait_for_mathjax(do_print)
+
+    @staticmethod
+    def _a4_page_layout() -> QPageLayout:
+        """Return an A4 portrait page layout with ~15 mm margins."""
+        margins = QMarginsF(15.0, 15.0, 15.0, 15.0)
+        return QPageLayout(
+            QPageSize(QPageSize.PageSizeId.A4),
+            QPageLayout.Orientation.Portrait,
+            margins,
+            QPageLayout.Unit.Millimeter,
+        )
+
+    def _wait_for_mathjax(self, then: Callable[[], None]) -> None:
+        r"""Poll ``window._mathjax_done`` then run ``then``.
+
+        MathJax sets ``window._mathjax_done`` once typesetting has
+        finished (see the template's startup hook). Printing before
+        that leaves equations as raw ``\[ … \]`` text. This polls the
+        flag and calls ``then`` as soon as it is truthy, or after a
+        timeout so a document with no math still prints promptly.
+        """
+        elapsed = [0]
+
+        def check() -> None:
+            def handle(done: object) -> None:
+                if done is True:
+                    then()
+                    return
+                elapsed[0] += _MATHJAX_POLL_MS
+                if elapsed[0] >= _MATHJAX_TIMEOUT_MS:
+                    then()
+                    return
+                QTimer.singleShot(_MATHJAX_POLL_MS, check)
+
+            self.view.page().runJavaScript(
+                "window._mathjax_done === true", handle
+            )
+
+        check()
 
     # ------------------------------------------------- editor actions
 
@@ -411,6 +546,40 @@ class MarkdownTab(QWidget):
         cursor.insertText(md + "\n")
         self.editor.setFocus()
 
+    def insert_footnote(self) -> None:
+        """Open FootnoteDialog; insert marker + append definition.
+
+        The inline marker ``[^fn-N]`` is inserted at the caret and the
+        matching definition ``[^fn-N]: ...`` is appended to the end of
+        the buffer (footnote definitions may live anywhere; end-of-doc
+        keeps the prose clean). The default id is the next sequential
+        footnote suffix.
+        """
+        default_id = next_footnote_suffix(self.editor.toPlainText())
+        dialog = FootnoteDialog(self, default_id=default_id)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        marker, definition = dialog.build_parts()
+        cursor = self.editor.textCursor()
+        cursor.insertText(marker)
+        # Append the definition at the very end of the buffer.
+        end = self.editor.textCursor()
+        end.movePosition(QTextCursor.MoveOperation.End)
+        current = self.editor.toPlainText()
+        prefix = "" if current.endswith("\n\n") else (
+            "\n" if current.endswith("\n") else "\n\n"
+        )
+        end.insertText(f"{prefix}{definition}\n")
+        self.editor.setFocus()
+
+    def insert_page_break(self) -> None:
+        """Insert a ``[[pagebreak]]`` marker on its own line."""
+        cursor = self.editor.textCursor()
+        if cursor.positionInBlock() != 0:
+            cursor.insertText("\n")
+        cursor.insertText("[[pagebreak]]\n")
+        self.editor.setFocus()
+
     def insert_code_block(self) -> None:
         """Insert a fenced Python code block skeleton."""
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")
@@ -617,12 +786,12 @@ class MarkdownTab(QWidget):
         self._render_now()
 
     def _render_now(self) -> None:
-        """Render synchronously and load via file:// to bypass setHtml's 2 MB cap.
+        r"""Render synchronously via file:// to bypass setHtml's 2 MB cap.
 
         The HTML embeds the entire MathJax bundle inline (~2 MB) so
         equations render offline. ``setHtml`` truncates anything past
         2 MB, which left MathJax untyped and equations stuck as raw
-        ``\\[ … \\]`` text. Writing to a per-tab temp file and using
+        ``\[ … \]`` text. Writing to a per-tab temp file and using
         ``view.load()`` removes the cap. The ``<base href>`` tag in
         the rendered HTML still points at the document's directory,
         so relative figures, bib files and links resolve correctly.

@@ -229,6 +229,22 @@ _WORDS: dict[str, dict[str, str]] = {
     },
 }
 
+# Localised section titles for the auto-generated index blocks.
+_INDEX_TITLES: dict[str, dict[str, str]] = {
+    "en": {
+        "toc": "Contents",
+        "lof": "List of Figures",
+        "lot": "List of Tables",
+        "loe": "List of Equations",
+    },
+    "es": {
+        "toc": "Contenido",
+        "lof": "Índice de figuras",
+        "lot": "Índice de tablas",
+        "loe": "Índice de ecuaciones",
+    },
+}
+
 # Fence-start / end detector (``` or ~~~, any leading spaces).
 _FENCE_RE = re.compile(r"^\s*(```|~~~)")
 
@@ -255,6 +271,40 @@ def _strip_code_spans(text: str) -> list[tuple[str, bool]]:
     if last < len(text):
         result.append((text[last:], False))
     return result
+
+
+def _number_labels(source: str) -> dict[str, int]:
+    """Assign sequential per-kind numbers to every label definition.
+
+    Scans ``source`` line by line, skipping fenced code blocks, and
+    numbers each ``{#fig-x}`` / ``{#tbl-x}`` / ``{#eq-x}`` / ``{#sec-x}``
+    definition in document order. This is the shared numbering pass used
+    by both :func:`_resolve_crossrefs` and :func:`collect_index_entries`
+    so the cross-reference links and the auto-generated lists always
+    agree on the numbers.
+
+    Args:
+        source: Raw Markdown / Quarto source text.
+
+    Returns:
+        Mapping from full label (e.g. ``fig-capacity``) to its number.
+    """
+    numbers: dict[str, int] = {}
+    counters: dict[str, int] = {"fig": 0, "tbl": 0, "eq": 0, "sec": 0}
+    in_fence = False
+    for line in source.splitlines(keepends=True):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for m in _XREF_DEF_RE.finditer(line):
+            label = m.group("label")
+            kind = m.group("kind")
+            if label not in numbers:
+                counters[kind] += 1
+                numbers[label] = counters[kind]
+    return numbers
 
 
 def _resolve_crossrefs(source: str, lang: str = "en") -> str:
@@ -284,25 +334,11 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
 
     # ------------------------------------------------------------------
     # PASS A — number every label definition in document order.
-    # Definitions inside fenced code blocks are skipped.
+    # Definitions inside fenced code blocks are skipped. Shared with
+    # collect_index_entries so numbering stays consistent.
     # ------------------------------------------------------------------
-    numbers: dict[str, int] = {}
-    counters: dict[str, int] = {"fig": 0, "tbl": 0, "eq": 0, "sec": 0}
-
+    numbers = _number_labels(source)
     lines = source.splitlines(keepends=True)
-    in_fence = False
-    for line in lines:
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        for m in _XREF_DEF_RE.finditer(line):
-            label = m.group("label")
-            kind = m.group("kind")
-            if label not in numbers:
-                counters[kind] += 1
-                numbers[label] = counters[kind]
 
     # ------------------------------------------------------------------
     # PASS B + C — transform lines outside fenced blocks.
@@ -423,6 +459,425 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
     return "".join(out_lines)
 
 
+# ---------------------------------------------------------------------------
+# Auto-generated index blocks (TOC + lists of figures / tables / equations)
+# and page breaks.
+# ---------------------------------------------------------------------------
+
+# Caption extractors (lenient — match any caption text, including one that
+# already carries a "Figure N:" prefix). Used only to build the lists.
+_FIG_EXTRACT_RE = re.compile(
+    r"!\[(?P<caption>[^\]]*)\]\([^)]*\)\{#(?P<label>fig-[A-Za-z0-9_-]+)[^}]*\}"
+)
+_TBL_EXTRACT_RE = re.compile(
+    r"^:\s+(?P<caption>.+?)\s+\{#(?P<label>tbl-[A-Za-z0-9_-]+)[^}]*\}\s*$"
+)
+_EQ_EXTRACT_RE = re.compile(
+    r"\$\$\s+\{#(?P<label>eq-[A-Za-z0-9_-]+)[^}]*\}"
+)
+
+# Already-prefixed caption: "Figure 12: ..." / "Figura 12: ..." etc.
+_CAPTION_PREFIX_RE = re.compile(
+    r"^(?:[A-Za-zÁÉÍÓÚáéíóúüñ]+)\s+\d+:\s+"
+)
+
+# ATX heading line: 1-6 leading '#', text, optional {#id ...} attr block.
+_HEADING_RE = re.compile(
+    r"^(?P<hashes>#{1,6})\s+(?P<text>.*?)\s*$"
+)
+_HEADING_ID_RE = re.compile(r"\{#(?P<id>[A-Za-z0-9_-]+)[^}]*\}")
+
+# Standalone index markers on their own line (pre-pandoc form).
+_TOC_MARKER_RE = re.compile(r"^\s*\[\[\s*toc\s*\]\]\s*$", re.IGNORECASE)
+_LOF_MARKER_RE = re.compile(r"^\s*\[\[\s*lof\s*\]\]\s*$", re.IGNORECASE)
+_LOT_MARKER_RE = re.compile(r"^\s*\[\[\s*lot\s*\]\]\s*$", re.IGNORECASE)
+_LOE_MARKER_RE = re.compile(r"^\s*\[\[\s*loe\s*\]\]\s*$", re.IGNORECASE)
+_PAGEBREAK_MARKER_RE = re.compile(
+    r"^\s*\[\[\s*pagebreak\s*\]\]\s*$", re.IGNORECASE
+)
+
+# Post-pandoc marker paragraphs (``[[toc]]`` -> ``<p>[[toc]]</p>``).
+_TOC_P_RE = re.compile(
+    r"<p>\s*\[\[\s*toc\s*\]\]\s*</p>", re.IGNORECASE
+)
+_LOF_P_RE = re.compile(
+    r"<p>\s*\[\[\s*lof\s*\]\]\s*</p>", re.IGNORECASE
+)
+_LOT_P_RE = re.compile(
+    r"<p>\s*\[\[\s*lot\s*\]\]\s*</p>", re.IGNORECASE
+)
+_LOE_P_RE = re.compile(
+    r"<p>\s*\[\[\s*loe\s*\]\]\s*</p>", re.IGNORECASE
+)
+
+PAGE_BREAK_HTML = '<div class="page-break"></div>'
+
+
+def _strip_caption_prefix(caption: str) -> str:
+    """Remove a leading ``Figure N:`` / ``Figura N:`` prefix if present.
+
+    The cross-reference resolver prefixes captions at their definition
+    site. When collecting list entries we strip any such prefix so the
+    list shows the bare caption text (the list builder re-adds the
+    localized word and number itself).
+    """
+    return _CAPTION_PREFIX_RE.sub("", caption.strip()).strip()
+
+
+def collect_index_entries(
+    source: str, lang: str = "en"
+) -> dict[str, list]:
+    """Collect numbered figure / table / equation entries from *source*.
+
+    Uses the same per-kind numbering as :func:`_resolve_crossrefs` (via
+    :func:`_number_labels`) so list numbers match cross-reference links.
+    Definitions inside fenced code blocks are ignored. Each entry is a
+    tuple:
+
+    * ``fig`` / ``tbl``: ``(number, caption_text, label)``
+    * ``eq``: ``(number, label)`` — equations have no caption.
+
+    Args:
+        source: Raw Markdown / Quarto source text.
+        lang: Two-letter language tag (unused for numbering; kept for a
+            symmetrical signature with the builders).
+
+    Returns:
+        Mapping with keys ``"fig"``, ``"tbl"`` and ``"eq"``, each a
+        list of entry tuples in document order.
+    """
+    del lang  # numbering is language-independent
+    numbers = _number_labels(source)
+    figs: list[tuple[int, str, str]] = []
+    tbls: list[tuple[int, str, str]] = []
+    eqs: list[tuple[int, str]] = []
+    seen: set[str] = set()
+    in_fence = False
+    for line in source.splitlines():
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for m in _FIG_EXTRACT_RE.finditer(line):
+            label = m.group("label")
+            if label in seen or label not in numbers:
+                continue
+            seen.add(label)
+            caption = _strip_caption_prefix(m.group("caption"))
+            figs.append((numbers[label], caption, label))
+        tbl_m = _TBL_EXTRACT_RE.match(line)
+        if tbl_m is not None:
+            label = tbl_m.group("label")
+            if label not in seen and label in numbers:
+                seen.add(label)
+                caption = _strip_caption_prefix(tbl_m.group("caption"))
+                tbls.append((numbers[label], caption, label))
+        for m in _EQ_EXTRACT_RE.finditer(line):
+            label = m.group("label")
+            if label in seen or label not in numbers:
+                continue
+            seen.add(label)
+            eqs.append((numbers[label], label))
+    figs.sort(key=lambda e: e[0])
+    tbls.sort(key=lambda e: e[0])
+    eqs.sort(key=lambda e: e[0])
+    return {"fig": figs, "tbl": tbls, "eq": eqs}
+
+
+def collect_headings(source: str) -> list[tuple[int, str, str]]:
+    """Collect ATX headings (and their anchor ids) from *source*.
+
+    Headings inside fenced code blocks are ignored. When a heading
+    already carries an explicit ``{#id}`` attribute that id is kept;
+    otherwise a stable ``toc-h-{n}`` id is generated. The returned ids
+    match what :func:`inject_heading_ids` injects, so the rendered
+    anchors resolve.
+
+    Args:
+        source: Raw Markdown / Quarto source text.
+
+    Returns:
+        List of ``(level, text, anchor_id)`` tuples in document order.
+    """
+    headings, _ = _scan_headings(source)
+    return headings
+
+
+def _scan_headings(
+    source: str,
+) -> tuple[list[tuple[int, str, str]], list[str]]:
+    """Scan headings; return entries plus the (possibly rewritten) lines.
+
+    For headings without an explicit id, a ``toc-h-{n}`` attribute is
+    appended to the line so the rendered anchor exists. The same id is
+    recorded in the returned heading list.
+    """
+    out_lines: list[str] = []
+    headings: list[tuple[int, str, str]] = []
+    in_fence = False
+    counter = 0
+    for line in source.splitlines(keepends=True):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out_lines.append(line)
+            continue
+        if in_fence:
+            out_lines.append(line)
+            continue
+        m = _HEADING_RE.match(line.rstrip("\n"))
+        if m is None:
+            out_lines.append(line)
+            continue
+        level = len(m.group("hashes"))
+        body = m.group("text")
+        id_m = _HEADING_ID_RE.search(body)
+        if id_m is not None:
+            anchor = id_m.group("id")
+            text = _HEADING_ID_RE.sub("", body).strip()
+            headings.append((level, text, anchor))
+            out_lines.append(line)
+            continue
+        counter += 1
+        anchor = f"toc-h-{counter}"
+        text = body.strip()
+        newline = "\n" if line.endswith("\n") else ""
+        injected = f"{m.group('hashes')} {text} {{#{anchor}}}{newline}"
+        headings.append((level, text, anchor))
+        out_lines.append(injected)
+    return headings, out_lines
+
+
+def inject_heading_ids(source: str) -> str:
+    """Return *source* with stable ids injected into bare headings.
+
+    Headings that already have an explicit ``{#id}`` are left untouched;
+    bare headings receive ``{#toc-h-N}`` matching :func:`collect_headings`
+    so TOC links resolve to real anchors in the rendered output.
+    """
+    _, lines = _scan_headings(source)
+    return "".join(lines)
+
+
+def _escape_html(text: str) -> str:
+    """Minimal HTML escaping for caption / heading text in list links."""
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+def _index_lang_key(lang: str) -> str:
+    """Normalize a language tag to a supported index key."""
+    key = lang[:2].lower() if lang else "en"
+    return key if key in _INDEX_TITLES else "en"
+
+
+def build_toc_html(
+    headings: list[tuple[int, str, str]], lang: str = "en"
+) -> str:
+    """Build a ``<nav class="toc">`` block from collected headings.
+
+    Args:
+        headings: ``(level, text, anchor_id)`` tuples.
+        lang: Two-letter language tag for the section title.
+
+    Returns:
+        HTML string, or an empty string when there are no headings.
+    """
+    if not headings:
+        return ""
+    key = _index_lang_key(lang)
+    title = _INDEX_TITLES[key]["toc"]
+    items = [
+        f'<li class="toc-level-{level}">'
+        f'<a href="#{anchor}">{_escape_html(text)}</a></li>'
+        for level, text, anchor in headings
+    ]
+    return (
+        '<nav class="toc">\n'
+        f"<h2>{title}</h2>\n"
+        "<ul>\n" + "\n".join(items) + "\n</ul>\n</nav>"
+    )
+
+
+def _build_caption_list_html(
+    entries: list,
+    *,
+    css_class: str,
+    title: str,
+    word: str,
+) -> str:
+    """Build a list-of-X nav block for fig / tbl entries."""
+    if not entries:
+        return ""
+    items = [
+        f'<li><a href="#{label}">{word} {n}: '
+        f"{_escape_html(caption)}</a></li>"
+        for n, caption, label in entries
+    ]
+    return (
+        f'<nav class="{css_class}">\n'
+        f"<h2>{title}</h2>\n"
+        "<ul>\n" + "\n".join(items) + "\n</ul>\n</nav>"
+    )
+
+
+def build_figure_list_html(entries: list, lang: str = "en") -> str:
+    """Build a ``<nav class="list-of-figures">`` block.
+
+    Args:
+        entries: ``(number, caption, label)`` tuples from
+            :func:`collect_index_entries`.
+        lang: Two-letter language tag.
+
+    Returns:
+        HTML string, or empty when there are no entries.
+    """
+    key = _index_lang_key(lang)
+    word = _WORDS.get(key, _WORDS["en"])["fig"]
+    return _build_caption_list_html(
+        entries,
+        css_class="list-of-figures",
+        title=_INDEX_TITLES[key]["lof"],
+        word=word,
+    )
+
+
+def build_table_list_html(entries: list, lang: str = "en") -> str:
+    """Build a ``<nav class="list-of-tables">`` block.
+
+    Args:
+        entries: ``(number, caption, label)`` tuples from
+            :func:`collect_index_entries`.
+        lang: Two-letter language tag.
+
+    Returns:
+        HTML string, or empty when there are no entries.
+    """
+    key = _index_lang_key(lang)
+    word = _WORDS.get(key, _WORDS["en"])["tbl"]
+    return _build_caption_list_html(
+        entries,
+        css_class="list-of-tables",
+        title=_INDEX_TITLES[key]["lot"],
+        word=word,
+    )
+
+
+def build_equation_list_html(entries: list, lang: str = "en") -> str:
+    """Build a ``<nav class="list-of-equations">`` block.
+
+    Args:
+        entries: ``(number, label)`` tuples from
+            :func:`collect_index_entries`. Equations have no caption.
+        lang: Two-letter language tag.
+
+    Returns:
+        HTML string, or empty when there are no entries.
+    """
+    if not entries:
+        return ""
+    key = _index_lang_key(lang)
+    word = _WORDS.get(key, _WORDS["en"])["eq"]
+    title = _INDEX_TITLES[key]["loe"]
+    items = [
+        f'<li><a href="#{label}">{word} {n}</a></li>'
+        for n, label in entries
+    ]
+    return (
+        '<nav class="list-of-equations">\n'
+        f"<h2>{title}</h2>\n"
+        "<ul>\n" + "\n".join(items) + "\n</ul>\n</nav>"
+    )
+
+
+def _strip_index_markers(source: str) -> str:
+    """Remove TOC / list marker lines from *source* (DOCX export).
+
+    The Word writer does not run the HTML post-processing that expands
+    these markers, so they would otherwise leak as literal text. Markers
+    inside fenced code blocks are preserved.
+    """
+    out_lines: list[str] = []
+    in_fence = False
+    for line in source.splitlines(keepends=True):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out_lines.append(line)
+            continue
+        stripped = line.rstrip("\n")
+        if not in_fence and (
+            _TOC_MARKER_RE.match(stripped)
+            or _LOF_MARKER_RE.match(stripped)
+            or _LOT_MARKER_RE.match(stripped)
+            or _LOE_MARKER_RE.match(stripped)
+        ):
+            continue
+        out_lines.append(line)
+    return "".join(out_lines)
+
+
+def _expand_page_breaks(source: str) -> str:
+    """Replace ``[[pagebreak]]`` marker lines with raw page-break HTML.
+
+    Runs before Pandoc; the raw ``<div>`` passes through thanks to the
+    ``+raw_html`` extension. Markers inside fenced code blocks are left
+    untouched.
+    """
+    out_lines: list[str] = []
+    in_fence = False
+    for line in source.splitlines(keepends=True):
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out_lines.append(line)
+            continue
+        if not in_fence and _PAGEBREAK_MARKER_RE.match(
+            line.rstrip("\n")
+        ):
+            # Emit as a ```{=html} raw block so Pandoc passes the div
+            # through verbatim instead of reflowing it.
+            out_lines.append(
+                f"\n```{{=html}}\n{PAGE_BREAK_HTML}\n```\n\n"
+            )
+            continue
+        out_lines.append(line)
+    return "".join(out_lines)
+
+
+def _expand_index_markers(body: str, source: str, lang: str) -> str:
+    """Replace TOC / list marker paragraphs in *body* with HTML blocks.
+
+    Pandoc renders a bare ``[[toc]]`` line as ``<p>[[toc]]</p>``. This
+    swaps each such paragraph for the generated navigation block built
+    from *source*. Markers with no matching entries become empty.
+
+    Args:
+        body: HTML produced by Pandoc.
+        source: The original Markdown source (for entry collection).
+        lang: Two-letter language tag.
+
+    Returns:
+        The body with index markers expanded.
+    """
+    headings = collect_headings(source)
+    entries = collect_index_entries(source, lang=lang)
+    body = _TOC_P_RE.sub(
+        lambda _m: build_toc_html(headings, lang), body
+    )
+    body = _LOF_P_RE.sub(
+        lambda _m: build_figure_list_html(entries["fig"], lang), body
+    )
+    body = _LOT_P_RE.sub(
+        lambda _m: build_table_list_html(entries["tbl"], lang), body
+    )
+    body = _LOE_P_RE.sub(
+        lambda _m: build_equation_list_html(entries["eq"], lang), body
+    )
+    return body
+
+
 _SVG_IMG_RE = re.compile(
     r"(!\[[^\]]*\]\()([^)\s]+?\.svg)(\)[^\n]*)"
 )
@@ -503,6 +958,10 @@ def export_docx(
     lang = metadata.get("lang", "en")
     prepared = _expand_quarto_callouts(source)
     prepared = _resolve_crossrefs(prepared, lang=lang)
+    # Drop preview-only index markers so they do not leak as literal
+    # text into the Word document, then materialize page breaks.
+    prepared = _strip_index_markers(prepared)
+    prepared = _expand_page_breaks(prepared)
     prepared, svg_tmp = _rasterize_svgs_for_docx(prepared, base_dir)
 
     # tango matches the HTML preview so code chunks keep colored
@@ -569,6 +1028,8 @@ def render_markdown(
     lang = metadata.get("lang", "en")
     prepared = _expand_quarto_callouts(source)
     prepared = _resolve_crossrefs(prepared, lang=lang)
+    prepared = inject_heading_ids(prepared)
+    prepared = _expand_page_breaks(prepared)
 
     extra_args = list(PANDOC_ARGS) + _bibliography_args(
         metadata, base_dir
@@ -580,6 +1041,7 @@ def render_markdown(
         format=PANDOC_FORMAT,
         extra_args=extra_args,
     )
+    body = _expand_index_markers(body, source, lang)
 
     return build_html_document(
         body=body,

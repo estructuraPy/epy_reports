@@ -38,12 +38,12 @@ def _load_base_css() -> str:
 
 
 def _load_mathjax_script() -> str:
-    """Return the inline MathJax v3 bundle (tex-svg-full, ~2 MB).
+    r"""Return the inline MathJax v3 bundle (tex-svg-full, ~2 MB).
 
     Embedded inline so the preview, PDF and HTML export all work
     offline. The CDN copy that lived here before is fragile when the
     machine has no internet or the print fires before the script
-    finishes downloading — which manifested as ``\\[ ... \\]`` shown
+    finishes downloading — which manifested as ``\[ ... \]`` shown
     as raw text in every export format.
     """
     js = (
@@ -65,6 +65,27 @@ def _base_href(base_dir: Path | None) -> str:
     return f'<base href="{uri}">'
 
 
+_TRUTHY_VALUES = {"true", "yes", "1", "on"}
+
+
+def is_truthy(value: str | None) -> bool:
+    """Interpret a YAML-ish scalar string as a boolean.
+
+    Treats ``"true"``, ``"yes"``, ``"1"`` and ``"on"`` (case-insensitive,
+    surrounding whitespace ignored) as ``True``; everything else,
+    including ``None`` and the empty string, is ``False``.
+
+    Args:
+        value: Raw metadata string, or ``None`` when the key is absent.
+
+    Returns:
+        ``True`` when the value reads as an affirmative boolean.
+    """
+    if value is None:
+        return False
+    return value.strip().lower() in _TRUTHY_VALUES
+
+
 def _front_matter_block(metadata: dict[str, str]) -> str:
     """Render YAML front matter as a small header above the body."""
     title = metadata.get("title")
@@ -80,6 +101,38 @@ def _front_matter_block(metadata: dict[str, str]) -> str:
     if date:
         parts.append(f"<p class='doc-date'>{date}</p>")
     parts.append("</header>")
+    return "\n".join(parts)
+
+
+def _cover_page_block(metadata: dict[str, str]) -> str:
+    """Render a dedicated cover page section from front matter.
+
+    Emitted only when the ``cover`` key is truthy. Renders, in order,
+    the optional logo image, the title, subtitle, author and date,
+    followed by a page break so the body starts on the next printed
+    page. The logo path resolves through the document's ``<base href>``,
+    so relative paths work in both preview and export.
+    """
+    logo = metadata.get("logo")
+    title = metadata.get("title")
+    subtitle = metadata.get("subtitle")
+    author = metadata.get("author")
+    date = metadata.get("date")
+    parts: list[str] = ['<section class="cover-page">']
+    if logo:
+        parts.append(
+            f'<img class="cover-logo" src="{logo}" alt="">'
+        )
+    if title:
+        parts.append(f'<h1 class="cover-title">{title}</h1>')
+    if subtitle:
+        parts.append(f'<p class="cover-subtitle">{subtitle}</p>')
+    if author:
+        parts.append(f'<p class="cover-author">{author}</p>')
+    if date:
+        parts.append(f'<p class="cover-date">{date}</p>')
+    parts.append("</section>")
+    parts.append('<div class="page-break"></div>')
     return "\n".join(parts)
 
 
@@ -106,7 +159,11 @@ def build_html_document(
         A complete, self-contained HTML5 document.
     """
     base_css = _load_base_css()
-    header = _front_matter_block(metadata or {})
+    meta = metadata or {}
+    if is_truthy(meta.get("cover")):
+        header = _cover_page_block(meta)
+    else:
+        header = _front_matter_block(meta)
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'

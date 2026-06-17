@@ -4,6 +4,33 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Auto-generated document indexes. Type a marker on its own line and it
+  expands at render time (preview and every export): `[[toc]]` (table of
+  contents), `[[lof]]` (list of figures), `[[lot]]` (list of tables),
+  `[[loe]]` (list of equations). Entries reuse the existing cross-reference
+  numbering and link to their anchors; titles are localized to the document
+  `lang:` (English / Spanish).
+- Page breaks via a `[[pagebreak]]` marker (Insert menu, `Ctrl+Shift+G`),
+  rendered as a `break-after: page` element honored by the PDF export.
+- PDF footers. When the front matter declares `footer:` text and/or
+  `page-numbers: true`, every exported PDF page is stamped with the footer
+  text and a localized "Page X of Y" / "Pág. X de Y" page number. Stamping
+  uses `pypdf` + `reportlab` (both BSD-licensed).
+- Footnote quick-insert dialog (Insert menu, `Ctrl+Shift+O`): enter the note
+  text and it inserts the `[^fn-N]` reference plus its definition.
+- Cover page. With `cover: true` the document opens with a dedicated cover
+  page (optional company `logo:`, plus title, `subtitle:`, author and date)
+  followed by a page break.
+- Configuration templates. Save the current theme + publishing settings
+  (CSL, footer, page numbers, cover, logo) as a named template and apply it
+  to any document in one click (Templates menu). Templates are stored as
+  JSON under the user config directory.
+- The PDF export now waits for MathJax to finish typesetting and prints with
+  an explicit A4 portrait layout, so equations render reliably in the output.
+
 ## [0.3.1] — 2026-06-11
 
 ### Added
