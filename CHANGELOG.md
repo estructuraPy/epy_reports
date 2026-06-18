@@ -4,6 +4,22 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] — 2026-06-18
+
+### Added
+- **The Spanish manual shows Spanish screenshots.** Every screenshot in the
+  user manual now matches the manual's language: the Spanish manual embeds
+  Spanish captures of the editor and of all insertion dialogs (figure,
+  table, equation, checklist, footnote, cross-reference, bibliography,
+  Document properties). The loader resolves `*_es.png` variants for the
+  Spanish manual automatically; the English manual is unchanged.
+
+### Changed
+- **Completed the Spanish localization of every dialog.** The bibliography
+  entry dialog (all field labels, group titles, the required-fields hint
+  and validation messages) and the epy_docs export dialog are now fully
+  translated. Field placeholders and file-picker titles localize too.
+
 ## [0.4.3] — 2026-06-18
 
 ### Added

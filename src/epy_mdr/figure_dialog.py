@@ -80,7 +80,7 @@ class FigureDialog(QDialog):
     def _browse(self) -> None:
         """Open a file picker and populate the path field."""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Select image", "", _IMAGE_FILTER
+            self, i18n.tr("Select image"), "", _IMAGE_FILTER
         )
         if filename:
             self.path_edit.setText(filename)

@@ -215,11 +215,13 @@ class BibEntryDialog(QDialog):
         if required:
             joined = ", ".join(required)
             self.required_label.setText(
-                f"Required for @{entry_type}: key, {joined}."
+                i18n.tr("Required for @{type}: key, {fields}.").format(
+                    type=entry_type, fields=joined
+                )
             )
         else:
             self.required_label.setText(
-                f"Required for @{entry_type}: key."
+                i18n.tr("Required for @{type}: key.").format(type=entry_type)
             )
         self._refresh_preview()
 
@@ -250,17 +252,20 @@ class BibEntryDialog(QDialog):
         if missing:
             QMessageBox.warning(
                 self,
-                "Missing required fields",
-                "These fields are required for @"
-                + draft.type + ": " + ", ".join(missing),
+                i18n.tr("Missing required fields"),
+                i18n.tr(
+                    "These fields are required for @{type}: {fields}"
+                ).format(type=draft.type, fields=", ".join(missing)),
             )
             return
         if draft.key in self._existing_keys:
             reply = QMessageBox.question(
                 self,
-                "Key already exists",
-                f"The key {draft.key!r} is already in the linked "
-                ".bib file. Append anyway?",
+                i18n.tr("Key already exists"),
+                i18n.tr(
+                    "The key {key} is already in the linked .bib file. "
+                    "Append anyway?"
+                ).format(key=repr(draft.key)),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
             )

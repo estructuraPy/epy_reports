@@ -76,8 +76,20 @@ def _load_manual_text(filename: str = "welcome.md") -> str:
         "__SHOT_XREF__": ("screenshots", "dlg_xref.png"),
         "__SHOT_BIB__": ("screenshots", "dlg_bib.png"),
     }
+    # The Spanish manual (``welcome_es.md``) uses the same placeholders but
+    # resolves them to the localized screenshot variants (``*_es.png``) when
+    # those exist, so it shows the UI in Spanish. The logo is shared.
+    is_es = Path(filename).stem.endswith("_es")
     root = importlib.resources.files("epy_mdr.assets")
     for placeholder, (subdir, name) in assets.items():
+        if is_es and subdir == "screenshots":
+            stem, _, ext = name.rpartition(".")
+            es_name = f"{stem}_es.{ext}"
+            try:
+                if root.joinpath(subdir).joinpath(es_name).is_file():
+                    name = es_name
+            except OSError:
+                pass
         try:
             res = root.joinpath(subdir).joinpath(name)
             uri = Path(str(res)).resolve().as_uri()

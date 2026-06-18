@@ -179,13 +179,74 @@ _ES: dict[str, str] = {
     "Quarto / Markdown editor with live preview":
         "Editor de Quarto / Markdown con vista previa en vivo",
     "Close": "Cerrar",
-    # --- bibliography + epy_docs export dialogs ---
+    # --- epy_docs export dialog ---
     "Preview:": "Vista previa:",
     "Entry type:": "Tipo de entrada:",
     "Layout:": "Diseño:",
     "Document type:": "Tipo de documento:",
     "Output directory:": "Directorio de salida:",
     "Output formats:": "Formatos de salida:",
+    # --- bibliography entry dialog: field labels ---
+    "Citation key *": "Clave de cita *",
+    "Author(s)": "Autor(es)",
+    "Editor(s)": "Editor(es)",
+    "Title": "Título",
+    "Journal": "Revista",
+    "Book title / proceedings": "Título del libro / actas",
+    "Publisher": "Editorial",
+    "Institution": "Institución",
+    "School / university": "Escuela / universidad",
+    "Organization": "Organización",
+    "Year": "Año",
+    "Month": "Mes",
+    "Volume": "Volumen",
+    "Number / issue": "Número",
+    "Pages": "Páginas",
+    "Edition": "Edición",
+    "Chapter": "Capítulo",
+    "Address (city)": "Dirección (ciudad)",
+    "How published": "Cómo se publicó",
+    "URL access date": "Fecha de acceso de la URL",
+    "Note": "Nota",
+    # --- bibliography entry dialog: group titles ---
+    "Identity": "Identidad",
+    "Venue": "Publicación",
+    "Date": "Fecha",
+    "Details": "Detalles",
+    "Location": "Ubicación",
+    "Identifiers": "Identificadores",
+    # --- bibliography entry dialog: dynamic + messages ---
+    "Required for @{type}: key, {fields}.":
+        "Requeridos para @{type}: key, {fields}.",
+    "Required for @{type}: key.": "Requeridos para @{type}: key.",
+    "Missing required fields": "Faltan campos requeridos",
+    "These fields are required for @{type}: {fields}":
+        "Estos campos son requeridos para @{type}: {fields}",
+    "Key already exists": "La clave ya existe",
+    "The key {key} is already in the linked .bib file. Append anyway?":
+        "La clave {key} ya está en el archivo .bib enlazado. "
+        "¿Agregar de todas formas?",
+    # --- file-picker dialog titles ---
+    "Select output directory": "Seleccionar directorio de salida",
+    "Select image": "Seleccionar imagen",
+    "Choose logo image": "Elegir imagen del logo",
+    # --- field placeholders ---
+    "Optional title…": "Título opcional…",
+    "Figure caption": "Título de la figura",
+    "Optional caption…": "Título opcional…",
+    "Footnote text": "Texto de la nota",
+    "Filter: fig, tbl, eq, sec, or any substring":
+        "Filtrar: fig, tbl, eq, sec, o cualquier subcadena",
+    "e.g. 1, beam-section": "p. ej. 1, beam-section",
+    "e.g. 1, beam-properties": "p. ej. 1, beam-properties",
+    "e.g. 1, source-note": "p. ej. 1, source-note",
+    "e.g. 1, euler-beam": "p. ej. 1, euler-beam",
+    "top-left": "sup. izq.",
+    "top-center": "sup. centro",
+    "top-right": "sup. der.",
+    "bottom-left": "inf. izq.",
+    "bottom-center": "inf. centro",
+    "bottom-right": "inf. der.",
 }
 
 
@@ -226,7 +287,13 @@ def translate_widget(root) -> None:
     """
     if _lang == "en":
         return
-    from PySide6.QtWidgets import QAbstractButton, QGroupBox, QLabel
+    from PySide6.QtWidgets import (
+        QAbstractButton,
+        QGroupBox,
+        QLabel,
+        QLineEdit,
+        QPlainTextEdit,
+    )
 
     title = root.windowTitle()
     if title:
@@ -243,3 +310,11 @@ def translate_widget(root) -> None:
         text = box.title()
         if text:
             box.setTitle(tr(text))
+    for field in root.findChildren(QLineEdit):
+        placeholder = field.placeholderText()
+        if placeholder:
+            field.setPlaceholderText(tr(placeholder))
+    for area in root.findChildren(QPlainTextEdit):
+        placeholder = area.placeholderText()
+        if placeholder:
+            area.setPlaceholderText(tr(placeholder))

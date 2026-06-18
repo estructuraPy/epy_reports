@@ -195,7 +195,7 @@ class DocsExportDialog(QDialog):
             self._source_path.parent
         )
         chosen = QFileDialog.getExistingDirectory(
-            self, "Select output directory", start
+            self, i18n.tr("Select output directory"), start
         )
         if chosen:
             self._edit_outdir.setText(chosen)

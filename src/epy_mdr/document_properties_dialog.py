@@ -143,7 +143,7 @@ class DocumentPropertiesDialog(QDialog):
     def _pick_logo(self) -> None:
         """Open a file picker for the cover logo image."""
         path, _ = QFileDialog.getOpenFileName(
-            self, "Choose logo image", "",
+            self, i18n.tr("Choose logo image"), "",
             "Images (*.png *.jpg *.jpeg *.svg);;All files (*)",
         )
         if path:
