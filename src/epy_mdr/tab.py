@@ -292,12 +292,7 @@ class MarkdownTab(QWidget):
         page_numbers = is_truthy(meta.get("page-numbers"))
         lang = meta.get("lang", "en")
         page_size = normalize_page_size(meta.get("page-size"))
-        raw_header = meta.get("header") or []
-        header_cells = (
-            list(raw_header)
-            if isinstance(raw_header, list)
-            else [str(raw_header)]
-        )
+        header_cells = snippets.parse_header_cells(meta.get("header"))
         has_cover = is_truthy(meta.get("cover"))
 
         base_dir = self._path.parent if self._path is not None else None

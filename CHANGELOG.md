@@ -4,6 +4,26 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9] — 2026-06-18
+
+### Added
+- **Document properties dialog** (*Document ▸ Document properties…*,
+  `Ctrl+Shift+Y`). A form to set the title block, cover page + logo, the
+  running header (a 2×3 grid of cells), the footer, page numbers and page
+  size — it reads the current YAML front matter and writes your changes
+  back, so you no longer have to edit the front matter by hand.
+
+### Fixed
+- **`header:` front matter rendered as a single cell.** The list value was
+  read as one literal string, so a 6-cell header printed the raw
+  `["A", "B", …]` text in one box. It is now parsed into its cells
+  (`snippets.parse_header_cells`), so the running-header grid renders
+  correctly in the PDF.
+
+### Changed
+- The welcome manual now notes that task-list checkboxes are **interactive
+  in the HTML export** and points to the new Document properties dialog.
+
 ## [0.6.8] — 2026-06-18
 
 ### Fixed

@@ -13,6 +13,7 @@ library into the bundle.
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -131,6 +132,29 @@ def parse_front_matter(text: str) -> dict[str, str]:
     return meta
 
 
+def parse_header_cells(value: object) -> list[str]:
+    """Normalize a ``header`` front-matter value into a list of cells.
+
+    ``parse_front_matter`` returns scalars as strings, so a YAML flow
+    sequence like ``["A", "B"]`` arrives here as that literal string. This
+    accepts either a real list or that JSON-ish string and returns the cell
+    strings; anything else becomes a single-cell list.
+    """
+    if isinstance(value, list):
+        return [str(x) for x in value]
+    text = str(value or "").strip()
+    if not text:
+        return []
+    if text.startswith("["):
+        try:
+            items = json.loads(text)
+        except (ValueError, TypeError):
+            items = None
+        if isinstance(items, list):
+            return [str(x) for x in items]
+    return [text]
+
+
 def _format_yaml_value(value: str) -> str:
     """Quote ``value`` if it would be ambiguous as a YAML scalar."""
     needs_quotes = (
@@ -145,14 +169,24 @@ def _format_yaml_value(value: str) -> str:
     return value
 
 
-def set_metadata_field(text: str, field: str, value: str) -> str:
+def set_metadata_field(
+    text: str, field: str, value: str, *, raw: bool = False
+) -> str:
     """Insert or replace a top-level YAML ``field`` in ``text``.
 
     Creates a front-matter block at the top of the buffer when none
     exists. When the field is already present, its value is replaced
     in place; otherwise the field is appended to the existing block.
+
+    Args:
+        text: The full document text.
+        field: The YAML key to set.
+        value: The value to write.
+        raw: When ``True`` the value is written verbatim (no scalar
+            quoting). Use it for values that are already valid YAML, such
+            as a flow sequence ``["a", "b"]`` for the ``header`` field.
     """
-    formatted = _format_yaml_value(value)
+    formatted = value if raw else _format_yaml_value(value)
     line = f"{field}: {formatted}"
 
     if text.startswith("---"):

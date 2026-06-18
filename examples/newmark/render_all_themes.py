@@ -65,7 +65,7 @@ try:
         normalize_page_size,
         render_markdown,
     )
-    from epy_mdr.snippets import parse_front_matter
+    from epy_mdr.snippets import parse_front_matter, parse_header_cells
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
     from epy_mdr import themes
@@ -80,7 +80,7 @@ except ImportError:
         normalize_page_size,
         render_markdown,
     )
-    from epy_mdr.snippets import parse_front_matter
+    from epy_mdr.snippets import parse_front_matter, parse_header_cells
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
@@ -281,10 +281,7 @@ class ThemeExporter:
             if self._page_bg:
                 add_page_background(self.pdf_path, self._page_bg)
                 print(f"  [{self.theme_id}] page background {self._page_bg}")
-            header_raw = self.meta.get("header") or []
-            header_cells = (
-                list(header_raw) if isinstance(header_raw, list) else [str(header_raw)]
-            )
+            header_cells = parse_header_cells(self.meta.get("header"))
             footer_text = str(self.meta.get("footer", "") or "")
             page_numbers_flag = str(self.meta.get("page-numbers", "")).lower() in (
                 "true", "yes", "1",

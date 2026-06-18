@@ -30,6 +30,7 @@ below it. Edit freely, then export with `Ctrl+P` to see it as a PDF.
 | Callout / code block / checklist | `Ctrl+Shift+C` / `Ctrl+Shift+K` / `Ctrl+Shift+L` |
 | Footnote / page break | `Ctrl+Shift+O` / `Ctrl+Shift+G` |
 | Cross-reference / citation picker | `Ctrl+R` / `Ctrl+Shift+B` |
+| Document properties (cover/header/footer) | `Ctrl+Shift+Y` |
 | Export PDF / HTML / DOCX | `Ctrl+P` / `Ctrl+Shift+P` / `Ctrl+Shift+D` |
 
 : Keyboard shortcuts. {#tbl-shortcuts}
@@ -61,6 +62,13 @@ csl: ieee           # citation style: ieee | apa | chicago | ...
 ```
 
 Only the keys you need are required; everything is optional.
+
+::: {.callout-tip title="Fill this in from a form"}
+You don't have to type the YAML by hand. Open *Document ▸ Document
+properties…* (`Ctrl+Shift+Y`) for a form that edits the title block, the
+cover page, the running header cells, the footer, page numbers and page
+size, and writes them into the front matter for you.
+:::
 
 # Text formatting
 
@@ -100,6 +108,11 @@ make the heading a cross-reference target:
 
 - [x] Completed task
 - [ ] Pending task
+
+::: {.callout-tip title="Interactive in HTML"}
+In the **HTML** export the task-list checkboxes are live — readers can tick
+and untick them in the browser. In the PDF they print as static boxes.
+:::
 
 # Quotes and callouts
 

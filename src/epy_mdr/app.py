@@ -18,6 +18,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
     QMainWindow,
     QMenu,
@@ -151,6 +152,12 @@ class MarkdownWindow(QMainWindow):
         self.act_print = QAction("Print...", self)
         self.act_print.setShortcut(QKeySequence("Ctrl+Alt+P"))
         self.act_print.triggered.connect(self._print_document)
+
+        self.act_doc_properties = QAction("Document properties…", self)
+        self.act_doc_properties.setShortcut(QKeySequence("Ctrl+Shift+Y"))
+        self.act_doc_properties.triggered.connect(
+            self._edit_document_properties
+        )
 
         self.act_quit = QAction("Quit", self)
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
@@ -464,6 +471,9 @@ class MarkdownWindow(QMainWindow):
             self._sync_page_size_menu
         )
 
+        self.document_menu = QMenu("&Document", self)
+        self.document_menu.addAction(self.act_doc_properties)
+
         self._build_templates_menu()
 
         self.help_menu = QMenu("&Help", self)
@@ -478,6 +488,7 @@ class MarkdownWindow(QMainWindow):
         self._add_dropdown(bar, "File", self.file_menu)
         self._add_dropdown(bar, "Text", self.text_menu)
         self._add_dropdown(bar, "Elements", self.elements_menu)
+        self._add_dropdown(bar, "Document", self.document_menu)
         self._add_dropdown(bar, "References", self.references_menu)
         self._add_dropdown(bar, "Export", self.export_menu)
         self._add_dropdown(bar, "View", self.view_menu)
@@ -837,6 +848,35 @@ class MarkdownWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Deleted template: {name}", 3000
         )
+
+    def _edit_document_properties(self) -> None:
+        """Open the Document properties form and write the front matter."""
+        from epy_mdr.document_properties_dialog import (  # noqa: PLC0415
+            DocumentPropertiesDialog,
+        )
+
+        tab = self._current_tab()
+        if tab is None:
+            return
+        text = tab.editor.toPlainText()
+        meta = snippets.parse_front_matter(text)
+        dialog = DocumentPropertiesDialog(self, meta)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        updated = text
+        for field, value, raw in dialog.updates():
+            updated = snippets.set_metadata_field(
+                updated, field, value, raw=raw
+            )
+        if updated != text:
+            cursor = tab.editor.textCursor()
+            cursor.beginEditBlock()
+            cursor.select(cursor.SelectionType.Document)
+            cursor.insertText(updated)
+            cursor.endEditBlock()
+        # Keep the page-size radio + preview in sync with any change.
+        self._sync_page_size_menu()
+        self.statusBar().showMessage("Document properties updated", 3000)
 
     def _link_bibliography(self) -> None:
         """Pick a .bib file and write it into the YAML front matter."""

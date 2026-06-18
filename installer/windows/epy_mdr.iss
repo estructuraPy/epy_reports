@@ -1,5 +1,5 @@
 ; Inno Setup script for epy_mdr
-; Version 0.6.8
+; Version 0.6.9
 ;
 ; Build from the project root AFTER running `python build.py`:
 ;   ISCC.exe installer\windows\epy_mdr.iss
@@ -26,7 +26,7 @@
 ;     checkbox below launches "ms-settings:defaultapps" as a convenience.
 
 #define AppName "epy_mdr"
-#define AppVersion "0.6.8"
+#define AppVersion "0.6.9"
 #define AppPublisher "Ing. Angel Navarro-Mora M.Sc."
 #define AppURL "https://github.com/estructuraPy/epy_mdr"
 #define AppId "{{A7C3E2F1-8D4B-4E9A-B5C6-3F1D2E8A9B7C}"
