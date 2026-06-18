@@ -4,6 +4,20 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] — 2026-06-18
+
+### Changed
+- **The welcome manual now demonstrates the full publishing pipeline, not
+  just the content types.** It opens with a real **cover page + logo**, a
+  running **header**, a footer with page numbers, and populated
+  **TOC / LOF / LOT / LOE** indexes — so the preloaded example shows
+  everything epy_mdr can produce.
+- **Screenshots added to the manual:** the editor (Markdown source + live
+  preview + menu bar) and the Document properties dialog. They are bundled
+  under `assets/screenshots/` and resolved to absolute URIs at load time
+  (the welcome tab has no file path), so they render in the preview and the
+  PDF export.
+
 ## [0.6.9] — 2026-06-18
 
 ### Added

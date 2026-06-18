@@ -5,6 +5,9 @@ author: Ing. Angel Navarro-Mora M.Sc.
 date: 2026-06-18
 lang: en
 page-size: letter
+cover: true
+logo: __EPY_LOGO__
+header: ["ANM Ingeniería", "epy_mdr User Manual", "2026"]
 footer: "epy_mdr — ANM Ingeniería"
 page-numbers: true
 ---
@@ -14,7 +17,15 @@ one-click PDF export. This document is both a demo and a manual: every
 section shows the *syntax* in a code block and the *rendered result* right
 below it. Edit freely, then export with `Ctrl+P` to see it as a PDF.
 
+![The epy_mdr editor — Markdown source on the left, live preview on the right, and the menu bar on top.](__SHOT_EDITOR__){#fig-editor width=100%}
+
 [[toc]]
+
+[[lof]]
+
+[[lot]]
+
+[[loe]]
 
 [[pagebreak]]
 
@@ -69,6 +80,8 @@ properties…* (`Ctrl+Shift+Y`) for a form that edits the title block, the
 cover page, the running header cells, the footer, page numbers and page
 size, and writes them into the front matter for you.
 :::
+
+![The Document properties dialog writes the cover, header, footer and page settings into the front matter.](__SHOT_PROPERTIES__){#fig-properties width=75%}
 
 # Text formatting
 

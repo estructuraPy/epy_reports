@@ -47,12 +47,34 @@ def _load_welcome_text() -> str:
     The welcome tab shows a full user manual that demonstrates every
     content type with its syntax and documents the Python API; it lives in
     ``assets/welcome.md`` so it can be edited as Markdown.
+
+    The ``__EPY_LOGO__`` placeholder in the front matter is replaced with a
+    ``file://`` URI to the bundled logo so the example actually renders a
+    cover page with a logo (the welcome tab has no file path, so a relative
+    logo would not resolve in the preview or export).
     """
-    return (
+    text = (
         importlib.resources.files("epy_mdr.assets")
         .joinpath("welcome.md")
         .read_text(encoding="utf-8")
     )
+    # Resolve bundled images (logo + screenshots) to absolute file:// URIs.
+    # The welcome tab has no file path, so relative image references would
+    # not resolve in the preview or the export.
+    assets = {
+        "__EPY_LOGO__": ("branding", "epy_mdr.png"),
+        "__SHOT_EDITOR__": ("screenshots", "editor.png"),
+        "__SHOT_PROPERTIES__": ("screenshots", "document_properties.png"),
+    }
+    root = importlib.resources.files("epy_mdr.assets")
+    for placeholder, (subdir, name) in assets.items():
+        try:
+            res = root.joinpath(subdir).joinpath(name)
+            uri = Path(str(res)).resolve().as_uri()
+        except (FileNotFoundError, ValueError, OSError):
+            uri = ""
+        text = text.replace(placeholder, uri)
+    return text
 
 
 WELCOME_TEXT = _load_welcome_text()
