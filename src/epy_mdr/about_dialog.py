@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 import epy_mdr
+from epy_mdr import _i18n as i18n
 
 
 def _load_branding_pixmap(name: str) -> QPixmap:
@@ -165,3 +166,4 @@ class AboutDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
+        i18n.translate_widget(self)

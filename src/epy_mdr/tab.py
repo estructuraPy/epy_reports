@@ -295,6 +295,19 @@ class MarkdownTab(QWidget):
         header_cells = snippets.parse_header_cells(meta.get("header"))
         has_cover = is_truthy(meta.get("cover"))
 
+        # PDF document metadata (embedded into the exported file). A
+        # copyright/rights notice is always recorded — taken from the
+        # ``copyright`` front-matter key, or derived as "© <year> <author>"
+        # — so the file carries authorship and ownership information.
+        doc_title = meta.get("title", "").strip()
+        author = meta.get("author", "").strip()
+        subtitle = meta.get("subtitle", "").strip()
+        keywords = meta.get("keywords", "").strip()
+        rights = meta.get("copyright", "").strip()
+        if not rights and author:
+            year = meta.get("date", "")[:4].strip()
+            rights = f"© {year} {author}" if year.isdigit() else f"© {author}"
+
         base_dir = self._path.parent if self._path is not None else None
         title = self._path.name if self._path is not None else UNTITLED
         export_html = render_markdown(
@@ -340,6 +353,16 @@ class MarkdownTab(QWidget):
                             lang=lang,
                             start_page=start_page,
                         )
+                    # Embed document metadata + copyright last, so it
+                    # survives the page-stamping rewrites above.
+                    _pdf_footer.add_metadata(
+                        tmp_pdf,
+                        title=doc_title or title,
+                        author=author,
+                        subject=subtitle,
+                        keywords=keywords,
+                        rights=rights,
+                    )
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(tmp_pdf), str(target))
             except (OSError, RuntimeError):

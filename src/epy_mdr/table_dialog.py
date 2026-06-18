@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
+
 
 class TableDialog(QDialog):
     """Ask the user for table dimensions, header option, and caption."""
@@ -66,6 +68,7 @@ class TableDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     @property
     def columns(self) -> int:

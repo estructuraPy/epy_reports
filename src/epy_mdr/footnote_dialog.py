@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
+
 
 class FootnoteDialog(QDialog):
     """Ask the user for footnote text and a short reference ID."""
@@ -52,6 +54,7 @@ class FootnoteDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     @property
     def note_text(self) -> str:

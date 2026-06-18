@@ -335,3 +335,65 @@ def add_header(
 
     with pdf_path.open("wb") as handle:
         writer.write(handle)
+
+
+def add_metadata(
+    pdf_path: Path,
+    *,
+    title: str = "",
+    author: str = "",
+    subject: str = "",
+    keywords: str = "",
+    rights: str = "",
+    creator: str = "epy_mdr",
+    producer: str = "epy_mdr — ANM Ingeniería",
+) -> None:
+    """Embed document metadata (including copyright) into a PDF, in place.
+
+    Writes the standard PDF ``/Info`` entries — title, author, subject,
+    keywords, creator, producer — plus a custom ``/Copyright`` key, so the
+    exported file always carries authorship and rights information. This is
+    both attribution and a lightweight ownership marker: the rights notice
+    travels with the file. Empty values are skipped; ``creator`` and
+    ``producer`` are always set.
+
+    The document is cloned (pages, links, named destinations and outline are
+    preserved) and only its metadata dictionary is updated.
+
+    Args:
+        pdf_path: Path to an existing PDF; overwritten with the result.
+        title: Document title.
+        author: Document author.
+        subject: Short description / subtitle.
+        keywords: Comma-separated keywords.
+        rights: Copyright / rights notice (e.g. ``"© 2026 ACME"``).
+        creator: Authoring application name.
+        producer: Producing application / organisation.
+
+    Raises:
+        RuntimeError: When :mod:`pypdf` is not installed.
+    """
+    try:
+        from pypdf import PdfWriter  # noqa: PLC0415
+    except ImportError as exc:  # pragma: no cover - env guard
+        raise RuntimeError(
+            "PDF metadata requires the 'pypdf' package. "
+            "Install it with: pip install pypdf"
+        ) from exc
+
+    info: dict[str, str] = {"/Creator": creator, "/Producer": producer}
+    if title:
+        info["/Title"] = title
+    if author:
+        info["/Author"] = author
+    if subject:
+        info["/Subject"] = subject
+    if keywords:
+        info["/Keywords"] = keywords
+    if rights:
+        info["/Copyright"] = rights
+
+    writer = PdfWriter(clone_from=str(pdf_path))
+    writer.add_metadata(info)
+    with pdf_path.open("wb") as handle:
+        writer.write(handle)

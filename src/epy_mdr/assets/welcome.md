@@ -63,6 +63,7 @@ date: 2026-06-18
 lang: en            # en or es — localizes "Figure"/"Figura", etc.
 page-size: letter   # letter | a4 | legal
 footer: "Confidential — Acme Inc."
+copyright: "© 2026 Acme Inc."   # embedded in the exported PDF metadata
 page-numbers: true  # stamp "Page X of Y" on every content page
 cover: true         # render a dedicated cover page
 logo: logo.png      # cover logo (relative to the document)

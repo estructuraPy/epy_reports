@@ -1,0 +1,245 @@
+"""Lightweight in-app internationalization (English / Spanish).
+
+English is the source language and the lookup key; Spanish strings live in
+``_ES``. Missing keys fall back to the English text. Widgets register a
+relabel callback via :func:`on_language_changed`, so switching the language
+re-applies every callback and the running UI updates live, with no restart.
+
+The product name ``epy_mdr``, code identifiers, theme ids, keyboard
+shortcuts and citation-style names (IEEE/APA/Chicago) stay in English.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+#: Supported languages: code -> endonym shown in the Language menu.
+LANGUAGES: dict[str, str] = {"en": "English", "es": "Español"}
+
+_lang = "en"
+_observers: list[Callable[[], None]] = []
+
+# English -> Spanish. Neutral / professional Spanish (no regional voseo).
+# Keys MUST match the source strings exactly (including the trailing
+# "..." vs the "…" ellipsis character and the Qt "&" menu accelerators).
+_ES: dict[str, str] = {
+    # --- top-level menus (with & accelerator) ---
+    "&File": "&Archivo",
+    "&Text": "&Texto",
+    "&Elements": "&Elementos",
+    "&Document": "&Documento",
+    "&References": "&Referencias",
+    "E&xport": "E&xportar",
+    "&View": "&Ver",
+    "&Templates": "&Plantillas",
+    "&Help": "&Ayuda",
+    # --- toolbar dropdown buttons (no accelerator) ---
+    "File": "Archivo",
+    "Text": "Texto",
+    "Elements": "Elementos",
+    "Document": "Documento",
+    "References": "Referencias",
+    "Export": "Exportar",
+    "View": "Ver",
+    "Templates": "Plantillas",
+    "Help": "Ayuda",
+    "Language": "Idioma",
+    # --- submenu titles ---
+    "Heading": "Título",
+    "Callout": "Llamado",
+    "Indexes": "Índices",
+    "Theme": "Tema",
+    "Page size": "Tamaño de página",
+    "Citation style": "Estilo de cita",
+    "Apply template": "Aplicar plantilla",
+    "Delete template": "Eliminar plantilla",
+    # --- File menu ---
+    "New": "Nuevo",
+    "Open...": "Abrir...",
+    "Save": "Guardar",
+    "Save As...": "Guardar como...",
+    "Reload": "Recargar",
+    "Close Tab": "Cerrar pestaña",
+    "Quit": "Salir",
+    # --- Text menu ---
+    "Heading 1": "Título 1",
+    "Heading 2": "Título 2",
+    "Heading 3": "Título 3",
+    "Heading 4": "Título 4",
+    "Heading 5": "Título 5",
+    "Heading 6": "Título 6",
+    "Remove heading": "Quitar título",
+    "Bold": "Negrita",
+    "Italic": "Cursiva",
+    "Inline code": "Código en línea",
+    "Link...": "Enlace...",
+    # --- Elements menu ---
+    "Section heading with label": "Título de sección con etiqueta",
+    "Figure (skeleton)": "Figura (esqueleto)",
+    "Image from file...": "Imagen desde archivo...",
+    "Table": "Tabla",
+    "Checklist": "Lista de tareas",
+    "Equation": "Ecuación",
+    "Footnote": "Nota al pie",
+    "Code block": "Bloque de código",
+    "Callout: Note": "Llamado: Nota",
+    "Callout: Tip": "Llamado: Sugerencia",
+    "Callout: Warning": "Llamado: Advertencia",
+    "Callout: Important": "Llamado: Importante",
+    "Callout: Caution": "Llamado: Precaución",
+    "Page break": "Salto de página",
+    "Table of contents  [[toc]]": "Tabla de contenidos  [[toc]]",
+    "List of figures  [[lof]]": "Lista de figuras  [[lof]]",
+    "List of tables  [[lot]]": "Lista de tablas  [[lot]]",
+    "List of equations  [[loe]]": "Lista de ecuaciones  [[loe]]",
+    # --- References menu ---
+    "Insert reference...": "Insertar referencia...",
+    "Link bibliography (.bib)...": "Enlazar bibliografía (.bib)...",
+    "New bibliography entry...": "Nueva entrada bibliográfica...",
+    "(no document open)": "(no hay documento abierto)",
+    "(no labels in this file)": "(no hay etiquetas en este archivo)",
+    "Citations": "Citas",
+    "Figures": "Figuras",
+    "Tables": "Tablas",
+    "Equations": "Ecuaciones",
+    "Sections": "Secciones",
+    # --- Export menu ---
+    "Export as PDF...": "Exportar como PDF...",
+    "Export as HTML...": "Exportar como HTML...",
+    "Export as DOCX...": "Exportar como DOCX...",
+    "Print...": "Imprimir...",
+    "Export via epy_docs...": "Exportar con epy_docs...",
+    # --- View menu ---
+    "Page view": "Vista de página",
+    # theme display names
+    "Academic": "Académico",
+    "Classic": "Clásico",
+    "Corporate": "Corporativo",
+    "Creative": "Creativo",
+    "Handwritten": "Manuscrito",
+    "Minimal": "Minimalista",
+    "Professional": "Profesional",
+    "Scientific": "Científico",
+    "Technical": "Técnico",
+    # page sizes
+    "Letter": "Carta",
+    "Legal": "Oficio",
+    # --- Document menu ---
+    "Document properties…": "Propiedades del documento…",
+    # --- Templates menu ---
+    "Save current settings as template…":
+        "Guardar la configuración actual como plantilla…",
+    # --- Help menu ---
+    "User manual (English)": "Manual de usuario (Inglés)",
+    "User manual (Spanish)": "Manual de usuario (Español)",
+    "About epy_mdr…": "Acerca de epy_mdr…",
+    # --- dialog window titles ---
+    "Insert checklist": "Insertar lista de tareas",
+    "Insert figure": "Insertar figura",
+    "Insert table": "Insertar tabla",
+    "Insert equation": "Insertar ecuación",
+    "Insert footnote": "Insertar nota al pie",
+    "Insert cross-reference": "Insertar referencia cruzada",
+    "New bibliography entry": "Nueva entrada bibliográfica",
+    "Export via epy_docs": "Exportar con epy_docs",
+    "Document properties": "Propiedades del documento",
+    "About epy_mdr": "Acerca de epy_mdr",
+    # --- common dialog labels / buttons ---
+    "Caption:": "Título:",
+    "Reference ID:": "ID de referencia:",
+    "Path:": "Ruta:",
+    "Width:": "Ancho:",
+    "Columns:": "Columnas:",
+    "Data rows:": "Filas de datos:",
+    "Include header row": "Incluir fila de encabezado",
+    "Items:": "Elementos:",
+    "Title:": "Título:",
+    "Note text:": "Texto de la nota:",
+    "LaTeX body:": "Cuerpo LaTeX:",
+    "Pick a label to insert as <code>@label</code>. Type to filter.":
+        "Elija una etiqueta para insertar como <code>@label</code>. "
+        "Escriba para filtrar.",
+    "Browse...": "Examinar...",
+    "Browse…": "Examinar…",
+    "OK": "Aceptar",
+    "Cancel": "Cancelar",
+    # --- Document properties dialog ---
+    "Title block": "Bloque de título",
+    "Cover page": "Portada",
+    "Running header (up to 6 cells)": "Encabezado (hasta 6 celdas)",
+    "Footer": "Pie de página",
+    "Subtitle:": "Subtítulo:",
+    "Author:": "Autor:",
+    "Date:": "Fecha:",
+    "Page size:": "Tamaño de página:",
+    "Text:": "Texto:",
+    "Render a dedicated cover page": "Generar una portada dedicada",
+    'Stamp "Page X of Y"': 'Estampar "Página X de Y"',
+    # --- About dialog ---
+    "Quarto / Markdown editor with live preview":
+        "Editor de Quarto / Markdown con vista previa en vivo",
+    "Close": "Cerrar",
+    # --- bibliography + epy_docs export dialogs ---
+    "Preview:": "Vista previa:",
+    "Entry type:": "Tipo de entrada:",
+    "Layout:": "Diseño:",
+    "Document type:": "Tipo de documento:",
+    "Output directory:": "Directorio de salida:",
+    "Output formats:": "Formatos de salida:",
+}
+
+
+def tr(text: str) -> str:
+    """Return ``text`` in the current language (English is the identity)."""
+    if _lang == "en":
+        return text
+    return _ES.get(text, text)
+
+
+def set_language(lang: str) -> None:
+    """Switch the active language and relabel every registered widget."""
+    global _lang
+    if lang not in LANGUAGES or lang == _lang:
+        return
+    _lang = lang
+    for callback in list(_observers):
+        callback()
+
+
+def current_language() -> str:
+    """Return the active language code."""
+    return _lang
+
+
+def on_language_changed(callback: Callable[[], None]) -> None:
+    """Register a relabel callback fired on every language change."""
+    _observers.append(callback)
+
+
+def translate_widget(root) -> None:
+    """Translate the window title and labelled children of a widget tree.
+
+    Reads the current language at call time, so it is meant to be called at
+    the end of a modal dialog's ``__init__`` (dialogs are rebuilt each time
+    they open). Only strings present in ``_ES`` change; everything else —
+    user data, untranslated labels, rich content — passes through unchanged.
+    """
+    if _lang == "en":
+        return
+    from PySide6.QtWidgets import QAbstractButton, QGroupBox, QLabel
+
+    title = root.windowTitle()
+    if title:
+        root.setWindowTitle(tr(title))
+    for label in root.findChildren(QLabel):
+        text = label.text()
+        if text:
+            label.setText(tr(text))
+    for button in root.findChildren(QAbstractButton):
+        text = button.text()
+        if text:
+            button.setText(tr(text))
+    for box in root.findChildren(QGroupBox):
+        text = box.title()
+        if text:
+            box.setTitle(tr(text))

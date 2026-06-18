@@ -65,6 +65,7 @@ date: 2026-06-18
 lang: es            # en o es: localiza "Figure"/"Figura", etc.
 page-size: letter   # letter | a4 | legal
 footer: "Confidencial — Acme S.A."
+copyright: "© 2026 Acme S.A."   # se embebe en la metadata del PDF
 page-numbers: true  # estampa "Página X de Y" en cada página de contenido
 cover: true         # genera una portada dedicada
 logo: logo.png      # logo de la portada (relativo al documento)

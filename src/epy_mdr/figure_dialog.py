@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
+
 _IMAGE_FILTER = (
     "Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp)"
     ";;All files (*)"
@@ -73,6 +75,7 @@ class FigureDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     def _browse(self) -> None:
         """Open a file picker and populate the path field."""

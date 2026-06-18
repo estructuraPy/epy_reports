@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from epy_mdr import _i18n as i18n
 from epy_mdr.latex_catalog import CATALOG, LatexEntry
 
 
@@ -74,6 +75,7 @@ class EquationDialog(QDialog):
         layout.addLayout(form)
         layout.addWidget(self.catalog_tabs, stretch=1)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     def _build_catalog_tab(self, entries: list[LatexEntry]) -> QWidget:
         """Build a scroll-area + grid of insertion buttons for one tab."""

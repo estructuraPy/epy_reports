@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from epy_mdr import _i18n as i18n
 from epy_mdr.bib import (
     ENTRY_TYPES,
     REQUIRED_FIELDS,
@@ -191,6 +192,7 @@ class BibEntryDialog(QDialog):
         # Prime
         self._on_type_changed(self.type_combo.currentText())
         self._refresh_preview()
+        i18n.translate_widget(self)
 
     # ----------------------------------------------------- Field model
 

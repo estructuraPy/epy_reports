@@ -1,9 +1,11 @@
 """Named configuration templates (presets) persisted as JSON files.
 
-A template bundles a small set of document-publishing settings — the
-visual theme plus the front-matter keys ``csl``, ``footer``,
-``page-numbers``, ``cover`` and ``logo`` — so a user can capture a
-house style once and re-apply it to any document.
+A template bundles a document's *appearance* settings — the visual theme
+plus the front-matter keys ``csl``, ``header``, ``footer``,
+``page-numbers``, ``page-size``, ``cover`` and ``logo`` — so a user can
+capture a house style (running header, footer, cover/logo, theme and page
+setup) once and re-apply it to any document. Document content such as the
+title, author or date is intentionally not stored.
 
 Each template is stored as a single JSON file under the user's
 application config directory::

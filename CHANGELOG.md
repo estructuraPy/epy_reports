@@ -4,6 +4,27 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] — 2026-06-18
+
+### Added
+- **In-app language switcher (English / Spanish).** *View ▸ Language*
+  switches the whole interface — menus, toolbar, dialogs — live, with no
+  restart, and the choice is remembered across sessions. Built on a small
+  dictionary-based translator (`_i18n.py`); English is the source language
+  and untranslated strings fall back to it gracefully.
+- **PDF exports embed document metadata.** Every exported PDF now carries
+  its title, author, subject, keywords, creator/producer and a copyright
+  notice in the PDF metadata, so authorship and rights travel with the
+  file. The notice comes from a new `copyright:` front-matter key, or is
+  derived as "© <year> <author>" when omitted.
+
+### Changed
+- **Templates now capture the full appearance.** A saved template stores
+  the theme plus the running `header`, `footer`, `cover`, `logo`,
+  `page-numbers`, `page-size` and `csl` — so a house style (header/footer
+  layout and theme included) can be captured once and re-applied. Document
+  content (title, author, date) is intentionally not stored.
+
 ## [0.4.2] — 2026-06-18
 
 ### Added

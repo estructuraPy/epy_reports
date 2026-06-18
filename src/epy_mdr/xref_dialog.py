@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from epy_mdr import _i18n as i18n
 from epy_mdr.bib import BibEntry
 from epy_mdr.snippets import KIND_DESCRIPTIONS, Label
 
@@ -76,6 +77,7 @@ class CrossRefDialog(QDialog):
         if self.list_widget.count() > 0:
             self.list_widget.setCurrentRow(0)
         self.filter_edit.setFocus()
+        i18n.translate_widget(self)
 
     def _populate(self, labels: list[Label]) -> None:
         """Refill the list widget with the current filtered labels."""

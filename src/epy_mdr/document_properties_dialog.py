@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
 from epy_mdr import snippets
 
 _PAGE_SIZES = ["letter", "a4", "legal"]
@@ -137,6 +138,7 @@ class DocumentPropertiesDialog(QDialog):
         layout.addWidget(header_box)
         layout.addWidget(footer_box)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     def _pick_logo(self) -> None:
         """Open a file picker for the cover logo image."""

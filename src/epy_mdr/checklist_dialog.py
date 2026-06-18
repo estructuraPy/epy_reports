@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
+
 
 class ChecklistDialog(QDialog):
     """Ask the user for item count and an optional title."""
@@ -43,6 +45,7 @@ class ChecklistDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        i18n.translate_widget(self)
 
     @property
     def item_count(self) -> int:

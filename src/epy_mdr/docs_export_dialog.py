@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from epy_mdr import _i18n as i18n
+
 
 class _RenderWorker(QThread):
     """Background thread that calls docs_bridge.render_document.
@@ -185,6 +187,7 @@ class DocsExportDialog(QDialog):
         root.addLayout(form)
         root.addWidget(self._lbl_status)
         root.addWidget(buttons)
+        i18n.translate_widget(self)
 
     def _browse_outdir(self) -> None:
         """Open a directory picker and update the output path field."""

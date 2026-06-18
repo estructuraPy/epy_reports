@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
     QToolButton,
 )
 
+from epy_mdr import _i18n as i18n
 from epy_mdr import bib, snippets, themes
 from epy_mdr.about_dialog import _load_branding_pixmap
 from epy_mdr.docs_bridge import epy_docs_available
@@ -132,6 +133,15 @@ class MarkdownWindow(QMainWindow):
         )
         self.act_page_view.setChecked(self._paged_enabled)
         self._apply_paged(self._paged_enabled)
+
+        # Internationalization: snapshot the English chrome, then apply the
+        # persisted language. Switching later relabels the UI live.
+        self._capture_i18n()
+        i18n.on_language_changed(self._retranslate_ui)
+        saved_lang = str(self._settings.value("language", "en"))
+        if saved_lang in i18n.LANGUAGES and saved_lang != "en":
+            i18n.set_language(saved_lang)
+        self._sync_language_menu()
 
         # Window icon (title bar + taskbar).
         logo_pix = _load_branding_pixmap("epy_mdr.png")
@@ -249,6 +259,21 @@ class MarkdownWindow(QMainWindow):
             self.page_size_actions[key] = act
         self.page_size_group.triggered.connect(
             lambda action: self._set_page_size(action.data())
+        )
+
+        # Language actions (English / Spanish, exclusive group). The
+        # endonyms ("English" / "Español") are intentionally NOT
+        # translated; the rest of the UI is, via _retranslate_ui.
+        self.lang_group = QActionGroup(self)
+        self.lang_group.setExclusive(True)
+        self.lang_actions: dict[str, QAction] = {}
+        for code, name in i18n.LANGUAGES.items():
+            act = QAction(name, self, checkable=True)
+            act.setData(code)
+            self.lang_group.addAction(act)
+            self.lang_actions[code] = act
+        self.lang_group.triggered.connect(
+            lambda action: self._set_language(action.data())
         )
 
     def _on_active_tab(self, fn_name: str, *args) -> None:
@@ -446,11 +471,11 @@ class MarkdownWindow(QMainWindow):
         self.file_menu.addAction(self.act_quit)
 
         self.text_menu = QMenu("&Text", self)
-        heading_sub = self.text_menu.addMenu("Heading")
+        self.heading_sub = self.text_menu.addMenu("Heading")
         for act in self.heading_actions:
-            heading_sub.addAction(act)
-        heading_sub.addSeparator()
-        heading_sub.addAction(self.act_no_heading)
+            self.heading_sub.addAction(act)
+        self.heading_sub.addSeparator()
+        self.heading_sub.addAction(self.act_no_heading)
         self.text_menu.addSeparator()
         self.text_menu.addAction(self.act_bold)
         self.text_menu.addAction(self.act_italic)
@@ -470,16 +495,16 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addAction(self.act_ins_footnote)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_code_block)
-        callout_sub = self.elements_menu.addMenu("Callout")
+        self.callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
-            callout_sub.addAction(act)
+            self.callout_sub.addAction(act)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
-        indexes_sub = self.elements_menu.addMenu("Indexes")
-        indexes_sub.addAction(self.act_ins_toc)
-        indexes_sub.addAction(self.act_ins_lof)
-        indexes_sub.addAction(self.act_ins_lot)
-        indexes_sub.addAction(self.act_ins_loe)
+        self.indexes_sub = self.elements_menu.addMenu("Indexes")
+        self.indexes_sub.addAction(self.act_ins_toc)
+        self.indexes_sub.addAction(self.act_ins_lof)
+        self.indexes_sub.addAction(self.act_ins_lot)
+        self.indexes_sub.addAction(self.act_ins_loe)
 
         self.references_menu = QMenu("&References", self)
         self.references_menu.aboutToShow.connect(
@@ -497,9 +522,9 @@ class MarkdownWindow(QMainWindow):
         self.export_menu.addAction(self.act_docs_export)
 
         self.view_menu = QMenu("&View", self)
-        theme_sub = self.view_menu.addMenu("Theme")
+        self.theme_sub = self.view_menu.addMenu("Theme")
         for act in self.theme_group.actions():
-            theme_sub.addAction(act)
+            self.theme_sub.addAction(act)
         self.view_menu.addSeparator()
         self.view_menu.addAction(self.act_page_view)
         self.page_size_menu = self.view_menu.addMenu("Page size")
@@ -510,6 +535,9 @@ class MarkdownWindow(QMainWindow):
         self.page_size_menu.aboutToShow.connect(
             self._sync_page_size_menu
         )
+        self.language_menu = self.view_menu.addMenu("Language")
+        for act in self.lang_group.actions():
+            self.language_menu.addAction(act)
 
         self.document_menu = QMenu("&Document", self)
         self.document_menu.addAction(self.act_doc_properties)
@@ -527,6 +555,9 @@ class MarkdownWindow(QMainWindow):
         bar = QToolBar("Main", self)
         bar.setMovable(False)
         self.addToolBar(bar)
+
+        # (button, english_text) pairs so the labels can be retranslated.
+        self._toolbar_buttons: list[tuple[QToolButton, str]] = []
 
         self._add_dropdown(bar, "File", self.file_menu)
         self._add_dropdown(bar, "Text", self.text_menu)
@@ -546,12 +577,64 @@ class MarkdownWindow(QMainWindow):
     ) -> None:
         """Add a popup-style QToolButton to ``bar`` that opens ``menu``."""
         btn = QToolButton(self)
-        btn.setText(text)
+        btn.setText(i18n.tr(text))
         btn.setMenu(menu)
         btn.setPopupMode(
             QToolButton.ToolButtonPopupMode.InstantPopup
         )
         bar.addWidget(btn)
+        self._toolbar_buttons.append((btn, text))
+
+    # --------------------------------------------- internationalization
+
+    def _capture_i18n(self) -> None:
+        """Snapshot the English text of every stable action/menu.
+
+        The map drives :meth:`_retranslate_ui`, so the source text stays the
+        translation key even after the label has been switched to Spanish.
+        """
+        self._tr_actions: dict[QAction, str] = {}
+        self._tr_menus: dict[QMenu, str] = {}
+        for obj in vars(self).values():
+            if isinstance(obj, QAction):
+                if obj.text():
+                    self._tr_actions[obj] = obj.text()
+            elif isinstance(obj, QMenu):
+                if obj.title():
+                    self._tr_menus[obj] = obj.title()
+            elif isinstance(obj, QActionGroup):
+                for act in obj.actions():
+                    if act.text():
+                        self._tr_actions[act] = act.text()
+            elif isinstance(obj, list):
+                for act in obj:
+                    if isinstance(act, QAction) and act.text():
+                        self._tr_actions[act] = act.text()
+            elif isinstance(obj, dict):
+                for act in obj.values():
+                    if isinstance(act, QAction) and act.text():
+                        self._tr_actions[act] = act.text()
+
+    def _retranslate_ui(self) -> None:
+        """Re-apply translations to every captured widget (live switch)."""
+        for action, english in self._tr_actions.items():
+            action.setText(i18n.tr(english))
+        for menu, english in self._tr_menus.items():
+            menu.setTitle(i18n.tr(english))
+        for btn, english in getattr(self, "_toolbar_buttons", []):
+            btn.setText(i18n.tr(english))
+        self._sync_language_menu()
+
+    def _set_language(self, code: str) -> None:
+        """Persist the chosen UI language and relabel the UI live."""
+        self._settings.setValue("language", code)
+        i18n.set_language(code)
+
+    def _sync_language_menu(self) -> None:
+        """Tick the radio item matching the active language."""
+        act = self.lang_actions.get(i18n.current_language())
+        if act is not None:
+            act.setChecked(True)
 
     # --------------------------------------------- references menu
 
@@ -571,7 +654,7 @@ class MarkdownWindow(QMainWindow):
         menu.clear()
         tab = self._current_tab()
         if tab is None:
-            placeholder = menu.addAction("(no document open)")
+            placeholder = menu.addAction(i18n.tr("(no document open)"))
             placeholder.setEnabled(False)
             menu.addSeparator()
             menu.addAction(self.act_link_bib)
@@ -583,7 +666,7 @@ class MarkdownWindow(QMainWindow):
         bib_entries = tab.bib_entries()
 
         if not labels:
-            placeholder = menu.addAction("(no labels in this file)")
+            placeholder = menu.addAction(i18n.tr("(no labels in this file)"))
             placeholder.setEnabled(False)
         else:
             groups: defaultdict[str, list[snippets.Label]] = (
@@ -594,7 +677,7 @@ class MarkdownWindow(QMainWindow):
             for kind in ("fig", "tbl", "eq", "sec"):
                 if kind not in groups:
                     continue
-                title = (
+                title = i18n.tr(
                     snippets.KIND_DESCRIPTIONS.get(kind, kind) + "s"
                 )
                 sub = menu.addMenu(title)
@@ -607,7 +690,9 @@ class MarkdownWindow(QMainWindow):
 
         if bib_entries:
             menu.addSeparator()
-            cite_sub = menu.addMenu(f"Citations ({len(bib_entries)})")
+            cite_sub = menu.addMenu(
+                f"{i18n.tr('Citations')} ({len(bib_entries)})"
+            )
             for entry in bib_entries:
                 act = cite_sub.addAction(entry.short_label())
                 act.setToolTip(
@@ -815,8 +900,10 @@ class MarkdownWindow(QMainWindow):
         data = {
             "theme": self._current_theme.id,
             "csl": meta.get("csl", ""),
+            "header": meta.get("header", ""),
             "footer": meta.get("footer", ""),
             "page_numbers": meta.get("page-numbers", ""),
+            "page_size": meta.get("page-size", ""),
             "cover": meta.get("cover", ""),
             "logo": meta.get("logo", ""),
         }
@@ -846,11 +933,12 @@ class MarkdownWindow(QMainWindow):
         tab = self._current_tab()
         if tab is None:
             return
-        # Map template keys to the front-matter field names.
+        # Map template keys to the front-matter field names (scalars).
         field_map = {
             "csl": "csl",
             "footer": "footer",
             "page_numbers": "page-numbers",
+            "page_size": "page-size",
             "cover": "cover",
             "logo": "logo",
         }
@@ -862,6 +950,13 @@ class MarkdownWindow(QMainWindow):
                 continue
             updated = snippets.set_metadata_field(
                 updated, field, str(value)
+            )
+        # The running header is a YAML flow sequence (e.g. ["A", "B"]);
+        # write it raw so the list literal is not quoted as a scalar.
+        header = tpl.get("header")
+        if header:
+            updated = snippets.set_metadata_field(
+                updated, "header", str(header), raw=True
             )
         if updated != text:
             cursor = tab.editor.textCursor()
