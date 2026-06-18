@@ -4,6 +4,17 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] — 2026-06-18
+
+### Fixed
+- **Themed PDF page margins no longer print white.** The 0.6.2 change set
+  the page background on the `html` root, but Chromium (and therefore Qt
+  WebEngine's `printToPdf`) strips background colors in print output by
+  default to save ink, so colored themes still exported with white
+  margins. Added `print-color-adjust: exact` on the root — the property is
+  inherited, so it forces every themed surface to paint. The full page,
+  including the 15 mm physical margins, now carries the theme color.
+
 ## [0.6.4] — 2026-06-18
 
 ### Fixed

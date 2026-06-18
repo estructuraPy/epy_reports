@@ -87,8 +87,18 @@
 html, body { margin: 0; padding: 0; }
 /* Propagate the theme's page background to the html root so Chromium/Qt
    WebEngine fills the physical paper margins (outside body) with the
-   same color instead of leaving them white in PDF export. */
-html { background: var(--bg, #ffffff); }
+   same color instead of leaving them white in PDF export.
+   `print-color-adjust: exact` is REQUIRED: Chromium (and therefore Qt
+   WebEngine's printToPdf) strips background colors in print output by
+   default to save ink, so without it the html/body background never
+   actually paints and the page margins come out white. The property is
+   inherited, so declaring it on the root forces every themed surface to
+   print. */
+html {
+    background: var(--bg, #ffffff);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
 
 /* Content wrapper. In normal mode it is a transparent passthrough so
    the body's centered max-width layout is preserved. In paged mode it

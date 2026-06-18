@@ -1,3 +1,3 @@
 """epy_mdr — Quarto/Markdown editor with PDF export."""
 
-__version__ = "0.6.4"
+__version__ = "0.6.5"
