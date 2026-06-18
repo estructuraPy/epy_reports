@@ -5,53 +5,45 @@ from __future__ import annotations
 from importlib import resources
 from pathlib import Path
 
-_FOOTNOTE_REFLOW_SCRIPT = """
+_PAGEDJS_RUNNER = """
 <script>
 (function () {
-  var BLOCK_TAGS = ['P','LI','BLOCKQUOTE','DIV','H1','H2','H3','H4','H5','H6','TD','TH','FIGCAPTION'];
-  function reflowFootnotes() {
-    var fnSection = document.querySelector('section.footnotes');
-    if (!fnSection) return;
-    var refs = document.querySelectorAll('a.footnote-ref');
-    refs.forEach(function (ref) {
-      var href = ref.getAttribute('href');
-      var fnId = href ? href.replace(/^#/, '') : null;
-      if (!fnId) return;
-      var fnEl = document.getElementById(fnId);
+  window._paged_done = false;
+  function setupFootnotes() {
+    var section = document.querySelector('section.footnotes');
+    if (!section) return;
+    document.querySelectorAll('a.footnote-ref').forEach(function (ref) {
+      var fnId = (ref.getAttribute('href') || '').replace(/^#/, '');
+      var fnEl = fnId ? document.getElementById(fnId) : null;
       if (!fnEl) return;
-
-      // Clone content; strip the back-link arrow.
       var clone = fnEl.cloneNode(true);
-      clone.querySelectorAll('.footnote-back').forEach(function (el) { el.remove(); });
-
-      // Walk up to the nearest block-level ancestor.
-      var anchor = ref;
-      while (anchor.parentElement && !BLOCK_TAGS.includes(anchor.parentElement.tagName)) {
-        anchor = anchor.parentElement;
-      }
-      var blockParent = anchor.parentElement || ref.parentElement;
-
-      // Build inline footnote block.
-      var block = document.createElement('div');
-      block.className = 'fn-inline-block';
-      var numSup = document.createElement('sup');
-      numSup.className = 'fn-number';
-      numSup.textContent = ref.textContent.trim();
-      block.appendChild(numSup);
-      block.appendChild(document.createTextNode(' '));
-      var pEl = clone.querySelector('p');
-      var source = pEl || clone;
-      while (source.firstChild) { block.appendChild(source.firstChild); }
-
-      if (blockParent && blockParent.parentElement) {
-        blockParent.parentElement.insertBefore(block, blockParent.nextSibling);
-      }
+      clone.querySelectorAll('.footnote-back').forEach(function (e) {
+        e.remove();
+      });
+      var span = document.createElement('span');
+      span.className = 'footnote';
+      var p = clone.querySelector('p');
+      var src = p || clone;
+      while (src.firstChild) { span.appendChild(src.firstChild); }
+      if (ref.parentNode) { ref.parentNode.replaceChild(span, ref); }
     });
+    section.remove();
+  }
+  function run() {
+    setupFootnotes();
+    if (!window.PagedPolyfill) { window._paged_done = true; return; }
+    window.PagedPolyfill.preview().then(function () {
+      window._paged_done = true;
+    }).catch(function () { window._paged_done = true; });
+  }
+  function waitMathThenRun() {
+    if (window._mathjax_done) { run(); }
+    else { setTimeout(waitMathThenRun, 100); }
   }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', reflowFootnotes);
+    document.addEventListener('DOMContentLoaded', waitMathThenRun);
   } else {
-    reflowFootnotes();
+    waitMathThenRun();
   }
 })();
 </script>
@@ -105,6 +97,43 @@ def _load_mathjax_script() -> str:
         .read_text(encoding="utf-8")
     )
     return f"<script>{js}</script>"
+
+
+# Page sizes as CSS ``@page { size }`` keywords.
+_PAGE_SIZE_CSS = {"letter": "letter", "a4": "A4", "legal": "legal"}
+
+
+def _pagedjs_head(page_size: str) -> str:
+    """Return the export-only Paged.js block: page CSS, polyfill and runner.
+
+    Used only for PDF export. ``window.PagedConfig.auto = false`` is set
+    *before* the polyfill loads so pagination is triggered manually by the
+    runner once MathJax has finished. Paged.js honours the ``@page`` margin
+    on every page, places each ``float: footnote`` at the foot of its page,
+    and reserves the space so notes never overlap the body.
+    """
+    size_key = (page_size or "").strip().lower()
+    size_css = _PAGE_SIZE_CSS.get(size_key, "letter")
+    css = (
+        "<style>\n"
+        f"@page {{ size: {size_css}; margin: 30mm; }}\n"
+        ".footnote { float: footnote; }\n"
+        ".pagedjs_footnote_area { font-size: var(--caption-size, 10pt); }\n"
+        ".pagedjs_footnote_area > div { padding-top: 0.4em; }\n"
+        "</style>\n"
+    )
+    polyfill = (
+        resources.files("epy_mdr.assets")
+        .joinpath("pagedjs")
+        .joinpath("paged.polyfill.min.js")
+        .read_text(encoding="utf-8")
+    )
+    return (
+        f"{css}"
+        "<script>window.PagedConfig = { auto: false };</script>\n"
+        f"<script>{polyfill}</script>\n"
+        f"{_PAGEDJS_RUNNER}\n"
+    )
 
 
 def _base_href(base_dir: Path | None) -> str:
@@ -202,6 +231,7 @@ def build_html_document(
     *,
     paged: bool = False,
     page_size: str = "letter",
+    for_export: bool = False,
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -222,6 +252,10 @@ def build_html_document(
             CSS picks the right sheet dimensions. Unknown or missing
             values fall back to Letter. The class is always emitted (it
             is harmless when not paged).
+        for_export: When ``True``, inject the Paged.js engine and an
+            ``@page`` rule so the document is paginated for PDF export
+            (per-page margins, footnotes at the foot of their page). The
+            live preview leaves this off.
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -238,6 +272,9 @@ def build_html_document(
     classes = ["paged"] if paged else []
     classes.append(f"size-{size_key}")
     body_class = f' class="{" ".join(classes)}"'
+    # Paged.js (and its @page rule) is injected only for PDF export, after
+    # the MathJax bundle so the runner can wait for typesetting first.
+    pagedjs = _pagedjs_head(size_key) if for_export else ""
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'
@@ -249,9 +286,9 @@ def build_html_document(
         f"{base_css}\n"
         f"{theme_css}\n"
         "</style>\n"
-        f"{_FOOTNOTE_REFLOW_SCRIPT}\n"
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
+        f"{pagedjs}"
         "</head>\n"
         f"<body{body_class}>\n"
         '<main class="doc-content">\n'

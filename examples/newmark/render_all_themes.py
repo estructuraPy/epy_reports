@@ -57,6 +57,7 @@ try:
     from epy_mdr._pdf_footer import (
         add_footer,
         add_header,
+        add_page_background,
         extract_anchor_pages,
     )
     from epy_mdr.renderer import (
@@ -71,6 +72,7 @@ except ImportError:
     from epy_mdr._pdf_footer import (
         add_footer,
         add_header,
+        add_page_background,
         extract_anchor_pages,
     )
     from epy_mdr.renderer import (
@@ -111,9 +113,11 @@ _PAGE_SIZE_IDS = {
 
 def _page_layout(page_size: str) -> QPageLayout:
     size_id = _PAGE_SIZE_IDS.get(normalize_page_size(page_size), _PAGE_SIZE_IDS["letter"])
-    # Zero margins: the web viewport must fill the whole sheet so the theme
-    # background prints edge to edge. The content inset comes from the
-    # stylesheet's print body padding (see assets/style.css @media print).
+    # Zero printer margin: Paged.js already lays out every page with a
+    # 30 mm @page margin, so the printed page maps 1:1 onto the sheet. The
+    # theme background is painted edge to edge afterwards by
+    # add_page_background; the 15 mm footer/header overlays sit inside the
+    # 30 mm margin with clearance.
     return QPageLayout(
         QPageSize(size_id),
         QPageLayout.Orientation.Portrait,
@@ -125,7 +129,7 @@ def _page_layout(page_size: str) -> QPageLayout:
 class ThemeExporter:
     """Render one theme: two-pass HTML→PDF with page number injection."""
 
-    MAX_WAIT_MS = 25_000
+    MAX_WAIT_MS = 60_000  # Paged.js pagination of a long doc can be slow
     POLL_MS = 300
 
     def __init__(self, theme_id: str, source: str, meta: dict, on_done) -> None:
@@ -142,12 +146,18 @@ class ThemeExporter:
         self._elapsed_ms = 0
         self._pending_pdf: Path | None = None
         self._pending_after = None
+        self._page_bg = ""
         # First physical page holding real content (after cover + indexes);
         # overlays start here and the footer renumbers content from 1.
         self._first_content_page = 1
 
         self.view = QWebEngineView()
+        # Paged.js measures content with getBoundingClientRect, which only
+        # works once the view is laid out. WA_DontShowOnScreen lays it out
+        # offscreen (no visible window) so pagination works headlessly.
+        self.view.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
         self.view.resize(900, 1200)
+        self.view.show()
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -156,6 +166,7 @@ class ThemeExporter:
     def go(self) -> None:
         print(f"\n=== theme: {self.theme_id} ===")
         theme = themes.get(self.theme_id)
+        self._page_bg = theme.css_vars.get("bg", "")
         page_size = normalize_page_size(self.meta.get("page-size"))
         html = render_markdown(
             self.source,
@@ -163,6 +174,7 @@ class ThemeExporter:
             theme_css=theme.to_css(),
             paged=False,
             page_size=page_size,
+            for_export=True,
         )
         self.html_path.write_text(html, encoding="utf-8")
         self._pass1_html = html
@@ -194,16 +206,18 @@ class ThemeExporter:
 
     def _poll(self) -> None:
         self._elapsed_ms += self.POLL_MS
+        # The Paged.js runner sets _paged_done only after MathJax has
+        # finished and pagination (incl. footnote placement) is complete.
         self.view.page().runJavaScript(
-            "window._mathjax_done === true", self._on_poll_result
+            "window._paged_done === true", self._on_poll_result
         )
 
     def _on_poll_result(self, done: bool) -> None:
         if done or self._elapsed_ms >= self.MAX_WAIT_MS:
             if not done:
-                print(f"  [{self.theme_id}] MathJax timeout — printing anyway")
+                print(f"  [{self.theme_id}] Paged.js timeout — printing anyway")
             else:
-                print(f"  [{self.theme_id}] MathJax ready after {self._elapsed_ms} ms")
+                print(f"  [{self.theme_id}] Paged.js ready after {self._elapsed_ms} ms")
             QTimer.singleShot(self.POLL_MS, self._do_print)
         else:
             QTimer.singleShot(self.POLL_MS, self._poll)
@@ -261,6 +275,12 @@ class ThemeExporter:
 
     def _apply_overlays_and_finish(self, ok: bool) -> None:
         if ok and self.pdf_path.exists():
+            # Paint the theme page background edge to edge on every page
+            # first (the printer margin is left white by Qt); the footer
+            # and header overlays are then stamped on top.
+            if self._page_bg:
+                add_page_background(self.pdf_path, self._page_bg)
+                print(f"  [{self.theme_id}] page background {self._page_bg}")
             header_raw = self.meta.get("header") or []
             header_cells = (
                 list(header_raw) if isinstance(header_raw, list) else [str(header_raw)]
@@ -313,7 +333,8 @@ def main() -> int:
     meta = parse_front_matter(source)
 
     app = QApplication.instance() or QApplication(sys.argv)
-    remaining = list(themes.THEMES.keys())
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    remaining = [only] if only else list(themes.THEMES.keys())
 
     def kick_next() -> None:
         if not remaining:

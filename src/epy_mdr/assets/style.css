@@ -465,7 +465,11 @@ nav.toc .toc-level-6 { padding-left: 6em; }
 
 .page-break {
     display: block;
-    break-after: page;
+    /* break-before (not -after): the zero-height marker starts the next
+       page and the following content flows from its top. With break-after
+       a marker left at the foot of a full page (e.g. after a tall cover)
+       spills onto a page of its own and Paged.js emits a blank page. */
+    break-before: page;
     height: 0;
     margin: 0;
     padding: 0;
@@ -498,27 +502,13 @@ body.paged .page-break::before {
     white-space: nowrap;
 }
 
-/* ---------- Footnotes (inline reflow) ---------- */
+/* ---------- Footnotes ---------- */
 
-/* Inserted by the footnote-reflow script after the referencing paragraph. */
-.fn-inline-block {
-    display: block;
-    border-top: 0.5pt solid var(--border, #ccc);
-    margin-top: 0.5em;
-    padding-top: 0.2em;
-    font-size: 0.8em;
-    line-height: 1.45;
-    color: var(--fg-muted, #555);
-    break-inside: avoid;
-}
-.fn-inline-block .fn-number {
-    font-size: 0.75em;
-    vertical-align: super;
-    margin-right: 0.15em;
-}
-
-/* In print (PDF export) hide the original end-of-document footnote section;
-   the inline blocks already carry the content on the correct page. */
+/* On screen (live preview) Pandoc's end-of-document footnote section is
+   shown as-is. For PDF export the Paged.js runner converts each footnote
+   into a ``float: footnote`` and Paged.js places it at the foot of its
+   page (see template._pagedjs_head); the end section is removed. This
+   print fallback hides it if pagination did not run. */
 @media print {
     section.footnotes { display: none; }
 }
@@ -612,20 +602,19 @@ body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
 
 /* ---------- Print / PDF tuning ---------- */
 
-/* Full-bleed printing: the page itself carries NO margin so the web
-   viewport spans the entire physical sheet and the html/body background
-   paints edge to edge (Chromium never paints the printer-margin band, so
-   any printToPdf/`@page` margin would come out white). The export code
-   therefore prints with zero QPageLayout margins; the visible content
-   inset is provided by the body padding below, which sits on the painted
-   background and clears the 15 mm footer/header overlays. */
-@page { margin: 0; }
-
+/* The PDF is exported with a real per-page printer margin (QPageLayout),
+   which Chromium honours on every page but never paints — so the page
+   background is applied afterwards as a full-sheet rectangle drawn behind
+   the content by `_pdf_footer.add_page_background`. That keeps correct
+   per-page top/bottom/side margins (footnotes and the footer no longer
+   collide) while the theme color still reaches the paper edges.
+   `print-color-adjust: exact` (on the root) keeps inner surfaces —
+   callouts, code blocks, table stripes — printing their own colors. */
 @media print {
     body {
         max-width: 100%;
         margin: 0;
-        padding: 30mm;
+        padding: 0;
         background: var(--bg);
     }
     a { color: inherit; text-decoration: none; }

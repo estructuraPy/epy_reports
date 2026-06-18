@@ -4,6 +4,31 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] — 2026-06-18
+
+### Changed
+- **Footnotes now sit at the foot of the page where they are referenced.**
+  PDF export is now paginated with Paged.js (bundled, MIT). Each Pandoc
+  footnote becomes a `float: footnote` that Paged.js places at the bottom
+  of its page with space reserved, so notes no longer interrupt the
+  following paragraph (the previous inline-reflow behaviour) and never
+  overlap the body. Paged.js honours the 30 mm `@page` margin on every
+  page, so the printer margin is zero and the theme background still
+  reaches the paper edges via `add_page_background`.
+
+### Fixed
+- **No more blank pages between the cover, the indexes and the body.**
+  Page-break markers now use `break-before` (a marker stranded at the foot
+  of a full page no longer spills onto a page of its own), and runs of
+  adjacent page breaks — an index block's own break next to an explicit
+  `[[pagebreak]]` — are collapsed into one.
+
+### Internal
+- Paged.js needs a laid-out viewport to measure content; the offscreen
+  export view is now shown with `WA_DontShowOnScreen` so pagination works
+  headlessly. `examples/newmark/render_all_themes.py` accepts an optional
+  theme-id argument to render a single theme.
+
 ## [0.6.6] — 2026-06-18
 
 ### Fixed

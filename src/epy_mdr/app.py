@@ -641,10 +641,11 @@ class MarkdownWindow(QMainWindow):
             app.setStyleSheet(themes.qss_for(theme))
 
         css = theme.to_css()
+        page_bg = theme.css_vars.get("bg", "")
         for i in range(self.tabs.count()):
             widget = self.tabs.widget(i)
             if isinstance(widget, MarkdownTab):
-                widget.set_theme_css(css)
+                widget.set_theme_css(css, page_bg)
 
         if theme.id in self.theme_actions:
             self.theme_actions[theme.id].setChecked(True)
@@ -1116,7 +1117,10 @@ class MarkdownWindow(QMainWindow):
     def _create_tab(self) -> MarkdownTab:
         """Instantiate a new MarkdownTab and wire its signals."""
         tab = MarkdownTab(self)
-        tab.set_theme_css(self._current_theme.to_css())
+        tab.set_theme_css(
+            self._current_theme.to_css(),
+            self._current_theme.css_vars.get("bg", ""),
+        )
         tab.set_paged(self._paged_enabled)
         tab.dirtyChanged.connect(
             lambda _flag, t=tab: self._refresh_tab_title(t)

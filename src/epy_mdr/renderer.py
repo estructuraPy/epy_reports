@@ -957,6 +957,24 @@ def _with_page_break(html: str) -> str:
     return html
 
 
+_CONSECUTIVE_BREAKS_RE = re.compile(
+    r'(?:<div class="page-break"></div>\s*){2,}'
+)
+
+
+def _collapse_page_breaks(html: str) -> str:
+    """Merge runs of adjacent page-break markers into a single one.
+
+    Each index block (TOC/LOF/LOT/LOE) appends its own page break and the
+    document may also place an explicit ``[[pagebreak]]`` right after them.
+    Two adjacent breaks make Paged.js start a page and then immediately
+    break again, leaving a blank page; collapsing them avoids that.
+    """
+    return _CONSECUTIVE_BREAKS_RE.sub(
+        '<div class="page-break"></div>', html
+    )
+
+
 def _expand_index_markers(body: str, source: str, lang: str) -> str:
     """Replace TOC / list marker paragraphs in *body* with HTML blocks.
 
@@ -1117,6 +1135,7 @@ def render_markdown(
     theme_css: str = "",
     paged: bool = False,
     page_size: str = "letter",
+    for_export: bool = False,
 ) -> str:
     """Render Quarto/Pandoc Markdown ``source`` to a full HTML page.
 
@@ -1144,6 +1163,9 @@ def render_markdown(
         page_size: Page-size key (``letter`` / ``a4`` / ``legal``)
             controlling the paged-preview sheet dimensions. Unknown or
             missing values fall back to Letter.
+        for_export: When ``True``, paginate the document with Paged.js for
+            PDF export (per-page margins, footnotes at the foot of their
+            page). Leave off for the live preview.
 
     Returns:
         A standalone HTML5 document ready for the preview pane or to
@@ -1170,6 +1192,7 @@ def render_markdown(
         extra_args=extra_args,
     )
     body = _expand_index_markers(body, source, lang)
+    body = _collapse_page_breaks(body)
 
     return build_html_document(
         body=body,
@@ -1179,4 +1202,5 @@ def render_markdown(
         theme_css=theme_css,
         paged=paged,
         page_size=page_size,
+        for_export=for_export,
     )

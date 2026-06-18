@@ -69,6 +69,72 @@ def extract_anchor_pages(pdf_path: Path) -> dict[str, int]:
         return {}
 
 
+def add_page_background(
+    pdf_path: Path,
+    color: str,
+    *,
+    start_page: int = 1,
+) -> None:
+    """Paint a solid full-sheet background behind every page, in place.
+
+    Qt WebEngine lays out the body inside the printer margin, so the margin
+    band of every page is left unpainted (white) even for colored themes —
+    Chromium never paints the printer-margin area. This draws a ``color``
+    rectangle covering the whole media box *below* the existing page
+    content, so the theme background reaches the paper edges without
+    touching the already-laid-out body, footnotes or overlays. The page
+    keeps its links because the backdrop is merged under it (``over=False``).
+
+    Args:
+        pdf_path: Path to an existing PDF; overwritten with the result.
+        color: CSS hex color (``#RRGGBB``) of the theme page background.
+            An empty or unparseable value leaves the PDF untouched.
+        start_page: First 1-based page to paint (defaults to every page,
+            cover and index pages included).
+
+    Raises:
+        RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not installed.
+    """
+    if not color:
+        return
+    try:
+        from pypdf import PdfReader, PdfWriter  # noqa: PLC0415
+        from reportlab.lib.colors import HexColor  # noqa: PLC0415
+        from reportlab.pdfgen import canvas  # noqa: PLC0415
+    except ImportError as exc:  # pragma: no cover - env guard
+        raise RuntimeError(
+            "PDF backgrounds require the 'pypdf' and 'reportlab' packages. "
+            "Install them with: pip install pypdf reportlab"
+        ) from exc
+
+    try:
+        fill = HexColor(color)
+    except (ValueError, TypeError):
+        return  # unparseable color → leave the PDF as-is
+
+    reader = PdfReader(str(pdf_path))
+    writer = PdfWriter()
+    for index, page in enumerate(reader.pages, start=1):
+        if index >= start_page:
+            width = float(page.mediabox.width)
+            height = float(page.mediabox.height)
+            buffer = io.BytesIO()
+            backdrop_canvas = canvas.Canvas(buffer, pagesize=(width, height))
+            backdrop_canvas.setFillColor(fill)
+            backdrop_canvas.rect(0, 0, width, height, fill=1, stroke=0)
+            backdrop_canvas.showPage()
+            backdrop_canvas.save()
+            buffer.seek(0)
+            backdrop = PdfReader(buffer).pages[0]
+            # over=False → backdrop goes underneath, page content (and its
+            # link annotations) stay on top.
+            page.merge_page(backdrop, over=False)
+        writer.add_page(page)
+
+    with pdf_path.open("wb") as handle:
+        writer.write(handle)
+
+
 def add_footer(
     pdf_path: Path,
     footer_text: str,

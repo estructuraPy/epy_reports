@@ -48,8 +48,9 @@ UNTITLED = "untitled.md"
 # Matches the integer suffix of a ``[^fn-N]`` footnote marker.
 _FOOTNOTE_RE = re.compile(r"\[\^fn-(\d+)\]")
 
-# MathJax typeset-completion poll: how long to wait before giving up.
-_MATHJAX_TIMEOUT_MS = 20_000
+# Export readiness poll (MathJax typeset + Paged.js pagination): how long
+# to wait before giving up and printing anyway.
+_PAGED_TIMEOUT_MS = 60_000
 _MATHJAX_POLL_MS = 100
 
 
@@ -119,6 +120,7 @@ class MarkdownTab(QWidget):
         self._dirty = False
         self._suppress_change = False
         self._theme_css: str = ""
+        self._page_bg: str = ""
         self._paged = False
 
         self.editor = QPlainTextEdit(self)
@@ -234,9 +236,16 @@ class MarkdownTab(QWidget):
             return
         self.load_file(self._path)
 
-    def set_theme_css(self, css: str) -> None:
-        """Update the preview's theme CSS and re-render immediately."""
+    def set_theme_css(self, css: str, page_bg: str = "") -> None:
+        """Update the preview's theme CSS and re-render immediately.
+
+        Args:
+            css: The theme's ``:root { … }`` override block.
+            page_bg: The theme's page background hex color (``--bg``), used
+                to paint the PDF page background edge to edge on export.
+        """
         self._theme_css = css
+        self._page_bg = page_bg
         self._render_now()
 
     def set_paged(self, value: bool) -> None:
@@ -300,6 +309,7 @@ class MarkdownTab(QWidget):
             theme_css=self._theme_css,
             paged=False,
             page_size=page_size,
+            for_export=True,
         )
 
         tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
@@ -318,6 +328,10 @@ class MarkdownTab(QWidget):
                 if ok:
                     from epy_mdr import _pdf_footer  # noqa: PLC0415
 
+                    if self._page_bg:
+                        _pdf_footer.add_page_background(
+                            tmp_pdf, self._page_bg,
+                        )
                     if any(header_cells):
                         _pdf_footer.add_header(
                             tmp_pdf, header_cells,
@@ -361,7 +375,7 @@ class MarkdownTab(QWidget):
                 if not ok:
                     after(False)
                     return
-                self._wait_for_mathjax(do_print)
+                self._wait_for_export_ready(do_print)
 
             # Connect the one-shot loadFinished BEFORE loading so the
             # signal can never be missed; SingleShotConnection keeps it
@@ -407,13 +421,15 @@ class MarkdownTab(QWidget):
 
     @staticmethod
     def _page_layout(page_size: str) -> QPageLayout:
-        """Return a portrait, zero-margin page layout.
+        """Return a portrait page layout with a 30 mm printer margin.
 
-        The page layout uses no margins so the web viewport fills the
-        whole physical sheet and the theme background prints edge to edge
-        (Chromium leaves any printer-margin band white). The visible
-        content inset is provided by the stylesheet's ``@media print``
-        body padding instead.
+        Chromium honours this margin on every page (so each page keeps a
+        consistent content inset and footnotes/footer never collide) but
+        never paints it. The theme background is therefore painted edge to
+        edge after export by
+        :func:`epy_mdr._pdf_footer.add_page_background`, so the margin does
+        not show as white, and the 15 mm footer/header overlays sit inside
+        it with clearance.
 
         Args:
             page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
@@ -429,7 +445,7 @@ class MarkdownTab(QWidget):
             "legal":  QPageSize.PageSizeId.Legal,
         }
         size_id = ids.get(normalize_page_size(page_size), ids["letter"])
-        margins = QMarginsF(0.0, 0.0, 0.0, 0.0)
+        margins = QMarginsF(30.0, 30.0, 30.0, 30.0)
         return QPageLayout(
             QPageSize(size_id),
             QPageLayout.Orientation.Portrait,
@@ -437,14 +453,16 @@ class MarkdownTab(QWidget):
             QPageLayout.Unit.Millimeter,
         )
 
-    def _wait_for_mathjax(self, then: Callable[[], None]) -> None:
-        r"""Poll ``window._mathjax_done`` then run ``then``.
+    def _wait_for_export_ready(self, then: Callable[[], None]) -> None:
+        r"""Poll ``window._paged_done`` then run ``then``.
 
-        MathJax sets ``window._mathjax_done`` once typesetting has
-        finished (see the template's startup hook). Printing before
-        that leaves equations as raw ``\[ … \]`` text. This polls the
-        flag and calls ``then`` as soon as it is truthy, or after a
-        timeout so a document with no math still prints promptly.
+        The export page runs MathJax and then Paged.js; the Paged.js
+        runner sets ``window._paged_done`` only once typesetting has
+        finished *and* pagination (page margins, footnotes at the foot of
+        their page) is complete. Printing before that prints raw
+        ``\[ … \]`` math or an unpaginated page. This polls the flag and
+        calls ``then`` as soon as it is truthy, or after a timeout so the
+        export still completes if pagination stalls.
         """
         elapsed = [0]
 
@@ -454,13 +472,13 @@ class MarkdownTab(QWidget):
                     then()
                     return
                 elapsed[0] += _MATHJAX_POLL_MS
-                if elapsed[0] >= _MATHJAX_TIMEOUT_MS:
+                if elapsed[0] >= _PAGED_TIMEOUT_MS:
                     then()
                     return
                 QTimer.singleShot(_MATHJAX_POLL_MS, check)
 
             self.view.page().runJavaScript(
-                "window._mathjax_done === true", handle
+                "window._paged_done === true", handle
             )
 
         check()
