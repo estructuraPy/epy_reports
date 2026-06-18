@@ -41,21 +41,23 @@ SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
 
-def _load_welcome_text() -> str:
-    """Load the preloaded welcome/manual document from package assets.
+def _load_manual_text(filename: str = "welcome.md") -> str:
+    """Load a bundled user-manual document and resolve its image placeholders.
 
-    The welcome tab shows a full user manual that demonstrates every
-    content type with its syntax and documents the Python API; it lives in
-    ``assets/welcome.md`` so it can be edited as Markdown.
+    The user manual is a full document that demonstrates every content type
+    with its syntax and documents the Python API; it ships as Markdown under
+    ``assets/`` so it can be edited freely. It exists in English
+    (``welcome.md``, the preloaded welcome tab) and Spanish
+    (``welcome_es.md``); both are openable from the Help menu.
 
-    The ``__EPY_LOGO__`` placeholder in the front matter is replaced with a
-    ``file://`` URI to the bundled logo so the example actually renders a
-    cover page with a logo (the welcome tab has no file path, so a relative
-    logo would not resolve in the preview or export).
+    The ``__EPY_LOGO__``, ``__SHOT_EDITOR__`` and ``__SHOT_PROPERTIES__``
+    placeholders are replaced with ``file://`` URIs to the bundled images so
+    the cover page and figures render even though the tab has no file path
+    (a relative reference would not resolve in the preview or the export).
     """
     text = (
         importlib.resources.files("epy_mdr.assets")
-        .joinpath("welcome.md")
+        .joinpath(filename)
         .read_text(encoding="utf-8")
     )
     # Resolve bundled images (logo + screenshots) to absolute file:// URIs.
@@ -65,6 +67,13 @@ def _load_welcome_text() -> str:
         "__EPY_LOGO__": ("branding", "epy_mdr.png"),
         "__SHOT_EDITOR__": ("screenshots", "editor.png"),
         "__SHOT_PROPERTIES__": ("screenshots", "document_properties.png"),
+        "__SHOT_FIGURE__": ("screenshots", "dlg_figure.png"),
+        "__SHOT_TABLE__": ("screenshots", "dlg_table.png"),
+        "__SHOT_EQUATION__": ("screenshots", "dlg_equation.png"),
+        "__SHOT_CHECKLIST__": ("screenshots", "dlg_checklist.png"),
+        "__SHOT_FOOTNOTE__": ("screenshots", "dlg_footnote.png"),
+        "__SHOT_XREF__": ("screenshots", "dlg_xref.png"),
+        "__SHOT_BIB__": ("screenshots", "dlg_bib.png"),
     }
     root = importlib.resources.files("epy_mdr.assets")
     for placeholder, (subdir, name) in assets.items():
@@ -77,7 +86,7 @@ def _load_welcome_text() -> str:
     return text
 
 
-WELCOME_TEXT = _load_welcome_text()
+WELCOME_TEXT = _load_manual_text("welcome.md")
 
 
 class MarkdownWindow(QMainWindow):
@@ -185,13 +194,13 @@ class MarkdownWindow(QMainWindow):
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_quit.triggered.connect(self.close)
 
-        self.act_sample_en = QAction("Open sample document (English)", self)
-        self.act_sample_en.triggered.connect(
-            lambda: self._open_sample("sample_en.md")
+        self.act_manual_en = QAction("User manual (English)", self)
+        self.act_manual_en.triggered.connect(
+            lambda: self._open_manual("welcome.md")
         )
-        self.act_sample_es = QAction("Open sample document (Spanish)", self)
-        self.act_sample_es.triggered.connect(
-            lambda: self._open_sample("sample_es.md")
+        self.act_manual_es = QAction("User manual (Spanish)", self)
+        self.act_manual_es.triggered.connect(
+            lambda: self._open_manual("welcome_es.md")
         )
 
         self.act_about = QAction("About epy_mdr…", self)
@@ -508,8 +517,8 @@ class MarkdownWindow(QMainWindow):
         self._build_templates_menu()
 
         self.help_menu = QMenu("&Help", self)
-        self.help_menu.addAction(self.act_sample_en)
-        self.help_menu.addAction(self.act_sample_es)
+        self.help_menu.addAction(self.act_manual_en)
+        self.help_menu.addAction(self.act_manual_es)
         self.help_menu.addSeparator()
         self.help_menu.addAction(self.act_about)
 
@@ -1150,23 +1159,20 @@ class MarkdownWindow(QMainWindow):
         tab = self._create_tab()
         tab.set_initial_text(WELCOME_TEXT, path=None)
 
-    def _open_sample(self, filename: str) -> None:
-        """Open a bundled sample document (Help menu) in a new tab.
+    def _open_manual(self, filename: str) -> None:
+        """Open a bundled user-manual document (Help menu) in a new tab.
 
-        The sample is loaded as an untitled buffer so the user can edit and
-        save it anywhere without overwriting the bundled copy.
+        The manual is loaded as an untitled buffer so the user can edit and
+        save it anywhere without overwriting the bundled copy. Image
+        placeholders are resolved to ``file://`` URIs so the cover and
+        figures render even with no file path.
         """
         try:
-            text = (
-                importlib.resources.files("epy_mdr.assets")
-                .joinpath("samples")
-                .joinpath(filename)
-                .read_text(encoding="utf-8")
-            )
+            text = _load_manual_text(filename)
         except (FileNotFoundError, OSError):
             QMessageBox.warning(
-                self, "Sample unavailable",
-                f"Could not load the bundled sample '{filename}'.",
+                self, "Manual unavailable",
+                f"Could not load the bundled manual '{filename}'.",
             )
             return
         tab = self._create_tab()

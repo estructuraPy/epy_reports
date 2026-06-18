@@ -4,7 +4,27 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.1] — 2026-06-18
+## [0.4.2] — 2026-06-18
+
+### Added
+- **Bilingual user manual, openable from Help.** The bundled user manual
+  now ships in English and Spanish. *Help ▸ User manual (English)* and
+  *Help ▸ User manual (Spanish)* each open the full manual in a new tab,
+  with its cover, logo, screenshots and figures resolved. (Replaces the
+  earlier mini sample documents.)
+- **Step-by-step "how to insert" guidance.** Every content type in the
+  manual now documents exactly how to insert it — the menu path and the
+  keyboard shortcut (e.g. *Elements ▸ Table*, `Ctrl+Shift+T`) — so the
+  reader can reproduce it.
+- **Screenshots of every insertion dialog.** The manual embeds captured
+  screenshots of the figure, table, equation, checklist, footnote,
+  cross-reference and bibliography-entry dialogs, generated from the real
+  widgets.
+
+### Changed
+- The Spanish manual uses neutral/professional Spanish.
+
+
 
 ### Added
 - **Sample documents in the Help menu.** *Help ▸ Open sample document

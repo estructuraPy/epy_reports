@@ -85,6 +85,9 @@ size, and writes them into the front matter for you.
 
 # Text formatting
 
+**Insert it:** select the text, then use the *Text* menu — `Ctrl+B` (bold),
+`Ctrl+I` (italic), `Ctrl+E` (inline code) or `Ctrl+K` (link).
+
 ```markdown
 **bold**, *italic*, `inline code`, ~~strikethrough~~ and a
 [link](https://anmingenieria.com).
@@ -95,6 +98,10 @@ size, and writes them into the front matter for you.
 
 # Headings and sections
 
+**Insert it:** *Text ▸ Heading* sets the level on the current line
+(`Ctrl+1`…`Ctrl+6`; `Ctrl+0` clears it). For a labelled, cross-referenceable
+section, use *Elements ▸ Section*.
+
 Prefix a line with one to six `#` characters. Add a `{#sec-...}` label to
 make the heading a cross-reference target:
 
@@ -103,6 +110,12 @@ make the heading a cross-reference target:
 ```
 
 # Lists and checklists
+
+**Insert it:** type the list markers directly, or use *Elements ▸ Checklist*
+(`Ctrl+Shift+L`) for a task list — the dialog asks for the number of items
+and an optional bold title.
+
+![The checklist dialog: set the number of items and an optional bold title.](__SHOT_CHECKLIST__){width=55%}
 
 ```markdown
 - Unordered item
@@ -128,6 +141,9 @@ and untick them in the browser. In the PDF they print as static boxes.
 :::
 
 # Quotes and callouts
+
+**Insert it:** *Elements ▸ Callout* (`Ctrl+Shift+C`), then pick the type
+(note / tip / warning / important / caution) and an optional title.
 
 A blockquote uses `>`; callouts use a fenced `::: {.callout-...}` block.
 The five callout types are `note`, `tip`, `warning`, `important` and
@@ -165,6 +181,9 @@ Proceed carefully — this can have consequences.
 
 # Code blocks
 
+**Insert it:** *Elements ▸ Code block* (`Ctrl+Shift+K`) and choose the
+language.
+
 Fence code with triple backticks and an optional language for syntax
 highlighting:
 
@@ -181,6 +200,11 @@ def greet(name: str) -> str:
 ```
 
 # Tables
+
+**Insert it:** *Elements ▸ Table* (`Ctrl+Shift+T`) — set the columns, rows,
+header and caption; the reference id is filled in for you.
+
+![The table dialog: columns, rows, a header toggle and a caption.](__SHOT_TABLE__){width=50%}
 
 A pipe table with a caption line (`: Caption {#tbl-id}`) becomes a
 numbered, cross-referenceable table:
@@ -210,10 +234,18 @@ optional width. The figure is auto-numbered and cross-referenceable:
 ![Stress–strain diagram of confined concrete.](figures/stress.svg){#fig-stress width=60%}
 ```
 
-Insert one with `Ctrl+Shift+F` — the editor copies the chosen image next to
-your document and fills in the label for you.
+**Insert it:** *Elements ▸ Figure* (`Ctrl+Shift+F`) — the editor copies the
+chosen image next to your document and fills in the label for you. Use
+*Elements ▸ Image* for a plain image with no caption.
+
+![The figure dialog: pick an image, a caption, a reference id and a width.](__SHOT_FIGURE__){width=55%}
 
 # Equations
+
+**Insert it:** *Elements ▸ Equation* (`Ctrl+Shift+Q`) — type the LaTeX and a
+reference id; the equation is auto-numbered.
+
+![The equation dialog: enter the LaTeX and a reference id.](__SHOT_EQUATION__){width=65%}
 
 Inline math goes between single `$`; display equations between `$$`, with
 an optional `{#eq-...}` label:
@@ -236,6 +268,12 @@ $$ {#eq-newmark}
 
 # Cross-references and citations
 
+**Insert it:** open the cross-reference picker with `Ctrl+R` and choose any
+labelled element; for a bibliography citation use the *References* menu
+(`Ctrl+Shift+B`), which needs a linked `.bib`.
+
+![The cross-reference picker lists every labelled figure, table, equation and section.](__SHOT_XREF__){width=55%}
+
 Reference any labelled element with `@` plus its id; the number and the
 localized word ("Table", "Equation", …) are filled in automatically:
 
@@ -253,7 +291,14 @@ As shown by Newmark [@newmark1959method], the method is unconditionally
 stable for $\beta \geq 1/4$.
 ```
 
+![The bibliography entry dialog composes a BibTeX record from a form.](__SHOT_BIB__){width=60%}
+
 # Footnotes
+
+**Insert it:** *Elements ▸ Footnote* (`Ctrl+Shift+O`) — it drops the marker
+and a matching definition stub for you to fill in.
+
+![The footnote dialog: the marker id and the note text.](__SHOT_FOOTNOTE__){width=60%}
 
 Drop a marker `[^id]` in the text and define it anywhere; on PDF export the
 note is placed at the *foot of the page* where it is referenced:
@@ -272,7 +317,8 @@ Confined concrete gains ductility[^fn-ductility].
 
 # Page layout markers
 
-Type any of these on their own line:
+**Insert it:** use *Elements ▸ Page break* (`Ctrl+Shift+G`) and
+*Elements ▸ Indexes*, or type any of these markers on their own line:
 
 | Marker | Effect |
 | --- | --- |
