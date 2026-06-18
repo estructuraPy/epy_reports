@@ -9,7 +9,9 @@ so the GUI can offer the *same* themes the document pipeline uses.
 from __future__ import annotations
 
 import json
+import re
 from importlib import resources
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtGui import QColor, QPalette
@@ -36,6 +38,13 @@ def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     """Convert ``#RRGGBB`` to an ``(r, g, b)`` int triplet."""
     h = hex_color.lstrip("#")
     return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def _coerce_hex(value: str | list[int]) -> str:
+    """Return ``#RRGGBB`` from either a hex string or an ``[r, g, b]`` list."""
+    if isinstance(value, str):
+        return value if value.startswith("#") else f"#{value}"
+    return _rgb_to_hex(value)
 
 
 def _mix(c1: str, c2: str, t: float) -> str:
@@ -142,9 +151,16 @@ def _callout_vars(
         "caution":   "oranges",
     }
     for kind in ("note", "tip", "warning", "important", "caution"):
-        pal_name = (
-            types.get(kind, {}).get("palette") or fallback[kind]
-        )
+        tdef = types.get(kind, {})
+        # Direct bg/border colors (used by the theme editor) win over a
+        # named-palette reference.
+        bg_direct = tdef.get("bg")
+        border_direct = tdef.get("border")
+        if bg_direct and border_direct:
+            out[f"callout-{kind}-bg"] = _coerce_hex(bg_direct)
+            out[f"callout-{kind}-border"] = _coerce_hex(border_direct)
+            continue
+        pal_name = tdef.get("palette") or fallback[kind]
         pdef = palettes.get(pal_name) or palettes.get(fallback[kind], {})
         # The 6-step palettes go from saturated (primary) to faint
         # (quinary). We use the lightest as the background and the
@@ -158,14 +174,25 @@ def _callout_vars(
 
 
 def load_layout_theme(filename: str) -> Theme:
-    """Build a :class:`Theme` from one layout ``.epyson`` file."""
+    """Build a :class:`Theme` from one bundled layout ``.epyson`` file."""
     raw = _read_json(filename)
+    return _theme_from_raw(raw, filename.rsplit(".", 1)[0])
+
+
+def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
+    """Build a :class:`Theme` from a parsed ``.epyson`` mapping.
+
+    Shared by the bundled-layout loader and the user-theme loader. An
+    explicit ``display_name`` in the file is honoured (so editor-generated
+    themes keep their exact name); otherwise it is derived from the id.
+    """
     palettes = _palettes()
 
-    layout_id = (
-        raw.get("layout_name") or filename.rsplit(".", 1)[0]
+    layout_id = raw.get("layout_name") or default_id
+    display_name = (
+        raw.get("display_name")
+        or layout_id.replace("-", " ").replace("_", " ").title()
     )
-    display_name = layout_id.replace("-", " ").replace("_", " ").title()
 
     # ---- fonts ------------------------------------------------------
     families = raw.get("font_families", {})
@@ -304,8 +331,127 @@ def load_layout_theme(filename: str) -> Theme:
     )
 
 
+# ----------------------------------------------- user (custom) themes
+
+_SAFE_STEM_RE = re.compile(r"[^A-Za-z0-9_-]+")
+
+
+def user_themes_dir() -> Path:
+    """Return the writable directory holding user-generated themes.
+
+    Lives under ``QStandardPaths.AppConfigLocation`` so custom themes
+    persist across sessions and are writable even from the frozen build
+    (the bundled ``assets/themes`` are read-only).
+    """
+    from PySide6.QtCore import QStandardPaths  # noqa: PLC0415
+
+    root = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.AppConfigLocation
+    )
+    return Path(root) / "epy_mdr" / "themes"
+
+
+def _safe_stem(name: str) -> str:
+    """Slugify a theme name into a safe ``.epyson`` file stem."""
+    slug = _SAFE_STEM_RE.sub("-", name.strip().lower()).strip("-")
+    return slug or "custom-theme"
+
+
+def load_user_theme(path: Path) -> Theme:
+    """Build a :class:`Theme` from a user ``.epyson`` file on disk."""
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return _theme_from_raw(raw, path.stem)
+
+
+def user_theme_ids() -> set[str]:
+    """Return the ids of themes that live in the user directory."""
+    directory = user_themes_dir()
+    if not directory.is_dir():
+        return set()
+    ids: set[str] = set()
+    for path in directory.glob("*.epyson"):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        ids.add(raw.get("layout_name") or path.stem)
+    return ids
+
+
+def save_user_theme(payload: dict[str, Any]) -> str:
+    """Persist an ``.epyson`` ``payload`` as a user theme; return its id.
+
+    The file stem and the ``layout_name`` are both set from the slugified
+    name so the saved id is stable and matches the filename.
+    """
+    layout_id = payload.get("layout_name") or _safe_stem(
+        payload.get("display_name", "custom-theme")
+    )
+    layout_id = _safe_stem(layout_id)
+    payload = {**payload, "layout_name": layout_id}
+    directory = user_themes_dir()
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / f"{layout_id}.epyson").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return layout_id
+
+
+def delete_user_theme(theme_id: str) -> None:
+    """Delete a user theme by id (no-op if it does not exist)."""
+    (user_themes_dir() / f"{theme_id}.epyson").unlink(missing_ok=True)
+
+
+def build_epyson(values: dict[str, Any]) -> dict[str, Any]:
+    """Assemble an ``.epyson`` payload from theme-editor form values.
+
+    ``values`` keys: ``display_name``; the hex colors ``page_bg``,
+    ``text``, ``heading``, ``primary``, ``secondary``, ``border``,
+    ``code_bg``, ``mark``; the font family names ``text_font`` and
+    ``code_font``; ``scales`` (``role -> {"size": float, "weight": str}``
+    for h1..h6, text, caption); and ``callouts``
+    (``kind -> {"bg": hex, "border": hex}``).
+    """
+    def rgb(hex_color: str) -> list[int]:
+        return list(_hex_to_rgb(hex_color))
+
+    return {
+        "display_name": values["display_name"],
+        "font_family_ref": "default",
+        "font_families": {
+            "default": {"primary": values["text_font"],
+                        "fallback": "Arial, sans-serif"},
+            "mono_code": {"primary": values["code_font"],
+                          "fallback": "monospace"},
+        },
+        "typography": {"scales": {
+            role: {"size": spec["size"], "weight": spec["weight"]}
+            for role, spec in values["scales"].items()
+        }},
+        "palette": {
+            "page": {"background": rgb(values["page_bg"]),
+                     "text": rgb(values["text"]),
+                     "header_color": rgb(values["heading"])},
+            "code": {"background": rgb(values["code_bg"]),
+                     "text": rgb(values["text"])},
+            "border_color": rgb(values["border"]),
+            "caption_color": rgb(values["text"]),
+            "colors": {"primary": rgb(values["primary"]),
+                       "secondary": rgb(values["secondary"]),
+                       "quaternary": rgb(values["mark"])},
+        },
+        "callouts": {"types": {
+            kind: {"bg": spec["bg"], "border": spec["border"]}
+            for kind, spec in values["callouts"].items()
+        }},
+    }
+
+
+# ------------------------------------------------------- catalogue
+
+
 def load_all_themes() -> dict[str, Theme]:
-    """Return every layout-derived theme, keyed by ``layout_name``."""
+    """Return every theme, keyed by id (bundled layouts + user themes)."""
     discovered: dict[str, Theme] = {}
     pkg = resources.files(ASSETS_PACKAGE)
     for entry in sorted(pkg.iterdir(), key=lambda p: p.name):
@@ -318,6 +464,16 @@ def load_all_themes() -> dict[str, Theme]:
         except (json.JSONDecodeError, OSError, KeyError):
             continue
         discovered[theme.id] = theme
+
+    # User-generated themes (override bundled ids of the same name).
+    directory = user_themes_dir()
+    if directory.is_dir():
+        for path in sorted(directory.glob("*.epyson")):
+            try:
+                theme = load_user_theme(path)
+            except (json.JSONDecodeError, OSError, KeyError):
+                continue
+            discovered[theme.id] = theme
     return discovered
 
 

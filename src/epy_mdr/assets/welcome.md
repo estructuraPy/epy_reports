@@ -67,6 +67,7 @@ copyright: "© 2026 Acme Inc."   # embedded in the exported PDF metadata
 page-numbers: true  # stamp "Page X of Y" on every content page
 cover: true         # render a dedicated cover page
 logo: logo.png      # cover logo (relative to the document)
+watermark: mark.png # faint grayscale image drawn behind every page
 header: ["Acme", "Report", "2026", "", "Rev. B", "p."]  # up to 6 cells
 bibliography: refs.bib   # enables @citations
 csl: ieee           # citation style: ieee | apa | chicago | ...
@@ -328,11 +329,20 @@ Confined concrete gains ductility[^fn-ductility].
 | `[[lot]]` | List of tables |
 | `[[loe]]` | List of equations |
 | `[[pagebreak]]` | Force a new page |
+| `[[section-roman]]` | Section break; the pages that follow number i, ii, iii… |
+| `[[section-arabic]]` | Section break; the pages that follow number 1, 2, 3… |
 
 : Layout markers. {#tbl-markers}
 
 Index entries (`[[toc]]`/`[[lof]]`/`[[lot]]`/`[[loe]]`) show the page
 number of their target in the exported PDF.
+
+**Section numbering.** A section break both forces a new page and
+restarts the page numbering in the chosen style. Use `[[section-roman]]`
+for front matter (a preface or the indexes) so it numbers i, ii, iii, and
+`[[section-arabic]]` where the body begins so it restarts at 1 — the
+classic academic convention. Insert them from *Elements ▸ Section break
+(Roman / Arabic)*.
 
 # Exporting
 
@@ -428,6 +438,17 @@ Switch the editor and preview theme from the *View* menu — nine layouts
 are bundled: academic, classic, corporate, creative, handwritten, minimal,
 professional, scientific and technical. The chosen theme styles both the
 on-screen preview and every export.
+
+**Make your own.** *View ▸ Theme ▸ New theme…* opens a theme editor: clone
+any bundled theme as a starting point, then adjust the base colors, the
+text and code fonts, the h1–h6 typography scale and the five callout
+colors — with a live preview. Everything else (the toolbar palette,
+syntax-highlighting colors, contrast) is derived automatically, so a few
+choices yield a coherent identity. Saved themes appear next to the
+built-in ones in *View ▸ Theme* and persist across sessions; edit or
+remove them from the same menu.
+
+![The theme editor: clone a theme, then tweak colors, fonts, typography and callouts with a live preview.](__SHOT_THEME_EDITOR__){width=80%}
 
 ---
 

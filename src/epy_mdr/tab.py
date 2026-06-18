@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 import shutil
 import tempfile
@@ -310,6 +311,17 @@ class MarkdownTab(QWidget):
 
         base_dir = self._path.parent if self._path is not None else None
         title = self._path.name if self._path is not None else UNTITLED
+
+        # Optional grayscale watermark image (front-matter ``watermark:``),
+        # resolved relative to the document when given a relative path.
+        watermark_path: Path | None = None
+        watermark = meta.get("watermark", "").strip()
+        if watermark:
+            candidate = Path(watermark)
+            if not candidate.is_absolute() and base_dir is not None:
+                candidate = base_dir / watermark
+            if candidate.is_file():
+                watermark_path = candidate
         export_html = render_markdown(
             text,
             base_dir=base_dir,
@@ -324,12 +336,18 @@ class MarkdownTab(QWidget):
         pass1_pdf = tmp_dir / "pass1.pdf"
         tmp_pdf = tmp_dir / "export.pdf"
 
-        def finalize(ok: bool, start_page: int) -> None:
+        def finalize(
+            ok: bool, start_page: int,
+            segments: list[tuple[int, str]] | None = None,
+        ) -> None:
             """Stamp header/footer overlays, move into place, then notify.
 
             ``start_page`` is the first content page: cover and index
             front matter before it stay clean, and the footer renumbers
             content from 1 (see :func:`epy_mdr._pdf_footer.add_footer`).
+            ``segments`` carries any ``[[section-roman]]`` /
+            ``[[section-arabic]]`` boundaries so numbering restarts per
+            section in the chosen style.
             """
             result_ok = ok
             try:
@@ -340,6 +358,10 @@ class MarkdownTab(QWidget):
                         _pdf_footer.add_page_background(
                             tmp_pdf, self._page_bg,
                         )
+                    if watermark_path is not None:
+                        # Best-effort: a missing Pillow must not fail export.
+                        with contextlib.suppress(OSError, RuntimeError):
+                            _pdf_footer.add_watermark(tmp_pdf, watermark_path)
                     if any(header_cells):
                         _pdf_footer.add_header(
                             tmp_pdf, header_cells,
@@ -352,6 +374,7 @@ class MarkdownTab(QWidget):
                             page_numbers=page_numbers,
                             lang=lang,
                             start_page=start_page,
+                            segments=segments,
                         )
                     # Embed document metadata + copyright last, so it
                     # survives the page-stamping rewrites above.
@@ -403,8 +426,23 @@ class MarkdownTab(QWidget):
             )
             self.view.load(QUrl.fromLocalFile(str(html_file.resolve())))
 
-        def after_pass2(first_content_page: int, ok: bool) -> None:
-            finalize(ok, first_content_page)
+        def after_pass2(
+            first_content_page: int, ok: bool,
+            segments: list[tuple[int, str]] | None = None,
+        ) -> None:
+            finalize(ok, first_content_page, segments)
+
+        def _section_segments(
+            anchors: dict[str, int],
+        ) -> list[tuple[int, str]] | None:
+            """Extract ``(page, style)`` section boundaries from anchors."""
+            found: list[tuple[int, str]] = []
+            for anchor_id, page in anchors.items():
+                if anchor_id.startswith("epy-section-roman-"):
+                    found.append((page, "roman"))
+                elif anchor_id.startswith("epy-section-arabic-"):
+                    found.append((page, "arabic"))
+            return sorted(found) or None
 
         def after_pass1(ok: bool) -> None:
             if not ok:
@@ -415,25 +453,32 @@ class MarkdownTab(QWidget):
             )
 
             anchor_to_page = extract_anchor_pages(pass1_pdf)
-            if anchor_to_page:
+            segments = _section_segments(anchor_to_page)
+            # Section markers are page breaks, not body content; exclude them
+            # when locating the first content page.
+            content_anchors = {
+                a: p for a, p in anchor_to_page.items()
+                if not a.startswith("epy-section-")
+            }
+            if content_anchors:
                 # Index blocks emit only links, so every destination is in
                 # the body; the smallest is the first content page. Cover +
                 # TOC/LOF/LOT/LOE before it are unnumbered front matter and
                 # the body is renumbered from 1.
-                first = min(anchor_to_page.values())
+                first = min(content_anchors.values())
                 html2 = inject_page_numbers(
                     export_html, anchor_to_page, first - 1
                 )
                 load_and_print(
                     html2, tmp_pdf,
-                    lambda ok2: after_pass2(first, ok2),
+                    lambda ok2: after_pass2(first, ok2, segments),
                 )
             else:
                 # No named destinations (older Qt / no anchors): skip the
                 # second pass and just stamp from the first content page,
                 # which is the page after the cover when present.
                 shutil.copy(pass1_pdf, tmp_pdf)
-                finalize(True, 2 if has_cover else 1)
+                finalize(True, 2 if has_cover else 1, segments)
 
         load_and_print(export_html, pass1_pdf, after_pass1)
 

@@ -575,6 +575,13 @@ _LOE_MARKER_RE = re.compile(r"^\s*\[\[\s*loe\s*\]\]\s*$", re.IGNORECASE)
 _PAGEBREAK_MARKER_RE = re.compile(
     r"^\s*\[\[\s*pagebreak\s*\]\]\s*$", re.IGNORECASE
 )
+# Section breaks that also switch the page-number style of what follows.
+_SECTION_ROMAN_RE = re.compile(
+    r"^\s*\[\[\s*section-roman\s*\]\]\s*$", re.IGNORECASE
+)
+_SECTION_ARABIC_RE = re.compile(
+    r"^\s*\[\[\s*section-arabic\s*\]\]\s*$", re.IGNORECASE
+)
 
 # Post-pandoc marker paragraphs (``[[toc]]`` -> ``<p>[[toc]]</p>``).
 _TOC_P_RE = re.compile(
@@ -932,19 +939,40 @@ def _expand_page_breaks(source: str) -> str:
     """
     out_lines: list[str] = []
     in_fence = False
+    section_n = 0
     for line in source.splitlines(keepends=True):
         if _FENCE_RE.match(line):
             in_fence = not in_fence
             out_lines.append(line)
             continue
-        if not in_fence and _PAGEBREAK_MARKER_RE.match(
-            line.rstrip("\n")
-        ):
+        stripped = line.rstrip("\n")
+        if not in_fence and _PAGEBREAK_MARKER_RE.match(stripped):
             # Emit as a ```{=html} raw block so Pandoc passes the div
             # through verbatim instead of reflowing it.
             out_lines.append(
                 f"\n```{{=html}}\n{PAGE_BREAK_HTML}\n```\n\n"
             )
+            continue
+        section_style = (
+            "roman" if _SECTION_ROMAN_RE.match(stripped)
+            else "arabic" if _SECTION_ARABIC_RE.match(stripped)
+            else None
+        )
+        if not in_fence and section_style is not None:
+            # A section break is a page break carrying an id that the PDF
+            # export resolves to a physical page, so footer numbering can
+            # restart in the chosen style from here on.
+            section_n += 1
+            anchor = f"epy-section-{section_style}-{section_n}"
+            # Chromium only emits a PDF named destination for an id that is
+            # the target of an internal link, so pair the (invisible) anchor
+            # span with a self-link; the export then resolves it to a page.
+            div = (
+                f'<div class="page-break"></div>'
+                f'<span id="{anchor}" class="epy-section-anchor"></span>'
+                f'<a href="#{anchor}" aria-hidden="true"></a>'
+            )
+            out_lines.append(f"\n```{{=html}}\n{div}\n```\n\n")
             continue
         out_lines.append(line)
     return "".join(out_lines)

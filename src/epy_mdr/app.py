@@ -75,6 +75,7 @@ def _load_manual_text(filename: str = "welcome.md") -> str:
         "__SHOT_FOOTNOTE__": ("screenshots", "dlg_footnote.png"),
         "__SHOT_XREF__": ("screenshots", "dlg_xref.png"),
         "__SHOT_BIB__": ("screenshots", "dlg_bib.png"),
+        "__SHOT_THEME_EDITOR__": ("screenshots", "dlg_theme.png"),
     }
     # The Spanish manual (``welcome_es.md``) uses the same placeholders but
     # resolves them to the localized screenshot variants (``*_es.png``) when
@@ -243,18 +244,18 @@ class MarkdownWindow(QMainWindow):
                 "Requires the epy-docs package"
             )
 
-        # Theme actions (one per registered theme, exclusive group).
-        self.theme_group = QActionGroup(self)
-        self.theme_group.setExclusive(True)
-        self.theme_actions: dict[str, QAction] = {}
-        for theme in themes.THEMES.values():
-            act = QAction(theme.display_name, self, checkable=True)
-            act.setData(theme.id)
-            self.theme_group.addAction(act)
-            self.theme_actions[theme.id] = act
-        self.theme_group.triggered.connect(
-            lambda action: self._apply_theme(action.data())
+        # Theme radio actions (one per registered theme, exclusive group).
+        self._build_theme_actions()
+
+        # Custom-theme editor actions (live in the Theme submenu).
+        self.act_new_theme = QAction("New theme…", self)
+        self.act_new_theme.triggered.connect(
+            lambda: self._open_theme_editor(edit_id=None)
         )
+        self.act_edit_theme = QAction("Edit current theme…", self)
+        self.act_edit_theme.triggered.connect(self._edit_current_theme)
+        self.act_delete_theme = QAction("Delete custom theme…", self)
+        self.act_delete_theme.triggered.connect(self._delete_custom_theme)
 
         # Page-size actions (Letter default, exclusive group). The key
         # is stored as action data and written into the document's
@@ -397,6 +398,23 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_page_break")
         )
 
+        self.act_ins_section_roman = QAction(
+            "Section break (Roman i, ii, iii)", self
+        )
+        self.act_ins_section_roman.triggered.connect(
+            lambda: self._on_active_tab(
+                "insert_index_marker", "section-roman"
+            )
+        )
+        self.act_ins_section_arabic = QAction(
+            "Section break (Arabic 1, 2, 3)", self
+        )
+        self.act_ins_section_arabic.triggered.connect(
+            lambda: self._on_active_tab(
+                "insert_index_marker", "section-arabic"
+            )
+        )
+
         self.act_ins_toc = QAction("Table of contents  [[toc]]", self)
         self.act_ins_toc.setShortcut(QKeySequence("Ctrl+Shift+U"))
         self.act_ins_toc.triggered.connect(
@@ -512,6 +530,8 @@ class MarkdownWindow(QMainWindow):
             self.callout_sub.addAction(act)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
+        self.elements_menu.addAction(self.act_ins_section_roman)
+        self.elements_menu.addAction(self.act_ins_section_arabic)
         self.indexes_sub = self.elements_menu.addMenu("Indexes")
         self.indexes_sub.addAction(self.act_ins_toc)
         self.indexes_sub.addAction(self.act_ins_lof)
@@ -535,8 +555,7 @@ class MarkdownWindow(QMainWindow):
 
         self.view_menu = QMenu("&View", self)
         self.theme_sub = self.view_menu.addMenu("Theme")
-        for act in self.theme_group.actions():
-            self.theme_sub.addAction(act)
+        self._populate_theme_menu()
         self.view_menu.addSeparator()
         self.view_menu.addAction(self.act_page_view)
         self.page_size_menu = self.view_menu.addMenu("Page size")
@@ -768,6 +787,107 @@ class MarkdownWindow(QMainWindow):
             self.statusBar().showMessage(
                 f"Theme: {theme.display_name}", 2000
             )
+
+    def _build_theme_actions(self) -> None:
+        """(Re)create the exclusive group of theme radio actions."""
+        self.theme_group = QActionGroup(self)
+        self.theme_group.setExclusive(True)
+        self.theme_actions: dict[str, QAction] = {}
+        for theme in themes.THEMES.values():
+            act = QAction(theme.display_name, self, checkable=True)
+            act.setData(theme.id)
+            self.theme_group.addAction(act)
+            self.theme_actions[theme.id] = act
+        self.theme_group.triggered.connect(
+            lambda action: self._apply_theme(action.data())
+        )
+
+    def _populate_theme_menu(self) -> None:
+        """Fill the Theme submenu: theme radios + custom-theme actions."""
+        self.theme_sub.clear()
+        for act in self.theme_group.actions():
+            self.theme_sub.addAction(act)
+        self.theme_sub.addSeparator()
+        self.theme_sub.addAction(self.act_new_theme)
+        self.theme_sub.addAction(self.act_edit_theme)
+        self.theme_sub.addAction(self.act_delete_theme)
+
+    def _refresh_themes(self, select_id: str | None = None) -> None:
+        """Reload bundled + user themes and rebuild the Theme submenu."""
+        # Drop the soon-to-be-replaced theme actions from the i18n map so
+        # _retranslate_ui never touches deleted QAction objects.
+        for act in self.theme_group.actions():
+            self._tr_actions.pop(act, None)
+        themes.reload()
+        self._build_theme_actions()
+        self._populate_theme_menu()
+        # Register the new theme actions for live retranslation.
+        for act in self.theme_group.actions():
+            self._tr_actions[act] = act.text()
+        if i18n.current_language() != "en":
+            self._retranslate_ui()
+        if select_id:
+            self._apply_theme(select_id)
+
+    def _open_theme_editor(self, edit_id: str | None = None) -> None:
+        """Open the theme editor; on save, persist and select the theme."""
+        from epy_mdr.theme_editor_dialog import (  # noqa: PLC0415
+            ThemeEditorDialog,
+        )
+
+        dialog = ThemeEditorDialog(
+            self, base_theme_id=self._current_theme.id, edit_id=edit_id
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            theme_id = themes.save_user_theme(dialog.epyson_payload())
+        except OSError as exc:
+            QMessageBox.warning(self, APP_NAME, str(exc))
+            return
+        self._refresh_themes(select_id=theme_id)
+        self.statusBar().showMessage(
+            i18n.tr("Theme saved: {name}").format(name=dialog.theme_name()),
+            3000,
+        )
+
+    def _edit_current_theme(self) -> None:
+        """Edit the active theme in place if custom, otherwise clone it."""
+        current = self._current_theme.id
+        edit_id = current if current in themes.user_theme_ids() else None
+        self._open_theme_editor(edit_id=edit_id)
+
+    def _delete_custom_theme(self) -> None:
+        """Delete a custom theme chosen from the user-generated set."""
+        from PySide6.QtWidgets import QInputDialog  # noqa: PLC0415
+
+        user_ids = sorted(themes.user_theme_ids())
+        if not user_ids:
+            QMessageBox.information(
+                self, APP_NAME, i18n.tr("No custom themes to delete.")
+            )
+            return
+        names = [themes.THEMES[i].display_name for i in user_ids]
+        choice, ok = QInputDialog.getItem(
+            self, i18n.tr("Delete custom theme…"),
+            i18n.tr("Theme:"), names, 0, False,
+        )
+        if not ok:
+            return
+        theme_id = user_ids[names.index(choice)]
+        confirm = QMessageBox.question(
+            self, APP_NAME,
+            i18n.tr("Delete the custom theme {name}?").format(name=choice),
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+        themes.delete_user_theme(theme_id)
+        fallback = (
+            themes.DEFAULT_THEME_ID
+            if self._current_theme.id == theme_id
+            else self._current_theme.id
+        )
+        self._refresh_themes(select_id=fallback)
 
     def _toggle_page_view(self, enabled: bool) -> None:
         """Toggle A4 page view on every tab and persist the choice."""

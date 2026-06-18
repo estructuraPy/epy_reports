@@ -31,7 +31,7 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 PKG_NAME = "epy-mdr"
-PKG_VERSION = "0.4.4"
+PKG_VERSION = "0.5.0"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
@@ -167,13 +167,14 @@ def _build_control_tar() -> bytes:
             # marked externally-managed, so `pip install` into it fails.
             # Build a dedicated virtual environment for the pip-only
             # runtime dependencies — PySide6 (GUI), pypdf + reportlab
-            # (PDF footer / page-number stamping) — and let the launcher
-            # in /usr/bin/epy-mdr run from it.
+            # (PDF footer / page-number stamping) and Pillow (grayscale
+            # watermark) — and let the launcher in /usr/bin/epy-mdr run
+            # from it.
             if [ ! -d "$VENV" ]; then
                 python3 -m venv "$VENV"
             fi
             "$VENV/bin/pip" install --upgrade pip || true
-            "$VENV/bin/pip" install PySide6 pypdf reportlab
+            "$VENV/bin/pip" install PySide6 pypdf reportlab Pillow
 
             # Update system MIME database so .qmd type is recognized.
             if command -v update-mime-database >/dev/null 2>&1; then

@@ -69,6 +69,7 @@ copyright: "© 2026 Acme S.A."   # se embebe en la metadata del PDF
 page-numbers: true  # estampa "Página X de Y" en cada página de contenido
 cover: true         # genera una portada dedicada
 logo: logo.png      # logo de la portada (relativo al documento)
+watermark: mark.png # imagen gris tenue detrás de cada página
 header: ["Acme", "Informe", "2026", "", "Rev. B", "p."]  # hasta 6 celdas
 bibliography: refs.bib   # habilita las @citas
 csl: ieee           # estilo de cita: ieee | apa | chicago | ...
@@ -336,11 +337,20 @@ línea:
 | `[[lot]]` | Lista de tablas |
 | `[[loe]]` | Lista de ecuaciones |
 | `[[pagebreak]]` | Fuerza una página nueva |
+| `[[section-roman]]` | Salto de sección; las páginas siguientes numeran i, ii, iii… |
+| `[[section-arabic]]` | Salto de sección; las páginas siguientes numeran 1, 2, 3… |
 
 : Marcadores de diseño. {#tbl-markers}
 
 Las entradas de índice (`[[toc]]`/`[[lof]]`/`[[lot]]`/`[[loe]]`) muestran el
 número de página de su destino en el PDF exportado.
+
+**Numeración por secciones.** Un salto de sección fuerza una página nueva y
+reinicia la numeración en el estilo elegido. Use `[[section-roman]]` para el
+material preliminar (un prefacio o los índices) y numere i, ii, iii, y
+`[[section-arabic]]` donde empieza el cuerpo para reiniciar en 1 — la
+convención académica clásica. Insértelos desde *Elementos ▸ Salto de
+sección (romano / arábigo)*.
 
 # Exportación
 
@@ -434,10 +444,21 @@ if epy_docs_available():
 
 # Temas
 
-Cambie el tema del editor y de la vista previa desde el menú *View*: vienen
+Cambie el tema del editor y de la vista previa desde el menú *Ver*: vienen
 nueve diseños: academic, classic, corporate, creative, handwritten,
 minimal, professional, scientific y technical. El tema elegido aplica
 estilo tanto a la vista previa en pantalla como a cada exportación.
+
+**Cree el suyo.** *Ver ▸ Tema ▸ Tema nuevo…* abre un editor de temas: clone
+cualquier tema incluido como punto de partida y ajuste los colores base,
+las fuentes de texto y código, la escala tipográfica h1–h6 y los colores de
+los cinco llamados — con vista previa en vivo. Todo lo demás (la paleta de
+la barra, los colores del resaltado, el contraste) se deriva
+automáticamente, así que unas pocas decisiones producen una identidad
+coherente. Los temas guardados aparecen junto a los incluidos en *Ver ▸
+Tema* y persisten entre sesiones; edítelos o elimínelos desde el mismo menú.
+
+![El editor de temas: clone un tema y ajuste colores, fuentes, tipografía y llamados con vista previa en vivo.](__SHOT_THEME_EDITOR__){width=80%}
 
 ---
 

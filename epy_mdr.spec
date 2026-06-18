@@ -46,6 +46,10 @@ hiddenimports += [
     "epy_mdr.assets.reference_docx",
     "epy_mdr.assets.mathjax",
     "epy_mdr.assets.csl",
+    # Lazy-imported inside _pdf_footer.add_watermark for the grayscale
+    # watermark; PyInstaller may miss the in-function import.
+    "PIL",
+    "PIL.Image",
 ]
 
 a = Analysis(

@@ -4,6 +4,29 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-06-18
+
+### Added
+- **Theme editor.** *View ▸ Theme ▸ New theme…* opens a full editor:
+  clone any bundled theme, then set the base colors, the text/code fonts,
+  the h1–h6 typography scale and the five callout colors, with a live
+  preview. Everything else (the Qt chrome palette, syntax-highlighting
+  colors, contrast) is derived automatically. Saved themes persist in the
+  user config directory, appear next to the built-in ones in *View ▸
+  Theme*, and can be edited or deleted from the same menu.
+- **Section breaks with Roman / Arabic numbering.** `[[section-roman]]`
+  and `[[section-arabic]]` (also under *Elements ▸ Section break*) force a
+  page break and restart the page numbering in the chosen style — front
+  matter in i, ii, iii and the body in 1, 2, 3, the classic academic
+  convention.
+- **Watermark.** A `watermark:` front-matter image (or the field in
+  *Document properties*) is desaturated to grayscale and drawn faintly
+  behind every page, so it never clashes with the document's colors.
+
+### Changed
+- New runtime dependency **Pillow** (grayscale watermark). The Ubuntu
+  `.deb` installs it into its PEP 668-safe virtualenv.
+
 ## [0.4.4] — 2026-06-18
 
 ### Added

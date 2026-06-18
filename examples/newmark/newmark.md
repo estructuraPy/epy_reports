@@ -16,6 +16,7 @@ bibliography: newmark.bib
 cover: true
 csl: ieee
 logo: epy_mdr.png
+watermark: epy_mdr.png
 date: 2026-06-15
 author: Ing. Angel Navarro-Mora M.Sc.
 footer: "Nathan M. Newmark (1910–1981) — ANM Ingeniería"
@@ -26,6 +27,8 @@ subtitle: Vida, obra y legado del fundador de la ingeniería sísmica moderna
 title: Nathan M. Newmark (1910–1981)
 ---
 
+[[section-roman]]
+
 [[toc]]
 
 [[lof]]
@@ -34,7 +37,7 @@ title: Nathan M. Newmark (1910–1981)
 
 [[loe]]
 
-[[pagebreak]]
+[[section-arabic]]
 
 # Introducción {#sec-intro}
 

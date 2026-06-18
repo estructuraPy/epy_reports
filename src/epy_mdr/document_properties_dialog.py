@@ -97,6 +97,16 @@ class DocumentPropertiesDialog(QDialog):
         logo_row.addWidget(logo_btn)
         cover_v.addLayout(logo_row)
 
+        # Grayscale watermark drawn faintly behind every page.
+        self.watermark_edit = QLineEdit(self._orig.get("watermark", ""))
+        wm_btn = QPushButton("Browse…")
+        wm_btn.clicked.connect(self._pick_watermark)
+        wm_row = QHBoxLayout()
+        wm_row.addWidget(QLabel("Watermark:"))
+        wm_row.addWidget(self.watermark_edit)
+        wm_row.addWidget(wm_btn)
+        cover_v.addLayout(wm_row)
+
         # --- Running header (2 rows x 3 columns) --------------------------
         cells = snippets.parse_header_cells(self._orig.get("header", ""))[:6]
         cells += [""] * (6 - len(cells))
@@ -149,6 +159,15 @@ class DocumentPropertiesDialog(QDialog):
         if path:
             self.logo_edit.setText(path)
 
+    def _pick_watermark(self) -> None:
+        """Open a file picker for the page watermark image."""
+        path, _ = QFileDialog.getOpenFileName(
+            self, i18n.tr("Choose watermark image"), "",
+            "Images (*.png *.jpg *.jpeg *.svg *.webp);;All files (*)",
+        )
+        if path:
+            self.watermark_edit.setText(path)
+
     def updates(self) -> list[tuple[str, str, bool]]:
         """Return the front-matter updates as ``(field, value, raw)``.
 
@@ -168,6 +187,7 @@ class DocumentPropertiesDialog(QDialog):
         add_text("author", self.author_edit.text())
         add_text("date", self.date_edit.text())
         add_text("logo", self.logo_edit.text())
+        add_text("watermark", self.watermark_edit.text())
         add_text("footer", self.footer_edit.text())
 
         def yn(checked: bool) -> str:

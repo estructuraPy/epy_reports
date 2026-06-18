@@ -17,12 +17,32 @@ Public API:
 
 from __future__ import annotations
 
-from epy_mdr.epyson import apply_palette, load_all_themes, qss_for
+from epy_mdr.epyson import (
+    apply_palette,
+    build_epyson,
+    delete_user_theme,
+    load_all_themes,
+    qss_for,
+    save_user_theme,
+    user_theme_ids,
+    user_themes_dir,
+)
 from epy_mdr.themes_base import Theme
 
 DEFAULT_THEME_ID = "corporate"
 
 THEMES: dict[str, Theme] = load_all_themes()
+
+
+def reload() -> dict[str, Theme]:
+    """Re-scan bundled + user themes and refresh :data:`THEMES` in place.
+
+    Mutates the existing ``THEMES`` dict (rather than rebinding it) so any
+    module that imported it keeps a live reference. Returns it.
+    """
+    THEMES.clear()
+    THEMES.update(load_all_themes())
+    return THEMES
 
 
 def get(theme_id: str | None) -> Theme:
@@ -52,6 +72,12 @@ __all__ = [
     "THEMES",
     "Theme",
     "apply_palette",
+    "build_epyson",
+    "delete_user_theme",
     "get",
     "qss_for",
+    "reload",
+    "save_user_theme",
+    "user_theme_ids",
+    "user_themes_dir",
 ]

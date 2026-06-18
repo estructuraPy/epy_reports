@@ -39,6 +39,25 @@ def _page_label(lang: str, current: int, total: int) -> str:
     return template.format(current=current, total=total)
 
 
+_ROMAN_STEPS = [
+    (1000, "m"), (900, "cm"), (500, "d"), (400, "cd"), (100, "c"),
+    (90, "xc"), (50, "l"), (40, "xl"), (10, "x"), (9, "ix"),
+    (5, "v"), (4, "iv"), (1, "i"),
+]
+
+
+def _roman(number: int) -> str:
+    """Return ``number`` as a lowercase Roman numeral (front-matter style)."""
+    if number <= 0:
+        return str(number)
+    out: list[str] = []
+    for value, glyph in _ROMAN_STEPS:
+        while number >= value:
+            out.append(glyph)
+            number -= value
+    return "".join(out)
+
+
 def extract_anchor_pages(pdf_path: Path) -> dict[str, int]:
     """Return ``anchor id → 1-based page`` from a Qt-generated PDF.
 
@@ -141,6 +160,126 @@ def add_page_background(
         writer.write(handle)
 
 
+def add_watermark(
+    pdf_path: Path,
+    image_path: Path,
+    *,
+    opacity: float = 0.12,
+    width_ratio: float = 0.7,
+) -> None:
+    """Stamp a faint grayscale watermark image onto every page, in place.
+
+    The source image is desaturated to grayscale (so it never clashes with
+    the document's colors) and drawn centered and translucent, washed out
+    behind the text like a classic watermark. The original alpha channel is
+    preserved and scaled by ``opacity`` so transparent logos stay clean.
+
+    Args:
+        pdf_path: Path to an existing PDF; overwritten with the result.
+        image_path: Any raster/vector image readable by Pillow.
+        opacity: Watermark strength in [0, 1] (default faint 0.12).
+        width_ratio: Watermark width as a fraction of the page width.
+
+    Raises:
+        RuntimeError: When Pillow, pypdf or reportlab is not installed.
+    """
+    try:
+        from PIL import Image  # noqa: PLC0415
+    except ImportError as exc:  # pragma: no cover - env guard
+        raise RuntimeError(
+            "Watermarks require the 'Pillow' package. "
+            "Install it with: pip install Pillow"
+        ) from exc
+    try:
+        from pypdf import PdfReader, PdfWriter  # noqa: PLC0415
+        from reportlab.lib.utils import ImageReader  # noqa: PLC0415
+        from reportlab.pdfgen import canvas  # noqa: PLC0415
+    except ImportError as exc:  # pragma: no cover - env guard
+        raise RuntimeError(
+            "Watermarks require the 'pypdf' and 'reportlab' packages. "
+            "Install them with: pip install pypdf reportlab"
+        ) from exc
+
+    if not Path(image_path).is_file():
+        return  # nothing to stamp
+
+    # Desaturate to grayscale, then rebuild as a translucent RGBA image so
+    # only a faint gray ghost of the artwork remains.
+    source = Image.open(str(image_path)).convert("RGBA")
+    r, g, b, alpha = source.split()
+    luminance = Image.merge("RGB", (r, g, b)).convert("L")
+    faint = Image.merge("RGB", (luminance, luminance, luminance)).convert(
+        "RGBA"
+    )
+    faint.putalpha(alpha.point(lambda v: int(v * opacity)))
+    img_w, img_h = faint.size
+    reader = PdfReader(str(pdf_path))
+    writer = PdfWriter()
+    for page in reader.pages:
+        page_w = float(page.mediabox.width)
+        page_h = float(page.mediabox.height)
+        draw_w = page_w * width_ratio
+        draw_h = draw_w * img_h / img_w
+        x = (page_w - draw_w) / 2.0
+        y = (page_h - draw_h) / 2.0
+        buffer = io.BytesIO()
+        wm_canvas = canvas.Canvas(buffer, pagesize=(page_w, page_h))
+        wm_canvas.drawImage(
+            ImageReader(faint), x, y, draw_w, draw_h, mask="auto"
+        )
+        wm_canvas.showPage()
+        wm_canvas.save()
+        buffer.seek(0)
+        overlay = PdfReader(buffer).pages[0]
+        page.merge_page(overlay)
+        writer.add_page(page)
+
+    with pdf_path.open("wb") as handle:
+        writer.write(handle)
+
+
+def _page_stamp(
+    index: int,
+    start_page: int,
+    content_total: int,
+    lang: str,
+    segments: list[tuple[int, str]] | None,
+    page_numbers: bool,
+) -> tuple[bool, str | None]:
+    """Return ``(stamp, label)`` for one physical page.
+
+    ``stamp`` is True when the page belongs to a numbered section (so the
+    footer text is drawn); ``label`` is the page-number string, or None when
+    numbering is off or the page is unnumbered front matter.
+
+    With ``segments`` (sorted ``(start_page, style)`` boundaries), each
+    section numbers from 1 in its own style (``roman`` or ``arabic``),
+    restarting at every boundary; pages before the first boundary are
+    unnumbered front matter. Without segments, the legacy single-run
+    behaviour applies: Arabic "Page X of Y" from ``start_page``.
+    """
+    if segments:
+        current_segment: tuple[int, str] | None = None
+        for seg_start, style in segments:
+            if index >= seg_start:
+                current_segment = (seg_start, style)
+            else:
+                break
+        if current_segment is None:
+            return (False, None)
+        seg_start, style = current_segment
+        if not page_numbers:
+            return (True, None)
+        number = index - seg_start + 1
+        return (True, _roman(number) if style == "roman" else str(number))
+
+    if index >= start_page:
+        if not page_numbers:
+            return (True, None)
+        return (True, _page_label(lang, index - start_page + 1, content_total))
+    return (False, None)
+
+
 def add_footer(
     pdf_path: Path,
     footer_text: str,
@@ -148,17 +287,18 @@ def add_footer(
     page_numbers: bool,
     lang: str = "en",
     start_page: int = 1,
+    segments: list[tuple[int, str]] | None = None,
 ) -> None:
     """Stamp pages of ``pdf_path`` with a footer, in place.
 
     Draws ``footer_text`` at the bottom-left and, when ``page_numbers`` is
-    ``True``, a localized "Page X of Y" string at the bottom-right.
+    ``True``, a page-number string at the bottom-right.
 
     Args:
         pdf_path: Path to an existing PDF; overwritten with the stamped
             version.
         footer_text: Static text drawn at the bottom-left.  May be empty.
-        page_numbers: When ``True``, draw "Page X of Y" at bottom-right.
+        page_numbers: When ``True``, draw the page number at bottom-right.
         lang: Two-letter language tag selecting the page-number wording.
         start_page: First 1-based physical page to stamp.  Pages before
             this (cover and index pages — TOC / LOF / LOT / LOE) are
@@ -166,6 +306,11 @@ def add_footer(
             Page numbering restarts at 1 on ``start_page`` and the
             "of Y" total counts only the stamped (content) pages, so the
             front matter is effectively unnumbered.
+        segments: Optional sorted list of ``(start_page, style)`` section
+            boundaries (``style`` is ``"roman"`` or ``"arabic"``). When
+            given, numbering restarts in each section's style — front matter
+            in Roman, the body in Arabic, for example — and a bare numeral
+            (``i``/``1``) is drawn instead of "Page X of Y".
 
     Raises:
         RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not installed.
@@ -182,6 +327,8 @@ def add_footer(
     if not footer_text and not page_numbers:
         return  # nothing to stamp
 
+    sorted_segments = sorted(segments) if segments else None
+
     reader = PdfReader(str(pdf_path))
     writer = PdfWriter()
     total = len(reader.pages)
@@ -192,7 +339,11 @@ def add_footer(
     margin = _MARGIN_MM * _MM_TO_PT
 
     for index, page in enumerate(reader.pages, start=1):
-        if index >= start_page:
+        stamp, label = _page_stamp(
+            index, start_page, content_total, lang,
+            sorted_segments, page_numbers,
+        )
+        if stamp and (footer_text or label):
             width = float(page.mediabox.width)
             height = float(page.mediabox.height)
             buffer = io.BytesIO()
@@ -201,9 +352,7 @@ def add_footer(
             pdf.setFillGray(_GRAY)
             if footer_text:
                 pdf.drawString(margin, margin, footer_text)
-            if page_numbers:
-                current = index - start_page + 1
-                label = _page_label(lang, current, content_total)
+            if label:
                 pdf.drawRightString(width - margin, margin, label)
             pdf.showPage()
             pdf.save()

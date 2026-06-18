@@ -58,6 +58,7 @@ try:
         add_footer,
         add_header,
         add_page_background,
+        add_watermark,
         extract_anchor_pages,
     )
     from epy_mdr.renderer import (
@@ -73,6 +74,7 @@ except ImportError:
         add_footer,
         add_header,
         add_page_background,
+        add_watermark,
         extract_anchor_pages,
     )
     from epy_mdr.renderer import (
@@ -126,6 +128,17 @@ def _page_layout(page_size: str) -> QPageLayout:
     )
 
 
+def _section_segments(anchors: dict) -> list[tuple[int, str]] | None:
+    """Extract ``(page, style)`` section boundaries from PDF anchors."""
+    found: list[tuple[int, str]] = []
+    for anchor_id, page in anchors.items():
+        if anchor_id.startswith("epy-section-roman-"):
+            found.append((page, "roman"))
+        elif anchor_id.startswith("epy-section-arabic-"):
+            found.append((page, "arabic"))
+    return sorted(found) or None
+
+
 class ThemeExporter:
     """Render one theme: two-pass HTML→PDF with page number injection."""
 
@@ -150,6 +163,8 @@ class ThemeExporter:
         # First physical page holding real content (after cover + indexes);
         # overlays start here and the footer renumbers content from 1.
         self._first_content_page = 1
+        # Section-break boundaries (Roman/Arabic), if the document has any.
+        self._segments: list[tuple[int, str]] | None = None
 
         self.view = QWebEngineView()
         # Paged.js measures content with getBoundingClientRect, which only
@@ -248,12 +263,19 @@ class ThemeExporter:
             return
 
         anchor_to_page = extract_anchor_pages(self._pass1_pdf)
-        if anchor_to_page:
+        self._segments = _section_segments(anchor_to_page)
+        # Section markers are page breaks, not body content; exclude them
+        # when locating the first content page.
+        content_anchors = {
+            a: p for a, p in anchor_to_page.items()
+            if not a.startswith("epy-section-")
+        }
+        if content_anchors:
             # All named destinations live in the body (index blocks emit
             # only links), so the smallest one is the first content page.
             # Everything before it (cover + TOC/LOF/LOT/LOE) is unnumbered
             # front matter; content page numbers restart at 1 from there.
-            self._first_content_page = min(anchor_to_page.values())
+            self._first_content_page = min(content_anchors.values())
             offset = self._first_content_page - 1
             print(
                 f"  [{self.theme_id}] extracted {len(anchor_to_page)} anchors "
@@ -292,7 +314,11 @@ class ThemeExporter:
             # destinations were found (pass 2 skipped).
             has_cover = str(self.meta.get("cover", "")).lower() in ("true", "yes", "1")
             overlay_start = max(self._first_content_page, 2 if has_cover else 1)
+            watermark = str(self.meta.get("watermark", "") or "").strip()
             try:
+                if watermark and (ROOT / watermark).is_file():
+                    add_watermark(self.pdf_path, ROOT / watermark)
+                    print(f"  [{self.theme_id}] watermark {watermark}")
                 if any(header_cells):
                     add_header(
                         self.pdf_path, header_cells,
@@ -306,8 +332,13 @@ class ThemeExporter:
                         page_numbers=page_numbers_flag,
                         lang=lang,
                         start_page=overlay_start,
+                        segments=self._segments,
                     )
-                    print(f"  [{self.theme_id}] footer stamped (from page {overlay_start})")
+                    label = (
+                        "sectioned" if self._segments
+                        else f"from page {overlay_start}"
+                    )
+                    print(f"  [{self.theme_id}] footer stamped ({label})")
             except RuntimeError as exc:
                 print(f"  [{self.theme_id}] overlay error: {exc}")
         self._finish()
