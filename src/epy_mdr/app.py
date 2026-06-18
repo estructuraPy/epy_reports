@@ -185,6 +185,15 @@ class MarkdownWindow(QMainWindow):
         self.act_quit.setShortcut(QKeySequence.StandardKey.Quit)
         self.act_quit.triggered.connect(self.close)
 
+        self.act_sample_en = QAction("Open sample document (English)", self)
+        self.act_sample_en.triggered.connect(
+            lambda: self._open_sample("sample_en.md")
+        )
+        self.act_sample_es = QAction("Open sample document (Spanish)", self)
+        self.act_sample_es.triggered.connect(
+            lambda: self._open_sample("sample_es.md")
+        )
+
         self.act_about = QAction("About epy_mdr…", self)
         self.act_about.triggered.connect(self._show_about)
 
@@ -499,6 +508,9 @@ class MarkdownWindow(QMainWindow):
         self._build_templates_menu()
 
         self.help_menu = QMenu("&Help", self)
+        self.help_menu.addAction(self.act_sample_en)
+        self.help_menu.addAction(self.act_sample_es)
+        self.help_menu.addSeparator()
         self.help_menu.addAction(self.act_about)
 
     def _build_toolbar(self) -> None:
@@ -1137,6 +1149,28 @@ class MarkdownWindow(QMainWindow):
         """Create the initial untitled tab shown at startup."""
         tab = self._create_tab()
         tab.set_initial_text(WELCOME_TEXT, path=None)
+
+    def _open_sample(self, filename: str) -> None:
+        """Open a bundled sample document (Help menu) in a new tab.
+
+        The sample is loaded as an untitled buffer so the user can edit and
+        save it anywhere without overwriting the bundled copy.
+        """
+        try:
+            text = (
+                importlib.resources.files("epy_mdr.assets")
+                .joinpath("samples")
+                .joinpath(filename)
+                .read_text(encoding="utf-8")
+            )
+        except (FileNotFoundError, OSError):
+            QMessageBox.warning(
+                self, "Sample unavailable",
+                f"Could not load the bundled sample '{filename}'.",
+            )
+            return
+        tab = self._create_tab()
+        tab.set_initial_text(text, path=None)
 
     def _create_tab(self) -> MarkdownTab:
         """Instantiate a new MarkdownTab and wire its signals."""
