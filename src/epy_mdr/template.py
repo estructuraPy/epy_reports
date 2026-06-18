@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 
@@ -72,8 +74,13 @@ window.MathJax = {
 """
 
 
+@lru_cache(maxsize=1)
 def _load_base_css() -> str:
-    """Load the bundled base stylesheet from package assets."""
+    """Load the bundled base stylesheet from package assets (cached).
+
+    The CSS is read once on first call and reused for every subsequent
+    render, avoiding a filesystem round-trip per document update.
+    """
     return (
         resources.files("epy_mdr.assets")
         .joinpath("style.css")
@@ -81,14 +88,18 @@ def _load_base_css() -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _load_mathjax_script() -> str:
-    r"""Return the inline MathJax v3 bundle (tex-svg-full, ~2 MB).
+    r"""Return the inline MathJax v3 bundle (tex-svg-full, ~2 MB), cached.
 
     Embedded inline so the preview, PDF and HTML export all work
     offline. The CDN copy that lived here before is fragile when the
     machine has no internet or the print fires before the script
     finishes downloading — which manifested as ``\[ ... \]`` shown
     as raw text in every export format.
+
+    The result is cached after the first load to avoid re-reading ~2 MB
+    on every render call.
     """
     js = (
         resources.files("epy_mdr.assets")
@@ -173,7 +184,11 @@ def is_truthy(value: str | None) -> bool:
 
 
 def _front_matter_block(metadata: dict[str, str]) -> str:
-    """Render YAML front matter as a small header above the body."""
+    """Render YAML front matter as a small header above the body.
+
+    All metadata values are HTML-escaped before interpolation to prevent
+    XSS injection from a crafted YAML front-matter block.
+    """
     title = metadata.get("title")
     author = metadata.get("author")
     date = metadata.get("date")
@@ -181,11 +196,11 @@ def _front_matter_block(metadata: dict[str, str]) -> str:
         return ""
     parts: list[str] = ['<header class="doc-meta">']
     if title:
-        parts.append(f"<h1 class='doc-title'>{title}</h1>")
+        parts.append(f"<h1 class='doc-title'>{html.escape(title)}</h1>")
     if author:
-        parts.append(f"<p class='doc-author'>{author}</p>")
+        parts.append(f"<p class='doc-author'>{html.escape(author)}</p>")
     if date:
-        parts.append(f"<p class='doc-date'>{date}</p>")
+        parts.append(f"<p class='doc-date'>{html.escape(date)}</p>")
     parts.append("</header>")
     return "\n".join(parts)
 
@@ -198,6 +213,9 @@ def _cover_page_block(metadata: dict[str, str]) -> str:
     followed by a page break so the body starts on the next printed
     page. The logo path resolves through the document's ``<base href>``,
     so relative paths work in both preview and export.
+
+    All metadata values are HTML-escaped before interpolation to prevent
+    XSS injection from a crafted YAML front-matter block.
     """
     logo = metadata.get("logo")
     title = metadata.get("title")
@@ -206,17 +224,18 @@ def _cover_page_block(metadata: dict[str, str]) -> str:
     date = metadata.get("date")
     parts: list[str] = ['<section class="cover-page">']
     if logo:
+        # src is a file path — escape attribute value to block injection.
         parts.append(
-            f'<img class="cover-logo" src="{logo}" alt="">'
+            f'<img class="cover-logo" src="{html.escape(logo, quote=True)}" alt="">'
         )
     if title:
-        parts.append(f'<h1 class="cover-title">{title}</h1>')
+        parts.append(f'<h1 class="cover-title">{html.escape(title)}</h1>')
     if subtitle:
-        parts.append(f'<p class="cover-subtitle">{subtitle}</p>')
+        parts.append(f'<p class="cover-subtitle">{html.escape(subtitle)}</p>')
     if author:
-        parts.append(f'<p class="cover-author">{author}</p>')
+        parts.append(f'<p class="cover-author">{html.escape(author)}</p>')
     if date:
-        parts.append(f'<p class="cover-date">{date}</p>')
+        parts.append(f'<p class="cover-date">{html.escape(date)}</p>')
     parts.append("</section>")
     parts.append('<div class="page-break"></div>')
     return "\n".join(parts)
@@ -281,7 +300,7 @@ def build_html_document(
         "<head>\n"
         '<meta charset="utf-8">\n'
         f"{_base_href(base_dir)}\n"
-        f"<title>{title}</title>\n"
+        f"<title>{html.escape(title)}</title>\n"
         "<style>\n"
         f"{base_css}\n"
         f"{theme_css}\n"

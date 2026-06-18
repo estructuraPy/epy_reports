@@ -60,12 +60,18 @@ def extract_anchor_pages(pdf_path: Path) -> dict[str, int]:
         reader = PdfReader(str(pdf_path))
         result: dict[str, int] = {}
         for name, dest in reader.named_destinations.items():
-            with contextlib.suppress(Exception):  # skip unresolvable dests
+            # Individual destinations may reference a missing page —
+            # suppress only the specific lookup errors pypdf raises.
+            with contextlib.suppress(KeyError, IndexError, TypeError):
                 result[name.lstrip("/")] = (
                     reader.get_destination_page_number(dest) + 1
                 )
         return result
-    except Exception:  # noqa: BLE001 - corrupt/unreadable PDF
+    except Exception:  # noqa: BLE001
+        # pypdf.PdfReadError (and other internal parse exceptions) are
+        # raised for structurally corrupt or truncated PDFs. We cannot
+        # enumerate all pypdf-internal exception subclasses here, so
+        # Exception is intentional: a bad PDF must not crash the export.
         return {}
 
 

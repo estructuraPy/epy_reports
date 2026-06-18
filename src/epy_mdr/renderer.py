@@ -1058,7 +1058,9 @@ def _rasterize_svgs_for_docx(
             renderer.render(painter)
             painter.end()
             image.save(str(png_path), "PNG")
-        except Exception:
+        except (OSError, RuntimeError, ValueError):
+            # Unreadable or malformed SVG — leave the reference unchanged
+            # so Pandoc can attempt its own fallback.
             return match.group(0)
         return f"{prefix}{png_path.as_posix()}{suffix}"
 
