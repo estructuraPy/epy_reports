@@ -111,10 +111,13 @@ _PAGE_SIZE_IDS = {
 
 def _page_layout(page_size: str) -> QPageLayout:
     size_id = _PAGE_SIZE_IDS.get(normalize_page_size(page_size), _PAGE_SIZE_IDS["letter"])
+    # Zero margins: the web viewport must fill the whole sheet so the theme
+    # background prints edge to edge. The content inset comes from the
+    # stylesheet's print body padding (see assets/style.css @media print).
     return QPageLayout(
         QPageSize(size_id),
         QPageLayout.Orientation.Portrait,
-        QMarginsF(15.0, 15.0, 15.0, 15.0),
+        QMarginsF(0.0, 0.0, 0.0, 0.0),
         QPageLayout.Unit.Millimeter,
     )
 

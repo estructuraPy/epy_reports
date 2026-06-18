@@ -407,7 +407,13 @@ class MarkdownTab(QWidget):
 
     @staticmethod
     def _page_layout(page_size: str) -> QPageLayout:
-        """Return a portrait page layout with ~15 mm margins.
+        """Return a portrait, zero-margin page layout.
+
+        The page layout uses no margins so the web viewport fills the
+        whole physical sheet and the theme background prints edge to edge
+        (Chromium leaves any printer-margin band white). The visible
+        content inset is provided by the stylesheet's ``@media print``
+        body padding instead.
 
         Args:
             page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
@@ -423,7 +429,7 @@ class MarkdownTab(QWidget):
             "legal":  QPageSize.PageSizeId.Legal,
         }
         size_id = ids.get(normalize_page_size(page_size), ids["letter"])
-        margins = QMarginsF(15.0, 15.0, 15.0, 15.0)
+        margins = QMarginsF(0.0, 0.0, 0.0, 0.0)
         return QPageLayout(
             QPageSize(size_id),
             QPageLayout.Orientation.Portrait,

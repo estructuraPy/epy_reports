@@ -4,6 +4,19 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] — 2026-06-18
+
+### Fixed
+- **PDF page margins are now actually painted with the theme color.** 0.6.5
+  added `print-color-adjust: exact` so backgrounds print, but the PDF was
+  still exported through a 15 mm printer margin (`QPageLayout`), and Chromium
+  never paints that printer-margin band — so colored themes still had white
+  edges. The export now prints with zero page margins (`@page { margin: 0 }`)
+  so the web viewport fills the whole sheet and the background paints edge to
+  edge; the visible content inset moved to the stylesheet's `@media print`
+  body padding (30 mm), which clears the 15 mm footer/header overlays.
+  Verified by sampling the exported PDF's corner pixels.
+
 ## [0.6.5] — 2026-06-18
 
 ### Fixed

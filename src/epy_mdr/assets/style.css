@@ -612,11 +612,20 @@ body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
 
 /* ---------- Print / PDF tuning ---------- */
 
+/* Full-bleed printing: the page itself carries NO margin so the web
+   viewport spans the entire physical sheet and the html/body background
+   paints edge to edge (Chromium never paints the printer-margin band, so
+   any printToPdf/`@page` margin would come out white). The export code
+   therefore prints with zero QPageLayout margins; the visible content
+   inset is provided by the body padding below, which sits on the painted
+   background and clears the 15 mm footer/header overlays. */
+@page { margin: 0; }
+
 @media print {
     body {
         max-width: 100%;
         margin: 0;
-        padding: 1.5cm 1.6cm;
+        padding: 30mm;
         background: var(--bg);
     }
     a { color: inherit; text-decoration: none; }
