@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections.abc import Iterator
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 from pathlib import Path
 
 _ENTRY_RE = re.compile(
@@ -202,7 +202,10 @@ class BibEntryDraft:
     note: str = ""
 
     def iter_filled_fields(self) -> Iterator[tuple[str, str]]:
-        """Yield ``(name, value)`` for every non-empty field, in canonical order."""
+        """Yield ``(name, value)`` for every non-empty field.
+
+        Fields are yielded in canonical order.
+        """
         for name in _FIELD_ORDER:
             value = getattr(self, name, "").strip()
             if value:

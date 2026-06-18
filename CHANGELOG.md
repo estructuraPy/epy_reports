@@ -4,6 +4,28 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] — 2026-06-17
+
+### Changed
+- **Page numbers now appear only on content pages.** Cover and index
+  pages (TOC / LOF / LOT / LOE) are treated as unnumbered front matter:
+  page numbering restarts at "1" on the first content page and the
+  "of Y" total counts only content pages, matching thesis/report
+  convention. The first content page is detected from the PDF's named
+  destinations — index blocks emit only links, so the smallest
+  destination is the first body page. The index entries are offset by
+  the same amount so the TOC numbers match the footer.
+- **In-app PDF export is now a two-pass export.** The desktop app
+  previously did a single pass and never resolved index page numbers;
+  it now mirrors the example pipeline, so exports from the app also fill
+  the TOC/LOF/LOT/LOE page numbers and number only content pages.
+
+### Internal
+- New shared helpers `renderer.inject_page_numbers` and
+  `_pdf_footer.extract_anchor_pages` are the single source of truth for
+  the two-pass page-number resolution, used by both the app export and
+  the `examples/newmark` render script.
+
 ## [0.6.2] — 2026-06-17
 
 ### Fixed

@@ -1,6 +1,6 @@
 [project]
 name = "epy_mdr"
-version = "0.6.2"
+version = "0.6.3"
 description = "Quarto/Markdown editor with live preview and one-click PDF export."
 authors = [
     { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },
@@ -69,3 +69,13 @@ convention = "google"
 "test_*.py" = ["D"]
 "build.py" = ["D"]
 "epy_mdr.spec" = ["D", "F821", "E501"]
+# Data catalog: one symbol entry per line (label + Spanish tooltip);
+# wrapping the rows to 79 chars would hurt, not help, readability.
+"src/epy_mdr/latex_catalog.py" = ["E501"]
+# Embedded JavaScript reflow script lives in a triple-quoted string;
+# its lines are JS, not Python, and must stay verbatim.
+"src/epy_mdr/template.py" = ["E501"]
+# Example scripts favor readability over library docstring/line rules.
+"examples/**/*.py" = ["D", "SIM105", "E501"]
+# Installer build scripts embed shell heredocs and long literal paths.
+"installer/**/*.py" = ["D", "E402", "E501"]

@@ -50,3 +50,33 @@ def test_add_footer_text_only(tmp_path):
 
     reader = PdfReader(str(pdf_path))
     assert len(reader.pages) == 2
+
+
+def test_add_footer_renumbers_content_from_start_page(tmp_path):
+    """Front matter before ``start_page`` stays unnumbered.
+
+    Content pages restart at "1" and "of Y" counts only those pages.
+    Page count is always preserved; the front-matter pages pass through
+    untouched while the body pages get the stamped overlay.
+    """
+    pdf_path = tmp_path / "doc.pdf"
+    _make_pdf(pdf_path, pages=5)
+    # Pages 1-2 = cover + TOC (unnumbered); content begins on page 3.
+    add_footer(
+        pdf_path, "ANM Ingeniería", page_numbers=True, lang="es", start_page=3
+    )
+    from pypdf import PdfReader
+
+    reader = PdfReader(str(pdf_path))
+    assert len(reader.pages) == 5
+    # The three content pages should read "Pág. 1 de 3" … "Pág. 3 de 3".
+    body_text = "".join(
+        reader.pages[i].extract_text() or "" for i in range(2, 5)
+    )
+    assert "Pág. 1 de 3" in body_text
+    assert "Pág. 3 de 3" in body_text
+    # Front matter must carry no page number.
+    front_text = "".join(
+        reader.pages[i].extract_text() or "" for i in range(0, 2)
+    )
+    assert "Pág." not in front_text

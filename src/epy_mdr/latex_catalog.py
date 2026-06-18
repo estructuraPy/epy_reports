@@ -253,9 +253,9 @@ def total_entries() -> int:
 
 
 def find(needle: str) -> list[tuple[str, LatexEntry]]:
-    """Return ``(category, entry)`` pairs whose label, latex source or
-    tooltip contains *needle* (case-insensitive).
+    """Return entries whose label, latex source or tooltip match *needle*.
 
+    Matching is case-insensitive and returns ``(category, entry)`` pairs.
     Useful for a search box on top of the palette.
     """
     needle_l = needle.lower()

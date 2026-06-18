@@ -40,11 +40,10 @@ depend on locally available fonts.
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QMarginsF, QTimer, QUrl, Qt
+from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl
 from PySide6.QtGui import QPageLayout, QPageSize
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication
@@ -55,22 +54,34 @@ ROOT = Path(__file__).resolve().parent
 # example runs straight from a clone without `pip install -e .`.
 try:
     from epy_mdr import themes
-    from epy_mdr.renderer import render_markdown
+    from epy_mdr._pdf_footer import (
+        add_footer,
+        add_header,
+        extract_anchor_pages,
+    )
+    from epy_mdr.renderer import (
+        inject_page_numbers,
+        normalize_page_size,
+        render_markdown,
+    )
     from epy_mdr.snippets import parse_front_matter
-    from epy_mdr.renderer import normalize_page_size
-    from epy_mdr._pdf_footer import add_footer, add_header
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
     from epy_mdr import themes
-    from epy_mdr.renderer import render_markdown
+    from epy_mdr._pdf_footer import (
+        add_footer,
+        add_header,
+        extract_anchor_pages,
+    )
+    from epy_mdr.renderer import (
+        inject_page_numbers,
+        normalize_page_size,
+        render_markdown,
+    )
     from epy_mdr.snippets import parse_front_matter
-    from epy_mdr.renderer import normalize_page_size
-    from epy_mdr._pdf_footer import add_footer, add_header
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
-
-_PAGE_NUM_RE = re.compile(r'<span class="page-num" data-ref="([^"]+)"></span>')
 
 WAIT_FOR_MATHJAX_JS = r"""
 (function () {
@@ -108,40 +119,6 @@ def _page_layout(page_size: str) -> QPageLayout:
     )
 
 
-def _extract_page_numbers(pdf_path: Path) -> dict[str, int]:
-    """Return anchor → 1-based page number from a Qt-generated PDF.
-
-    Qt WebEngine records HTML element ids as PDF named destinations.  If
-    pypdf finds none (older Qt or missing deps), returns an empty dict so
-    the caller can skip pass 2 gracefully.
-    """
-    try:
-        from pypdf import PdfReader  # noqa: PLC0415
-        reader = PdfReader(str(pdf_path))
-        result: dict[str, int] = {}
-        for name, dest in reader.named_destinations.items():
-            name_clean = name.lstrip("/")
-            try:
-                page_num = reader.get_destination_page_number(dest) + 1
-                result[name_clean] = page_num
-            except Exception:  # noqa: BLE001
-                pass
-        return result
-    except Exception:  # noqa: BLE001
-        return {}
-
-
-def _inject_page_numbers(html: str, anchor_to_page: dict[str, int]) -> str:
-    """Fill ``<span class="page-num" data-ref="…"></span>`` with page numbers."""
-    def replace(m: re.Match) -> str:
-        ref = m.group(1)
-        page = anchor_to_page.get(ref, anchor_to_page.get(ref.lstrip("/"), 0))
-        if page:
-            return f'<span class="page-num" data-ref="{ref}">{page}</span>'
-        return m.group(0)
-    return _PAGE_NUM_RE.sub(replace, html)
-
-
 class ThemeExporter:
     """Render one theme: two-pass HTML→PDF with page number injection."""
 
@@ -162,6 +139,9 @@ class ThemeExporter:
         self._elapsed_ms = 0
         self._pending_pdf: Path | None = None
         self._pending_after = None
+        # First physical page holding real content (after cover + indexes);
+        # overlays start here and the footer renumbers content from 1.
+        self._first_content_page = 1
 
         self.view = QWebEngineView()
         self.view.resize(900, 1200)
@@ -250,10 +230,20 @@ class ThemeExporter:
             self._finish()
             return
 
-        anchor_to_page = _extract_page_numbers(self._pass1_pdf)
+        anchor_to_page = extract_anchor_pages(self._pass1_pdf)
         if anchor_to_page:
-            print(f"  [{self.theme_id}] extracted {len(anchor_to_page)} anchors — running pass 2")
-            html2 = _inject_page_numbers(self._pass1_html, anchor_to_page)
+            # All named destinations live in the body (index blocks emit
+            # only links), so the smallest one is the first content page.
+            # Everything before it (cover + TOC/LOF/LOT/LOE) is unnumbered
+            # front matter; content page numbers restart at 1 from there.
+            self._first_content_page = min(anchor_to_page.values())
+            offset = self._first_content_page - 1
+            print(
+                f"  [{self.theme_id}] extracted {len(anchor_to_page)} anchors "
+                f"— content starts on physical page {self._first_content_page} "
+                f"— running pass 2"
+            )
+            html2 = inject_page_numbers(self._pass1_html, anchor_to_page, offset)
             # Update saved HTML with page numbers
             self.html_path.write_text(html2, encoding="utf-8")
             self._load_and_print(html2, self.pdf_path, self._after_pass2)
@@ -277,8 +267,11 @@ class ThemeExporter:
                 "true", "yes", "1",
             )
             lang = str(self.meta.get("lang", "en"))
+            # Start overlays on the first content page (after cover + index
+            # front matter). Falls back to skipping just the cover when no
+            # destinations were found (pass 2 skipped).
             has_cover = str(self.meta.get("cover", "")).lower() in ("true", "yes", "1")
-            overlay_start = 2 if has_cover else 1
+            overlay_start = max(self._first_content_page, 2 if has_cover else 1)
             try:
                 if any(header_cells):
                     add_header(

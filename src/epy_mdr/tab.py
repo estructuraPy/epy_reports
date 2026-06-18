@@ -33,7 +33,11 @@ from epy_mdr.checklist_dialog import ChecklistDialog
 from epy_mdr.equation_dialog import EquationDialog
 from epy_mdr.figure_dialog import FigureDialog
 from epy_mdr.footnote_dialog import FootnoteDialog
-from epy_mdr.renderer import normalize_page_size, render_markdown
+from epy_mdr.renderer import (
+    inject_page_numbers,
+    normalize_page_size,
+    render_markdown,
+)
 from epy_mdr.table_dialog import TableDialog
 from epy_mdr.template import is_truthy
 from epy_mdr.xref_dialog import CrossRefDialog
@@ -273,23 +277,42 @@ class MarkdownTab(QWidget):
                 export finishes (success or failure). ``target`` is the
                 final destination path so the caller can report it.
         """
-        meta = snippets.parse_front_matter(self.editor.toPlainText())
+        text = self.editor.toPlainText()
+        meta = snippets.parse_front_matter(text)
         footer_text = meta.get("footer", "")
         page_numbers = is_truthy(meta.get("page-numbers"))
         lang = meta.get("lang", "en")
         page_size = normalize_page_size(meta.get("page-size"))
         raw_header = meta.get("header") or []
         header_cells = (
-            list(raw_header) if isinstance(raw_header, list) else [str(raw_header)]
+            list(raw_header)
+            if isinstance(raw_header, list)
+            else [str(raw_header)]
         )
         has_cover = is_truthy(meta.get("cover"))
-        overlay_start = 2 if has_cover else 1
+
+        base_dir = self._path.parent if self._path is not None else None
+        title = self._path.name if self._path is not None else UNTITLED
+        export_html = render_markdown(
+            text,
+            base_dir=base_dir,
+            title=title,
+            theme_css=self._theme_css,
+            paged=False,
+            page_size=page_size,
+        )
 
         tmp_dir = Path(tempfile.mkdtemp(prefix="epy_mdr_pdf_"))
+        pass1_pdf = tmp_dir / "pass1.pdf"
         tmp_pdf = tmp_dir / "export.pdf"
 
-        def finalize(_path: str, ok: bool) -> None:
-            """Stamp header/footer overlays, move into place, then notify."""
+        def finalize(ok: bool, start_page: int) -> None:
+            """Stamp header/footer overlays, move into place, then notify.
+
+            ``start_page`` is the first content page: cover and index
+            front matter before it stay clean, and the footer renumbers
+            content from 1 (see :func:`epy_mdr._pdf_footer.add_footer`).
+            """
             result_ok = ok
             try:
                 if ok:
@@ -298,7 +321,7 @@ class MarkdownTab(QWidget):
                     if any(header_cells):
                         _pdf_footer.add_header(
                             tmp_pdf, header_cells,
-                            lang=lang, start_page=overlay_start,
+                            lang=lang, start_page=start_page,
                         )
                     if footer_text or page_numbers:
                         _pdf_footer.add_footer(
@@ -306,7 +329,7 @@ class MarkdownTab(QWidget):
                             footer_text,
                             page_numbers=page_numbers,
                             lang=lang,
-                            start_page=overlay_start,
+                            start_page=start_page,
                         )
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(tmp_pdf), str(target))
@@ -320,32 +343,67 @@ class MarkdownTab(QWidget):
             if on_done is not None:
                 on_done(target, result_ok)
 
-        def do_print() -> None:
-            """Print the loaded export page to the temp file."""
-            self.view.page().pdfPrintingFinished.connect(
-                finalize, Qt.ConnectionType.SingleShotConnection
-            )
-            self.view.page().printToPdf(
-                str(tmp_pdf), self._page_layout(page_size)
-            )
+        def load_and_print(html: str, out_pdf: Path, after) -> None:
+            """Load ``html`` into the view, wait for MathJax, print to PDF."""
+            html_file = tmp_dir / f"{out_pdf.stem}.html"
+            html_file.write_text(html, encoding="utf-8")
 
-        def on_loaded(ok: bool) -> None:
-            """Run after the fresh export page finishes loading."""
+            def do_print() -> None:
+                self.view.page().pdfPrintingFinished.connect(
+                    lambda _p, ok: after(ok),
+                    Qt.ConnectionType.SingleShotConnection,
+                )
+                self.view.page().printToPdf(
+                    str(out_pdf), self._page_layout(page_size)
+                )
+
+            def on_loaded(ok: bool) -> None:
+                if not ok:
+                    after(False)
+                    return
+                self._wait_for_mathjax(do_print)
+
+            # Connect the one-shot loadFinished BEFORE loading so the
+            # signal can never be missed; SingleShotConnection keeps it
+            # from leaking into later preview reloads.
+            self.view.loadFinished.connect(
+                on_loaded, Qt.ConnectionType.SingleShotConnection
+            )
+            self.view.load(QUrl.fromLocalFile(str(html_file.resolve())))
+
+        def after_pass2(first_content_page: int, ok: bool) -> None:
+            finalize(ok, first_content_page)
+
+        def after_pass1(ok: bool) -> None:
             if not ok:
-                # Load failed — finalize as failure (also restores
-                # the live preview via the finalize cleanup path).
-                finalize("", False)
+                finalize(False, 1)
                 return
-            self._wait_for_mathjax(do_print)
+            from epy_mdr._pdf_footer import (  # noqa: PLC0415
+                extract_anchor_pages,
+            )
 
-        # Always render a FRESH, non-paged export page into the view.
-        # Connect the one-shot loadFinished BEFORE loading so the signal
-        # can never be missed; SingleShotConnection keeps it from
-        # leaking into later preview reloads.
-        self.view.loadFinished.connect(
-            on_loaded, Qt.ConnectionType.SingleShotConnection
-        )
-        self._render_into_view(paged=False, page_size=page_size)
+            anchor_to_page = extract_anchor_pages(pass1_pdf)
+            if anchor_to_page:
+                # Index blocks emit only links, so every destination is in
+                # the body; the smallest is the first content page. Cover +
+                # TOC/LOF/LOT/LOE before it are unnumbered front matter and
+                # the body is renumbered from 1.
+                first = min(anchor_to_page.values())
+                html2 = inject_page_numbers(
+                    export_html, anchor_to_page, first - 1
+                )
+                load_and_print(
+                    html2, tmp_pdf,
+                    lambda ok2: after_pass2(first, ok2),
+                )
+            else:
+                # No named destinations (older Qt / no anchors): skip the
+                # second pass and just stamp from the first content page,
+                # which is the page after the cover when present.
+                shutil.copy(pass1_pdf, tmp_pdf)
+                finalize(True, 2 if has_cover else 1)
+
+        load_and_print(export_html, pass1_pdf, after_pass1)
 
     @staticmethod
     def _page_layout(page_size: str) -> QPageLayout:

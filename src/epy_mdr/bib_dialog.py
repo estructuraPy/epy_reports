@@ -38,7 +38,6 @@ from epy_mdr.bib import (
     suggest_key,
 )
 
-
 # Field name → human-readable label shown in the form.
 _LABELS: dict[str, str] = {
     "key":          "Citation key *",

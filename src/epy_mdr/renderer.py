@@ -58,6 +58,50 @@ def normalize_page_size(value: str | None) -> str:
     return key if key in PAGE_SIZES else DEFAULT_PAGE_SIZE
 
 
+# Matches the empty page-number placeholders emitted in index blocks
+# (TOC / LOF / LOT / LOE). They are filled in a second export pass once
+# the anchor → page mapping is known.
+PAGE_NUM_SPAN_RE = re.compile(
+    r'<span class="page-num" data-ref="([^"]+)"></span>'
+)
+
+
+def inject_page_numbers(
+    html: str, anchor_to_page: dict[str, int], offset: int = 0
+) -> str:
+    """Fill index page-number placeholders with resolved page numbers.
+
+    Replaces each ``<span class="page-num" data-ref="…"></span>`` with the
+    page number of its target anchor. ``offset`` is subtracted from every
+    physical page so the printed index numbers match the footer, which
+    restarts at 1 on the first content page (cover and index pages are
+    unnumbered front matter). Placeholders whose anchor is unknown are
+    left untouched.
+
+    Args:
+        html: Rendered HTML containing the placeholders.
+        anchor_to_page: Map of anchor id → 1-based physical page number.
+        offset: Pages of front matter to subtract (``first_content_page
+            - 1``). Defaults to 0 (no renumbering).
+
+    Returns:
+        The HTML with placeholders filled in.
+    """
+    def replace(m: re.Match) -> str:
+        ref = m.group(1)
+        page = anchor_to_page.get(
+            ref, anchor_to_page.get(ref.lstrip("/"), 0)
+        )
+        if page:
+            return (
+                f'<span class="page-num" data-ref="{ref}">'
+                f"{page - offset}</span>"
+            )
+        return m.group(0)
+
+    return PAGE_NUM_SPAN_RE.sub(replace, html)
+
+
 def page_size_dimensions(value: str | None) -> tuple[float, float]:
     """Return the ``(width_mm, height_mm)`` for a page-size value.
 
@@ -934,13 +978,22 @@ def _expand_index_markers(body: str, source: str, lang: str) -> str:
         lambda _m: _with_page_break(build_toc_html(headings, lang)), body
     )
     body = _LOF_P_RE.sub(
-        lambda _m: _with_page_break(build_figure_list_html(entries["fig"], lang)), body
+        lambda _m: _with_page_break(
+            build_figure_list_html(entries["fig"], lang)
+        ),
+        body,
     )
     body = _LOT_P_RE.sub(
-        lambda _m: _with_page_break(build_table_list_html(entries["tbl"], lang)), body
+        lambda _m: _with_page_break(
+            build_table_list_html(entries["tbl"], lang)
+        ),
+        body,
     )
     body = _LOE_P_RE.sub(
-        lambda _m: _with_page_break(build_equation_list_html(entries["eq"], lang)), body
+        lambda _m: _with_page_break(
+            build_equation_list_html(entries["eq"], lang)
+        ),
+        body,
     )
     return body
 

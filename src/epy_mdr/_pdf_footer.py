@@ -14,6 +14,7 @@ called without them installed.
 
 from __future__ import annotations
 
+import contextlib
 import io
 from pathlib import Path
 
@@ -38,6 +39,36 @@ def _page_label(lang: str, current: int, total: int) -> str:
     return template.format(current=current, total=total)
 
 
+def extract_anchor_pages(pdf_path: Path) -> dict[str, int]:
+    """Return ``anchor id → 1-based page`` from a Qt-generated PDF.
+
+    Qt WebEngine records HTML element ids as PDF named destinations, so a
+    first export pass yields the physical page of every anchored heading,
+    figure, table and equation. The index blocks emit only links (no
+    destinations), so every entry here points into the document body —
+    ``min(result.values())`` is therefore the first content page.
+
+    Returns an empty dict when :mod:`pypdf` is missing or the PDF has no
+    named destinations (older Qt), so the caller can skip the second pass
+    gracefully.
+    """
+    try:
+        from pypdf import PdfReader  # noqa: PLC0415
+    except ImportError:  # pragma: no cover - env guard
+        return {}
+    try:
+        reader = PdfReader(str(pdf_path))
+        result: dict[str, int] = {}
+        for name, dest in reader.named_destinations.items():
+            with contextlib.suppress(Exception):  # skip unresolvable dests
+                result[name.lstrip("/")] = (
+                    reader.get_destination_page_number(dest) + 1
+                )
+        return result
+    except Exception:  # noqa: BLE001 - corrupt/unreadable PDF
+        return {}
+
+
 def add_footer(
     pdf_path: Path,
     footer_text: str,
@@ -52,12 +83,17 @@ def add_footer(
     ``True``, a localized "Page X of Y" string at the bottom-right.
 
     Args:
-        pdf_path: Path to an existing PDF; overwritten with the stamped version.
+        pdf_path: Path to an existing PDF; overwritten with the stamped
+            version.
         footer_text: Static text drawn at the bottom-left.  May be empty.
         page_numbers: When ``True``, draw "Page X of Y" at bottom-right.
         lang: Two-letter language tag selecting the page-number wording.
-        start_page: First 1-based page number to stamp.  Pages before this
-            (e.g. a cover page) are passed through unchanged.
+        start_page: First 1-based physical page to stamp.  Pages before
+            this (cover and index pages — TOC / LOF / LOT / LOE) are
+            passed through unchanged and carry no footer or page number.
+            Page numbering restarts at 1 on ``start_page`` and the
+            "of Y" total counts only the stamped (content) pages, so the
+            front matter is effectively unnumbered.
 
     Raises:
         RuntimeError: When :mod:`pypdf` or :mod:`reportlab` is not installed.
@@ -77,6 +113,10 @@ def add_footer(
     reader = PdfReader(str(pdf_path))
     writer = PdfWriter()
     total = len(reader.pages)
+    # Page numbers restart at 1 on the first stamped (content) page and the
+    # "of Y" total counts only those pages, so cover + index front matter
+    # stays unnumbered instead of forcing the body to start at "Page N".
+    content_total = max(total - start_page + 1, 0)
     margin = _MARGIN_MM * _MM_TO_PT
 
     for index, page in enumerate(reader.pages, start=1):
@@ -90,7 +130,8 @@ def add_footer(
             if footer_text:
                 pdf.drawString(margin, margin, footer_text)
             if page_numbers:
-                label = _page_label(lang, index, total)
+                current = index - start_page + 1
+                label = _page_label(lang, current, content_total)
                 pdf.drawRightString(width - margin, margin, label)
             pdf.showPage()
             pdf.save()
@@ -129,7 +170,8 @@ def add_header(
     the document body.
 
     Args:
-        pdf_path: Path to an existing PDF; overwritten with the stamped version.
+        pdf_path: Path to an existing PDF; overwritten with the stamped
+            version.
         cells: Up to 6 strings for the header grid.  Missing cells default to
             empty strings.
         lang: Two-letter language tag (reserved; not used currently).

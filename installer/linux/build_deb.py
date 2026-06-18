@@ -22,9 +22,6 @@ The script prints a verification listing of the ar members at the end.
 from __future__ import annotations
 
 import io
-import os
-import shutil
-import struct
 import sys
 import tarfile
 import textwrap
@@ -34,7 +31,7 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 PKG_NAME = "epy-mdr"
-PKG_VERSION = "0.6.2"
+PKG_VERSION = "0.6.3"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
@@ -64,6 +61,7 @@ SRC_PKG = ROOT / "src" / "epy_mdr"
 
 # pypandoc location — pure-Python files only (no binaries)
 import pypandoc as _pypandoc
+
 PYPANDOC_SRC = Path(_pypandoc.__file__).parent
 
 # ---------------------------------------------------------------------------
