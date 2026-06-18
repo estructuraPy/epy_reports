@@ -421,15 +421,13 @@ class MarkdownTab(QWidget):
 
     @staticmethod
     def _page_layout(page_size: str) -> QPageLayout:
-        """Return a portrait page layout with a 30 mm printer margin.
+        """Return a portrait page layout with zero printer margin.
 
-        Chromium honours this margin on every page (so each page keeps a
-        consistent content inset and footnotes/footer never collide) but
-        never paints it. The theme background is therefore painted edge to
-        edge after export by
-        :func:`epy_mdr._pdf_footer.add_page_background`, so the margin does
-        not show as white, and the 15 mm footer/header overlays sit inside
-        it with clearance.
+        Paged.js already lays out every page with the 30 mm ``@page``
+        margin, so the printer margin MUST be zero — otherwise the two
+        stack (30 mm + 30 mm) and the PDF prints with a 60 mm margin. The
+        theme background is painted edge to edge after export by
+        :func:`epy_mdr._pdf_footer.add_page_background`.
 
         Args:
             page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
@@ -445,7 +443,7 @@ class MarkdownTab(QWidget):
             "legal":  QPageSize.PageSizeId.Legal,
         }
         size_id = ids.get(normalize_page_size(page_size), ids["letter"])
-        margins = QMarginsF(30.0, 30.0, 30.0, 30.0)
+        margins = QMarginsF(0.0, 0.0, 0.0, 0.0)
         return QPageLayout(
             QPageSize(size_id),
             QPageLayout.Orientation.Portrait,

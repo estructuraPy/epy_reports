@@ -40,59 +40,21 @@ SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
 
-WELCOME_TEXT = (
-    "# Welcome to epy_mdr\n\n"
-    "A small **Quarto / Markdown** editor with live preview and "
-    "one-click PDF export.\n\n"
-    "**Author:** Ing. Angel Navarro-Mora M.Sc.\n\n"
-    "Follow these steps to build your first document.\n\n"
-    "## Step 1 — Create or open a document\n\n"
-    "1. Press `Ctrl+N` for a new tab, or `Ctrl+O` to open an "
-    "existing `.qmd`, `.md` or `.markdown` file.\n"
-    "2. You can also drag and drop files anywhere on the window — "
-    "each one opens as a tab.\n"
-    "3. Save early with `Ctrl+S` (`Ctrl+Shift+S` to save as). "
-    "`Ctrl+W` closes the tab and `F5` reloads from disk.\n\n"
-    "## Step 2 — Write and format text\n\n"
-    "1. Put the cursor on a line and press `Ctrl+1` … `Ctrl+6` to "
-    "make it a heading H1–H6 (`Ctrl+0` strips the heading).\n"
-    "2. Select text and apply `Ctrl+B` for **bold**, `Ctrl+I` for "
-    "*italic*, `Ctrl+E` for `inline code`.\n"
-    "3. Press `Ctrl+K` to insert a link `[text](url)`.\n\n"
-    "## Step 3 — Insert structured elements\n\n"
-    "Every element gets a label so you can cross-reference it later:\n\n"
-    "1. `Ctrl+Shift+H` — section heading with `{#sec-...}` label.\n"
-    "2. `Ctrl+Shift+F` — figure with `{#fig-...}` label "
-    "(picks the image file and copies it next to your document).\n"
-    "3. `Ctrl+Shift+T` — table: choose columns, rows, header and "
-    "caption; the `{#tbl-...}` label is added for you.\n"
-    "4. `Ctrl+Shift+L` — checklist: choose item count and an optional "
-    "title; inserts GitHub-flavoured task-list items `- [ ]`.\n"
-    "5. `Ctrl+Shift+Q` — display equation with `{#eq-...}` label.\n"
-    "6. `Ctrl+Shift+K` — fenced code block.\n"
-    "7. `Ctrl+Shift+C` — callout box (note, tip, warning, caution, "
-    "important — see the Elements menu).\n\n"
-    "## Step 4 — Cite and cross-reference\n\n"
-    "1. Press `Ctrl+Shift+B` once to link your BibTeX file; this "
-    "writes `bibliography:` into the YAML front matter.\n"
-    "2. Press `Ctrl+R` to open the cross-reference picker and "
-    "insert `@sec-...`, `@fig-...`, `@tbl-...`, `@eq-...` or a "
-    "`@citation` from the linked `.bib`.\n"
-    "3. The bibliography is appended automatically to the preview "
-    "and to every export (Pandoc citeproc).\n\n"
-    "## Step 5 — Export your document\n\n"
-    "1. `Ctrl+P` exports the rendered preview as PDF.\n"
-    "2. `Ctrl+Shift+P` exports as HTML and `Ctrl+Shift+D` as Word "
-    "(.docx); `Ctrl+Alt+P` prints.\n"
-    "3. For publication-quality output, use *Export > Export via "
-    "epy_docs...* to render with professional layouts (requires the "
-    "commercial epy_docs backend by ANM Ingenieria, plus Quarto).\n\n"
-    "::: {.callout-tip}\n"
-    "## Make it yours\n"
-    "Change the editor and preview theme from the *View* menu — "
-    "nine layouts are available, from academic to handwritten.\n"
-    ":::\n"
-)
+def _load_welcome_text() -> str:
+    """Load the preloaded welcome/manual document from package assets.
+
+    The welcome tab shows a full user manual that demonstrates every
+    content type with its syntax and documents the Python API; it lives in
+    ``assets/welcome.md`` so it can be edited as Markdown.
+    """
+    return (
+        importlib.resources.files("epy_mdr.assets")
+        .joinpath("welcome.md")
+        .read_text(encoding="utf-8")
+    )
+
+
+WELCOME_TEXT = _load_welcome_text()
 
 
 class MarkdownWindow(QMainWindow):

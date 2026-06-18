@@ -116,7 +116,7 @@ def _pagedjs_head(page_size: str) -> str:
     size_css = _PAGE_SIZE_CSS.get(size_key, "letter")
     css = (
         "<style>\n"
-        f"@page {{ size: {size_css}; margin: 30mm; }}\n"
+        f"@page {{ size: {size_css}; margin: 25mm; }}\n"
         ".footnote { float: footnote; }\n"
         ".pagedjs_footnote_area { font-size: var(--caption-size, 10pt); }\n"
         ".pagedjs_footnote_area > div { padding-top: 0.4em; }\n"

@@ -4,6 +4,24 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] — 2026-06-18
+
+### Fixed
+- **Enormous PDF margins.** The in-app PDF export still used a 30 mm
+  printer margin on top of the 30 mm Paged.js `@page` margin, so exports
+  printed with a 60 mm margin. The printer margin is now zero (Paged.js is
+  the single source of the page margin), and that margin was trimmed from
+  30 mm to a standard 25 mm.
+
+### Changed
+- **The preloaded welcome tab is now a full user manual.** It demonstrates
+  every content type with its syntax and rendered result — front matter,
+  formatting, lists/checklists, callouts, code, tables, figures, equations,
+  cross-references, citations, footnotes and layout markers — and documents
+  the **Python API** for driving epy_mdr without the GUI (`render_markdown`,
+  `themes`, the `_pdf_footer` stamping helpers and the `docs_bridge`). The
+  manual lives in `assets/welcome.md` so it can be edited as Markdown.
+
 ## [0.6.7] — 2026-06-18
 
 ### Changed
