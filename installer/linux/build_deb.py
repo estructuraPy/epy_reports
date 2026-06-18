@@ -14,7 +14,7 @@ Run from the project root:
     python installer/linux/build_deb.py
 
 Output:
-    installer/dist/epy-mdr_0.4.1_all.deb
+    installer/dist/epy-mdr_<version>_all.deb
 
 The script prints a verification listing of the ar members at the end.
 """
@@ -31,7 +31,7 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 PKG_NAME = "epy-mdr"
-PKG_VERSION = "0.6.3"
+PKG_VERSION = "0.6.4"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
@@ -51,7 +51,11 @@ DESCRIPTION_LONG = """\
  The postinst script updates system MIME and desktop caches and adds
  epy_mdr to /usr/share/applications/defaults.list as a best-effort hint."""
 
-DEPENDS = "python3 (>= 3.10), pandoc"
+# python3-venv is required so the postinst can build an isolated
+# virtual environment for the pip-only runtime deps (PEP 668: the
+# system Python on Debian 12+/Ubuntu 23.04+ is externally managed and
+# refuses direct `pip install`).
+DEPENDS = "python3 (>= 3.10), python3-venv, pandoc"
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 OUT_DIR = ROOT / "installer" / "dist"
@@ -157,15 +161,19 @@ def _build_control_tar() -> bytes:
             #!/bin/sh
             set -e
 
-            # Install the pip-only runtime dependencies (not available as
-            # system packages on Ubuntu 24.04+): PySide6 (GUI), and pypdf +
-            # reportlab (PDF footer / page-number stamping).
-            if command -v pip3 >/dev/null 2>&1; then
-                pip3 install PySide6 pypdf reportlab
-            else
-                echo "WARNING: pip3 not found — install the runtime deps manually" >&2
-                echo "  Run: sudo apt install python3-pip && sudo pip3 install PySide6 pypdf reportlab" >&2
+            VENV="/usr/lib/epy-mdr/venv"
+
+            # PEP 668: the system Python on Debian 12+/Ubuntu 23.04+ is
+            # marked externally-managed, so `pip install` into it fails.
+            # Build a dedicated virtual environment for the pip-only
+            # runtime dependencies — PySide6 (GUI), pypdf + reportlab
+            # (PDF footer / page-number stamping) — and let the launcher
+            # in /usr/bin/epy-mdr run from it.
+            if [ ! -d "$VENV" ]; then
+                python3 -m venv "$VENV"
             fi
+            "$VENV/bin/pip" install --upgrade pip || true
+            "$VENV/bin/pip" install PySide6 pypdf reportlab
 
             # Update system MIME database so .qmd type is recognized.
             if command -v update-mime-database >/dev/null 2>&1; then
@@ -218,6 +226,23 @@ def _build_control_tar() -> bytes:
         """)
         _tar_add_data(tf, "./prerm", prerm.encode(), mode=0o755)
 
+        # postrm
+        postrm = textwrap.dedent("""\
+            #!/bin/sh
+            set -e
+
+            # The runtime virtualenv is created by postinst at install
+            # time, so dpkg does not track it.  Remove it on uninstall /
+            # purge and drop the now-empty package directory.
+            if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+                rm -rf /usr/lib/epy-mdr/venv
+                rmdir /usr/lib/epy-mdr 2>/dev/null || true
+            fi
+
+            exit 0
+        """)
+        _tar_add_data(tf, "./postrm", postrm.encode(), mode=0o755)
+
     return buf.getvalue()
 
 
@@ -248,13 +273,14 @@ def _build_data_tar(png_path: Path) -> bytes:
             _tar_add_dir(tf, d)
 
         # /usr/bin/epy_mdr launcher shell script
-        # Use the system interpreter explicitly: PySide6 is installed by the
-        # postinst into /usr/bin/python3's environment.  A bare "python3" would
-        # pick up whatever is first on PATH (e.g. an activated virtualenv that
-        # lacks PySide6) and fail to launch.
+        # Run from the dedicated virtualenv the postinst builds: it holds
+        # PySide6/pypdf/reportlab (PEP 668 keeps these out of the system
+        # Python).  sys.path is extended with /usr/lib/epy-mdr so the
+        # bundled epy_mdr package and pypandoc shim are importable on top
+        # of the venv's site-packages.
         launcher = textwrap.dedent("""\
             #!/bin/sh
-            exec /usr/bin/python3 -c "import sys; sys.path.insert(0, '/usr/lib/epy-mdr'); from epy_mdr.app import main; sys.exit(main())" "$@"
+            exec /usr/lib/epy-mdr/venv/bin/python -c "import sys; sys.path.insert(0, '/usr/lib/epy-mdr'); from epy_mdr.app import main; sys.exit(main())" "$@"
         """)
         _tar_add_data(tf, f"./usr/bin/{PKG_NAME}", launcher.encode(),
                       mode=0o755)

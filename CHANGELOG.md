@@ -4,6 +4,19 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] — 2026-06-18
+
+### Fixed
+- **Ubuntu `.deb` install no longer fails under PEP 668.** On Debian 12+
+  and Ubuntu 23.04+ the system Python is marked externally-managed, so
+  the previous `postinst` step `pip3 install PySide6 pypdf reportlab`
+  aborted with `externally-managed-environment` and left the package
+  half-configured. The `postinst` now builds a dedicated virtual
+  environment at `/usr/lib/epy-mdr/venv`, installs the pip-only runtime
+  deps into it, and the `/usr/bin/epy-mdr` launcher runs from that venv.
+  `python3-venv` is added to `Depends`, and a new `postrm` removes the
+  venv on uninstall/purge.
+
 ## [0.6.3] — 2026-06-17
 
 ### Changed
