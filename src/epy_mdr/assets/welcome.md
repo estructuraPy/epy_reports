@@ -344,6 +344,125 @@ for front matter (a preface or the indexes) so it numbers i, ii, iii, and
 classic academic convention. Insert them from *Elements ▸ Section break
 (Roman / Arabic)*.
 
+# Diagrams
+
+**Insert it:** *Elements ▸ Diagram ▸ Mermaid / nomnoml* drops a fenced code
+block you fill with the diagram source. Both engines read the active theme's
+colours, so a diagram always matches the document.
+
+Fence the source with the engine name. **Mermaid** draws flowcharts,
+sequences and more:
+
+````markdown
+```mermaid
+flowchart LR
+    A[Load] --> B[Analyse]
+    B --> C[Design]
+    C --> D[Report]
+```
+````
+
+```mermaid
+flowchart LR
+    A[Load] --> B[Analyse]
+    B --> C[Design]
+    C --> D[Report]
+```
+
+**nomnoml** draws UML-style component diagrams:
+
+````markdown
+```nomnoml
+[Document] -> [Section]
+[Section] -> [Figure]
+[Section] -> [Table]
+```
+````
+
+```nomnoml
+[Document] -> [Section]
+[Section] -> [Figure]
+[Section] -> [Table]
+```
+
+::: {.callout-note title="Where they render"}
+Diagrams render in the live preview, the HTML export and the PDF. In the
+Word (.docx) export they fall back to their source text.
+:::
+
+# Design components
+
+Beyond prose, a set of theme-driven layout components turn a plain list into
+a designed block. Each is a fenced `::: {.class}` div coloured from the
+active theme.
+
+**Cards** — a responsive grid of titled panels:
+
+```markdown
+:::: {.cards}
+::: {.card}
+#### Strength
+Characteristic value with partial factors applied.
+:::
+::: {.card}
+#### Stiffness
+Serviceability deflection within limits.
+:::
+::::
+```
+
+:::: {.cards}
+::: {.card}
+#### Strength
+Characteristic value with partial factors applied.
+:::
+::: {.card}
+#### Stiffness
+Serviceability deflection within limits.
+:::
+::::
+
+**Big numbers** — a row of headline figures with labels:
+
+```markdown
+:::: {.stats}
+::: {.stat}
+**28 MPa**
+
+[concrete strength]{.stat-label}
+:::
+::::
+```
+
+:::: {.stats}
+::: {.stat}
+**28 MPa**
+
+[concrete strength]{.stat-label}
+:::
+::: {.stat}
+**200 GPa**
+
+[steel modulus]{.stat-label}
+:::
+::::
+
+**Timeline** — a vertical sequence of milestones:
+
+```markdown
+::: {.timeline}
+- **Phase 1** — Site investigation
+- **Phase 2** — Structural design
+- **Phase 3** — Construction
+:::
+```
+
+::: {.timeline}
+- **Phase 1** — Site investigation
+- **Phase 2** — Structural design
+- **Phase 3** — Construction
+:::
+
 # Exporting
 
 | Format | Shortcut | Engine |

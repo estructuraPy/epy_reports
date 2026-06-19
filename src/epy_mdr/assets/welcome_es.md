@@ -352,6 +352,126 @@ material preliminar (un prefacio o los índices) y numere i, ii, iii, y
 convención académica clásica. Insértelos desde *Elementos ▸ Salto de
 sección (romano / arábigo)*.
 
+# Diagramas
+
+**Cómo insertarlo:** *Elementos ▸ Diagrama ▸ Mermaid / nomnoml* inserta un
+bloque de código que usted completa con la fuente del diagrama. Ambos
+motores leen los colores del tema activo, así que un diagrama siempre combina
+con el documento.
+
+Encierre la fuente con el nombre del motor. **Mermaid** dibuja diagramas de
+flujo, de secuencia y más:
+
+````markdown
+```mermaid
+flowchart LR
+    A[Cargas] --> B[Analisis]
+    B --> C[Diseno]
+    C --> D[Reporte]
+```
+````
+
+```mermaid
+flowchart LR
+    A[Cargas] --> B[Analisis]
+    B --> C[Diseno]
+    C --> D[Reporte]
+```
+
+**nomnoml** dibuja diagramas de componentes estilo UML:
+
+````markdown
+```nomnoml
+[Documento] -> [Seccion]
+[Seccion] -> [Figura]
+[Seccion] -> [Tabla]
+```
+````
+
+```nomnoml
+[Documento] -> [Seccion]
+[Seccion] -> [Figura]
+[Seccion] -> [Tabla]
+```
+
+::: {.callout-note title="Dónde se renderizan"}
+Los diagramas se renderizan en la vista previa, la exportación HTML y el PDF.
+En la exportación a Word (.docx) caen a su texto fuente.
+:::
+
+# Componentes de diseño
+
+Más allá del texto, un conjunto de componentes de diseño guiados por el tema
+convierten una lista simple en un bloque diseñado. Cada uno es un div
+`::: {.clase}` coloreado a partir del tema activo.
+
+**Tarjetas** — una grilla adaptable de paneles con título:
+
+```markdown
+:::: {.cards}
+::: {.card}
+#### Resistencia
+Valor característico con factores parciales aplicados.
+:::
+::: {.card}
+#### Rigidez
+Deflexión de servicio dentro de límites.
+:::
+::::
+```
+
+:::: {.cards}
+::: {.card}
+#### Resistencia
+Valor característico con factores parciales aplicados.
+:::
+::: {.card}
+#### Rigidez
+Deflexión de servicio dentro de límites.
+:::
+::::
+
+**Números grandes** — una fila de cifras destacadas con etiquetas:
+
+```markdown
+:::: {.stats}
+::: {.stat}
+**28 MPa**
+
+[resistencia del concreto]{.stat-label}
+:::
+::::
+```
+
+:::: {.stats}
+::: {.stat}
+**28 MPa**
+
+[resistencia del concreto]{.stat-label}
+:::
+::: {.stat}
+**200 GPa**
+
+[módulo del acero]{.stat-label}
+:::
+::::
+
+**Línea de tiempo** — una secuencia vertical de hitos:
+
+```markdown
+::: {.timeline}
+- **Fase 1** — Investigación del sitio
+- **Fase 2** — Diseño estructural
+- **Fase 3** — Construcción
+:::
+```
+
+::: {.timeline}
+- **Fase 1** — Investigación del sitio
+- **Fase 2** — Diseño estructural
+- **Fase 3** — Construcción
+:::
+
 # Exportación
 
 | Formato | Atajo | Motor |
