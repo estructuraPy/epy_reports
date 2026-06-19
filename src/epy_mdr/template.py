@@ -334,6 +334,40 @@ def _cover_page_block(metadata: dict[str, str]) -> str:
     return "\n".join(parts)
 
 
+# Restores the scroll position the preview had before a re-render. The live
+# preview reloads the whole document on every edit, which would otherwise jump
+# back to the top; the editor appends ``#epypos=s:<ratio>`` to the preview URL
+# and this hook scrolls there once MathJax (and any diagrams) have settled, so
+# the layout height is final. Export URLs carry no hash, so it is a no-op.
+_PREVIEW_RESTORE = """
+<script>
+(function () {
+  window._epyRestore = function () {
+    try {
+      var m = (location.hash || '').match(/epypos=([^&]+)/);
+      if (!m) return;
+      var val = decodeURIComponent(m[1]);
+      if (val.charAt(0) === 's') {
+        var r = parseFloat(val.slice(2)) || 0;
+        var el = document.scrollingElement || document.documentElement;
+        if (el) el.scrollTop = r * (el.scrollHeight - el.clientHeight);
+      }
+    } catch (e) {}
+  };
+  function ready() {
+    return window._mathjax_done && window._diagrams_done !== false;
+  }
+  function tryRestore() {
+    if (ready()) { window._epyRestore(); }
+    else { setTimeout(tryRestore, 100); }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryRestore);
+  } else { tryRestore(); }
+})();
+</script>
+"""
+
 _CONTINUOUS_CSS = """
 /* Continuous HTML export: hide the print/page structure so the document
    reads as one continuous web page — no page breaks and no page-number
@@ -425,6 +459,10 @@ def build_html_document(
     # Paged.js (and its @page rule) is injected only for PDF export, after
     # the MathJax bundle so the runner can wait for typesetting first.
     pagedjs = _pagedjs_head(size_key) if for_export else ""
+    # The live preview restores its scroll position after a re-render; the
+    # export paths (Paged.js PDF, standalone continuous HTML) carry no
+    # restore hash, so the hook is preview-only.
+    preview_restore = "" if (for_export or continuous) else _PREVIEW_RESTORE
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'
@@ -448,6 +486,7 @@ def build_html_document(
         f"{header}\n"
         f"{body}\n"
         "</main>\n"
+        f"{preview_restore}"
         "</body>\n"
         "</html>\n"
     )

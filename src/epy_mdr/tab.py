@@ -46,6 +46,20 @@ from epy_mdr.xref_dialog import CrossRefDialog
 RENDER_DEBOUNCE_MS = 250
 UNTITLED = "untitled.md"
 
+# Reads the preview's scroll position as a 0..1 ratio so the next render can
+# return to it (see ``_PREVIEW_RESTORE`` in template.py). "" before any
+# content has scrolled.
+_CAPTURE_POS_JS = (
+    "(function () {"
+    "  try {"
+    "    var el = document.scrollingElement || document.documentElement;"
+    "    if (!el) return '';"
+    "    var d = el.scrollHeight - el.clientHeight;"
+    "    return d > 0 ? 'epypos=s:' + (el.scrollTop / d) : '';"
+    "  } catch (e) { return ''; }"
+    "})()"
+)
+
 # Matches the integer suffix of a ``[^fn-N]`` footnote marker.
 _FOOTNOTE_RE = re.compile(r"\[\^fn-(\d+)\]")
 
@@ -247,7 +261,8 @@ class MarkdownTab(QWidget):
         """
         self._theme_css = css
         self._page_bg = page_bg
-        self._render_now()
+        # Same document, only the theme changed — keep the scroll position.
+        self._render_now(preserve=True)
 
     def set_paged(self, value: bool) -> None:
         """Toggle the A4 page-view preview and re-render immediately.
@@ -1007,10 +1022,10 @@ class MarkdownTab(QWidget):
         self._render_timer.start()
 
     def _render(self) -> None:
-        """Render the current buffer into the preview pane."""
-        self._render_now()
+        """Debounced re-render after an edit; keeps the scroll position."""
+        self._render_now(preserve=True)
 
-    def _render_now(self) -> None:
+    def _render_now(self, *, preserve: bool = False) -> None:
         r"""Render synchronously via file:// to bypass setHtml's 2 MB cap.
 
         The HTML embeds the entire MathJax bundle inline (~2 MB) so
@@ -1020,11 +1035,20 @@ class MarkdownTab(QWidget):
         ``view.load()`` removes the cap. The ``<base href>`` tag in
         the rendered HTML still points at the document's directory,
         so relative figures, bib files and links resolve correctly.
+
+        When ``preserve`` is set (an edit or theme change to the same
+        document), the preview's scroll position is captured and
+        re-applied after the reload, so it does not jump back to the top
+        on every keystroke.
         """
-        self._render_into_view(paged=self._paged)
+        self._render_into_view(paged=self._paged, preserve=preserve)
 
     def _render_into_view(
-        self, *, paged: bool, page_size: str | None = None
+        self,
+        *,
+        paged: bool,
+        page_size: str | None = None,
+        preserve: bool = False,
     ) -> None:
         """Render the buffer into the preview, forcing ``paged`` state.
 
@@ -1038,6 +1062,8 @@ class MarkdownTab(QWidget):
             paged: Whether to render the paged-preview sheet.
             page_size: Explicit page-size key. ``None`` reads it from
                 the buffer's front matter.
+            preserve: When ``True``, capture the preview's scroll position
+                before the reload and restore it afterwards.
         """
         text = self.editor.toPlainText()
         if page_size is None:
@@ -1061,7 +1087,21 @@ class MarkdownTab(QWidget):
             )
         preview_path = self._preview_tmp_dir / "preview.html"
         preview_path.write_text(html, encoding="utf-8")
-        self.view.load(QUrl.fromLocalFile(str(preview_path.resolve())))
+        url = QUrl.fromLocalFile(str(preview_path.resolve()))
+        if preserve:
+            self.view.page().runJavaScript(
+                _CAPTURE_POS_JS,
+                lambda pos: self._load_preview(url, pos),
+            )
+        else:
+            self._load_preview(url, None)
+
+    def _load_preview(self, url: QUrl, pos: object) -> None:
+        """Load ``url`` into the preview, optionally with a restore hash."""
+        if isinstance(pos, str) and pos:
+            url = QUrl(url)
+            url.setFragment(pos)
+        self.view.load(url)
 
     def cleanup_preview_tmp(self) -> None:
         """Delete the temp dir backing the live preview (call on close)."""
