@@ -39,7 +39,7 @@ _PAGEDJS_RUNNER = """
     }).catch(function () { window._paged_done = true; });
   }
   function waitMathThenRun() {
-    if (window._mathjax_done) { run(); }
+    if (window._mathjax_done && window._diagrams_done !== false) { run(); }
     else { setTimeout(waitMathThenRun, 100); }
   }
   if (document.readyState === 'loading') {
@@ -108,6 +108,99 @@ def _load_mathjax_script() -> str:
         .read_text(encoding="utf-8")
     )
     return f"<script>{js}</script>"
+
+
+_DIAGRAM_PKG = {
+    "mermaid": [("epy_mdr.assets.mermaid", "mermaid.min.js")],
+    "nomnoml": [
+        ("epy_mdr.assets.nomnoml", "graphre.js"),
+        ("epy_mdr.assets.nomnoml", "nomnoml.js"),
+    ],
+}
+
+
+@lru_cache(maxsize=4)
+def _load_diagram_script(engine: str) -> str:
+    """Return the bundled engine file(s) wrapped in ``<script>`` (cached)."""
+    parts: list[str] = []
+    for pkg, name in _DIAGRAM_PKG[engine]:
+        js = resources.files(pkg).joinpath(name).read_text(encoding="utf-8")
+        parts.append(f"<script>{js}</script>")
+    return "".join(parts)
+
+
+_MERMAID_CONFIG = """
+<script>
+window._epy_init_mermaid = function () {
+  if (!window.mermaid) return Promise.resolve();
+  var cs = getComputedStyle(document.documentElement);
+  function v(n, d) { return (cs.getPropertyValue(n) || d).trim(); }
+  mermaid.initialize({
+    startOnLoad: false, securityLevel: 'loose', theme: 'base',
+    themeVariables: {
+      background: v('--epy-bg', '#ffffff'),
+      primaryColor: v('--epy-soft', '#eeeeee'),
+      primaryTextColor: v('--epy-fg', '#222222'),
+      primaryBorderColor: v('--epy-primary', '#2a76dd'),
+      lineColor: v('--epy-primary', '#2a76dd'),
+      secondaryColor: v('--epy-bg', '#ffffff'),
+      tertiaryColor: v('--epy-bg', '#ffffff')
+    }
+  });
+  return mermaid.run({ querySelector: '.mermaid' });
+};
+</script>
+"""
+
+_NOMNOML_CONFIG = """
+<script>
+window._epy_init_nomnoml = function () {
+  if (!window.nomnoml) return Promise.resolve();
+  var cs = getComputedStyle(document.documentElement);
+  function v(n, d) { return (cs.getPropertyValue(n) || d).trim(); }
+  var head = '#stroke: ' + v('--epy-primary', '#2a76dd') + '\\n' +
+             '#fill: ' + v('--epy-soft', '#eeeeee') + '\\n';
+  document.querySelectorAll('pre.nomnoml').forEach(function (el) {
+    try {
+      var wrap = document.createElement('div');
+      wrap.className = 'nomnoml';
+      wrap.innerHTML = nomnoml.renderSvg(head + el.textContent);
+      el.replaceWith(wrap);
+    } catch (e) { el.textContent = 'nomnoml: ' + e.message; }
+  });
+  return Promise.resolve();
+};
+</script>
+"""
+
+
+def _diagram_block(diagrams: frozenset[str]) -> str:
+    """Return the diagram bundles + a load-time runner.
+
+    The runner renders the engines and sets ``window._diagrams_done`` so the
+    Paged.js export waits for the diagrams before paginating.
+    """
+    if not diagrams:
+        return ""
+    head = ""
+    inits: list[str] = []
+    if "mermaid" in diagrams:
+        head += _load_diagram_script("mermaid") + _MERMAID_CONFIG
+        inits.append("window._epy_init_mermaid()")
+    if "nomnoml" in diagrams:
+        head += _load_diagram_script("nomnoml") + _NOMNOML_CONFIG
+        inits.append("window._epy_init_nomnoml()")
+    runner = (
+        "<script>\n"
+        "window._diagrams_done = false;\n"
+        "document.addEventListener('DOMContentLoaded', function () {\n"
+        "  Promise.all([" + ", ".join(inits) + "])"
+        ".then(function () { window._diagrams_done = true; })\n"
+        ".catch(function () { window._diagrams_done = true; });\n"
+        "});\n"
+        "</script>\n"
+    )
+    return head + runner
 
 
 # Page sizes as CSS ``@page { size }`` keywords.
@@ -283,6 +376,7 @@ def build_html_document(
     page_size: str = "letter",
     for_export: bool = False,
     continuous: bool = False,
+    diagrams: frozenset[str] = frozenset(),
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -310,6 +404,8 @@ def build_html_document(
         continuous: When ``True``, hide the print/page structure (page
             breaks and index page numbers) so the HTML reads as one
             continuous web page. Used by the HTML export.
+        diagrams: Diagram engines used (``mermaid`` / ``nomnoml``); their
+            bundles and a load-time runner are injected when present.
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -344,6 +440,7 @@ def build_html_document(
         "</style>\n"
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
+        f"{_diagram_block(diagrams)}"
         f"{pagedjs}"
         "</head>\n"
         f"<body{body_class}>\n"

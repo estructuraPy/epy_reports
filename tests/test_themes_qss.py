@@ -165,23 +165,20 @@ def test_qss_no_malformed_hex(theme_id: str):
 
 
 @pytest.mark.parametrize("theme_id", sorted(THEMES.keys()))
-def test_qss_contains_tonal_hex(theme_id: str):
-    """QSS contains derived tonal hex codes (not just the raw bg)."""
+def test_qss_contains_theme_colors(theme_id: str):
+    """The Fluent QSS embeds the theme accent and a derived neutral fill."""
     theme = THEMES[theme_id]
     qss = qss_for(theme)
     window = theme.qt_palette.get("Window", "#FFFFFF")
-    accent = theme.qt_palette.get("Highlight", "#0066CC")
-    dark = _is_dark(window)
-    tv = _tonal_variants(window, accent, dark)
+    text = theme.qt_palette.get("WindowText", "#000000")
+    highlight = theme.qt_palette.get("Highlight", "#0066CC")
+    subtle = _mix(text, window, 0.94)
 
-    # toolbar and accent_soft must appear in the stylesheet
-    assert tv["bg_toolbar"].upper() in qss.upper(), (
-        f"bg_toolbar {tv['bg_toolbar']!r} not found in QSS for "
-        f"{theme_id!r}"
+    assert highlight.upper() in qss.upper(), (
+        f"accent {highlight!r} not found in QSS for {theme_id!r}"
     )
-    assert tv["accent_soft"].upper() in qss.upper(), (
-        f"accent_soft {tv['accent_soft']!r} not found in QSS for "
-        f"{theme_id!r}"
+    assert subtle.upper() in qss.upper(), (
+        f"subtle fill {subtle!r} not found in QSS for {theme_id!r}"
     )
 
 

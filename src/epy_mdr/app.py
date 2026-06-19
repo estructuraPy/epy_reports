@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from epy_mdr import _i18n as i18n
 from epy_mdr import bib, snippets, themes
+from epy_mdr._design import document_css
 from epy_mdr.about_dialog import _load_branding_pixmap
 from epy_mdr.docs_bridge import epy_docs_available
 from epy_mdr.renderer import export_docx, render_markdown
@@ -773,7 +774,7 @@ class MarkdownWindow(QMainWindow):
             themes.apply_palette(app, theme)
             app.setStyleSheet(themes.qss_for(theme))
 
-        css = theme.to_css()
+        css = document_css(theme)
         page_bg = theme.css_vars.get("bg", "")
         for i in range(self.tabs.count()):
             widget = self.tabs.widget(i)
@@ -1171,7 +1172,7 @@ class MarkdownWindow(QMainWindow):
             # Repaint the preview immediately so the cover, logo and
             # watermark reflect the new properties without waiting.
             tab.set_theme_css(
-                self._current_theme.to_css(),
+                document_css(self._current_theme),
                 self._current_theme.css_vars.get("bg", ""),
             )
         # Keep the page-size radio + preview in sync with any change.
@@ -1386,7 +1387,7 @@ class MarkdownWindow(QMainWindow):
             text,
             base_dir=base_dir,
             title=title,
-            theme_css=self._current_theme.to_css(),
+            theme_css=document_css(self._current_theme),
             continuous=True,
         )
         target.write_text(html, encoding="utf-8")
@@ -1440,7 +1441,7 @@ class MarkdownWindow(QMainWindow):
         """Instantiate a new MarkdownTab and wire its signals."""
         tab = MarkdownTab(self)
         tab.set_theme_css(
-            self._current_theme.to_css(),
+            document_css(self._current_theme),
             self._current_theme.css_vars.get("bg", ""),
         )
         tab.set_paged(self._paged_enabled)

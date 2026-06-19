@@ -1,0 +1,137 @@
+"""Theme-driven design components shared by slides and documents.
+
+A single :func:`design_css` produces the CSS for a small vocabulary of
+composition components — lead text, accents, badges, cards, big stats,
+timelines and agendas — all derived from the active theme's ``css_vars`` so
+the look stays coordinated with the rest of the deck. The ``scope`` selector
+prefix lets the same definitions style a reveal.js deck (``".reveal "``) or a
+flowing document (``""`` / ``".doc-content "``).
+
+Markup vocabulary (Pandoc fenced divs / bracketed spans):
+
+* ``::: card … :::`` — a bordered card; group several in ``::: cards``.
+* ``::: stat`` with ``**NUMBER**`` then a label — a big number with a caption;
+  group several in ``::: stats``.
+* ``[text]{.badge}`` — a pill badge.
+* ``::: {.timeline}`` over a bullet list — a vertical timeline.
+* ``::: {.agenda}`` over a list — a numbered agenda.
+* ``[text]{.lead}`` / ``[text]{.muted}`` — emphasised / dimmed text.
+"""
+
+from __future__ import annotations
+
+from epy_mdr.themes_base import Theme
+
+
+def _v(theme: Theme, key: str, default: str = "") -> str:
+    """Return a css var from *theme*, falling back to *default*."""
+    return theme.css_vars.get(key, default)
+
+
+def document_css(theme: Theme) -> str:
+    """Theme ``:root`` vars + ``--epy-*`` aliases + component CSS.
+
+    Used as the document's theme stylesheet so flowing documents pick up
+    the same design components as the slide decks, and the diagram engines
+    (which read ``--epy-*``) inherit the document palette.
+    """
+    return (
+        theme.to_css()
+        + "\n:root {"
+        " --epy-primary: var(--link);"
+        " --epy-fg: var(--fg);"
+        " --epy-bg: var(--bg);"
+        " --epy-soft: var(--bg-soft);"
+        " --epy-border: var(--border);"
+        " }\n"
+        + design_css(theme, scope="")
+    )
+
+
+def design_css(theme: Theme, *, scope: str = "") -> str:
+    """Return theme-driven component CSS, every selector prefixed by ``scope``.
+
+    Args:
+        theme: The active visual theme; colours and fonts come from its
+            ``css_vars``.
+        scope: Selector prefix, e.g. ``".reveal "`` for a deck or ``""`` for a
+            document, so the same components style both targets.
+    """
+    bg = _v(theme, "bg", "#ffffff")
+    fg = _v(theme, "fg", "#222222")
+    heading = _v(theme, "heading-color", fg)
+    primary = _v(theme, "link", "#2a76dd")
+    border = _v(theme, "border", "#d0d0d0")
+    soft = _v(theme, "bg-soft", _v(theme, "code-bg", "#f3f3f3"))
+    font_head = _v(theme, "font-family-headings", "inherit")
+    s = scope
+    return f"""
+/* lead / accents */
+{s}.lead {{ font-size: 1.15em; opacity: 0.9; }}
+{s}.muted {{ opacity: 0.65; }}
+{s}.accent {{ color: {primary}; }}
+{s}.accent-bar, {s}hr.accent-bar {{
+  height: 0.18em; width: 2.4em; border: none; border-radius: 2px;
+  background: {primary}; margin: 0.35em 0;
+}}
+{s}.badge {{
+  display: inline-block; padding: 0.08em 0.55em; border-radius: 999px;
+  background: {primary}; color: {bg}; font-size: 0.62em; font-weight: 700;
+  vertical-align: middle; font-family: {font_head};
+}}
+
+/* cards */
+{s}.cards {{
+  display: grid; gap: 0.7em; align-items: stretch;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}}
+{s}.card {{
+  background: {soft}; border: 1px solid {border};
+  border-top: 4px solid {primary}; border-radius: 10px;
+  padding: 0.55em 0.8em; text-align: left;
+}}
+{s}.card > :first-child {{ margin-top: 0; }}
+{s}.card > :last-child {{ margin-bottom: 0; }}
+{s}.card h1, {s}.card h2, {s}.card h3,
+{s}.card h4, {s}.card h5 {{ color: {heading}; }}
+
+/* big stats */
+{s}.stats {{
+  display: grid; gap: 1em; align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}}
+{s}.stat {{ text-align: center; }}
+{s}.stat p {{ margin: 0.1em 0; }}
+{s}.stat strong {{
+  display: block; font-size: 2.6em; font-weight: 800; line-height: 1;
+  color: {primary}; font-family: {font_head};
+}}
+{s}.stat .stat-label {{ display: block; font-size: 0.68em; opacity: 0.8; }}
+
+/* timeline */
+{s}.timeline ul {{
+  list-style: none; margin: 0.3em 0; padding-left: 1.2em;
+  border-left: 3px solid {primary};
+}}
+{s}.timeline li {{
+  position: relative; margin: 0 0 0.55em; padding-left: 0.4em;
+}}
+{s}.timeline li::before {{
+  content: ""; position: absolute; left: -1.58em; top: 0.32em;
+  width: 0.62em; height: 0.62em; border-radius: 50%;
+  background: {primary}; box-shadow: 0 0 0 3px {bg};
+}}
+
+/* agenda */
+{s}.agenda ul {{ list-style: none; counter-reset: agenda; padding-left: 0; }}
+{s}.agenda li {{
+  counter-increment: agenda; position: relative;
+  padding-left: 1.8em; margin: 0.4em 0;
+}}
+{s}.agenda li::before {{
+  content: counter(agenda); position: absolute; left: 0; top: 0.05em;
+  width: 1.25em; height: 1.25em; line-height: 1.25em; text-align: center;
+  border-radius: 50%; background: {primary}; color: {bg};
+  font-size: 0.7em; font-weight: 700; font-family: {font_head};
+}}
+"""

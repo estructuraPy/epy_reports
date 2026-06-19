@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pypandoc
 
+from epy_mdr._diagrams import diagram_engines, expand_diagrams
 from epy_mdr.snippets import parse_front_matter
 from epy_mdr.template import build_html_document
 
@@ -1214,6 +1215,7 @@ def render_markdown(
     prepared = _resolve_crossrefs(prepared, lang=lang)
     prepared = inject_heading_ids(prepared)
     prepared = _expand_page_breaks(prepared)
+    prepared = expand_diagrams(prepared)
 
     extra_args = list(PANDOC_ARGS) + _bibliography_args(
         metadata, base_dir
@@ -1238,4 +1240,5 @@ def render_markdown(
         page_size=page_size,
         for_export=for_export,
         continuous=continuous,
+        diagrams=frozenset(diagram_engines(source)),
     )
