@@ -386,8 +386,9 @@ flowchart LR
 ```
 
 ::: {.callout-note title="Where they render"}
-Diagrams render in the live preview, the HTML export and the PDF. In the
-Word (.docx) export they fall back to their source text.
+Diagrams render in the live preview, the HTML export and the PDF, and the
+Word (.docx) export rasterizes each one to a themed image so the document
+keeps the picture.
 :::
 
 # Design components

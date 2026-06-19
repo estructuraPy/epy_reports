@@ -395,8 +395,9 @@ flowchart LR
 ```
 
 ::: {.callout-note title="Dónde se renderizan"}
-Los diagramas se renderizan en la vista previa, la exportación HTML y el PDF.
-En la exportación a Word (.docx) caen a su texto fuente.
+Los diagramas se renderizan en la vista previa, la exportación HTML y el PDF,
+y la exportación a Word (.docx) los rasteriza a una imagen con el color del
+tema para conservar el dibujo.
 :::
 
 # Componentes de diseño

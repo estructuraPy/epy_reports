@@ -20,6 +20,12 @@ from pathlib import Path
 import pypandoc
 
 from epy_mdr._diagrams import diagram_engines, expand_diagrams
+from epy_mdr._media_export import (
+    collect_diagrams,
+    render_diagram_pngs,
+    simplify_components_for_export,
+    substitute_diagram_images,
+)
 from epy_mdr.snippets import parse_front_matter
 from epy_mdr.template import build_html_document
 
@@ -1101,6 +1107,8 @@ def export_docx(
     target: Path,
     base_dir: Path | None = None,
     reference_doc: Path | None = None,
+    *,
+    theme_css: str = "",
 ) -> None:
     """Convert Quarto/Pandoc Markdown ``source`` to a ``.docx`` file.
 
@@ -1122,10 +1130,26 @@ def export_docx(
             (fonts, colors, heading levels) Pandoc will copy into the
             output.  When ``None`` or when the file does not exist the
             export proceeds with Pandoc's default styles.
+        theme_css: Optional active-theme CSS (``--epy-*`` variables) used
+            to colour the rasterized Mermaid/nomnoml diagrams so they match
+            the document; empty renders them in the default palette.
     """
     metadata = parse_front_matter(source)
     lang = metadata.get("lang", "en")
-    prepared = _expand_quarto_callouts(source)
+
+    # Word has no diagram engine and ignores the component CSS, so render
+    # each Mermaid/nomnoml diagram to a themed PNG (best-effort) and rewrite
+    # the design components into native Word structures before Pandoc runs.
+    prepared = source
+    diag_tmp: Path | None = None
+    diagrams = collect_diagrams(source)
+    if diagrams:
+        diag_tmp = Path(tempfile.mkdtemp(prefix="epy_mdr_docx_diag_"))
+        pngs = render_diagram_pngs(diagrams, diag_tmp, theme_css=theme_css)
+        prepared = substitute_diagram_images(prepared, pngs)
+    prepared = simplify_components_for_export(prepared)
+
+    prepared = _expand_quarto_callouts(prepared)
     prepared = _resolve_crossrefs(prepared, lang=lang)
     # Drop preview-only index markers so they do not leak as literal
     # text into the Word document, then materialize page breaks.
@@ -1156,6 +1180,8 @@ def export_docx(
     finally:
         if svg_tmp is not None:
             shutil.rmtree(svg_tmp, ignore_errors=True)
+        if diag_tmp is not None:
+            shutil.rmtree(diag_tmp, ignore_errors=True)
 
 
 def render_markdown(

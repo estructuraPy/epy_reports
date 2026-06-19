@@ -1351,7 +1351,9 @@ class MarkdownWindow(QMainWindow):
         )
         try:
             export_docx(
-                text, target, base_dir=base_dir, reference_doc=reference_doc
+                text, target, base_dir=base_dir,
+                reference_doc=reference_doc,
+                theme_css=document_css(self._current_theme),
             )
         except (OSError, RuntimeError) as exc:
             QMessageBox.critical(
