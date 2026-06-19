@@ -14,7 +14,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QFont, QPalette
 from PySide6.QtWidgets import QApplication
 
 from epy_mdr.themes_base import Theme
@@ -482,6 +482,13 @@ def load_all_themes() -> dict[str, Theme]:
 def apply_palette(app: QApplication, theme: Theme) -> None:
     """Apply ``theme.qt_palette`` to the running Qt application."""
     app.setStyle("Fusion")
+    # Fluent-style typography: a clean system sans for the chrome. The
+    # editor keeps its own monospace font (set explicitly per widget).
+    chrome_font = QFont("Segoe UI Variable Text")
+    if "segoe ui variable" not in chrome_font.family().lower():
+        chrome_font = QFont("Segoe UI")
+    chrome_font.setPointSize(10)
+    app.setFont(chrome_font)
     palette = QPalette()
     for role_name, hex_color in theme.qt_palette.items():
         role = getattr(QPalette.ColorRole, role_name, None)
@@ -546,144 +553,137 @@ def qss_for(theme: Theme) -> str:
     highlight_text = p.get("HighlightedText", "#ffffff")
     border = theme.css_vars.get("border", "#cccccc")
 
-    dark = _is_dark(window)
-    tonal = _tonal_variants(window, highlight, dark)
-    bg_toolbar = tonal["bg_toolbar"]
-    bg_statusbar = tonal["bg_statusbar"]
-    bg_menu = tonal["bg_menu"]
-    accent_soft = tonal["accent_soft"]
-    accent_strong = tonal["accent_strong"]
-    scrollbar_handle = tonal["scrollbar_handle"]
-
-    # Tab unselected background matches the toolbar tone.
-    tab_bg = bg_toolbar
-    # Tab selected background matches the editor pane.
-    tab_selected = base
-    # Tab hover slightly lighter/darker than toolbar.
-    tab_hover = accent_soft
-
-    # Text over accent_soft must remain readable.
-    accent_soft_text = _contrast_text(accent_soft)
-
-    # Muted text for statusbar.
-    muted_text = _mix(text, window, 0.30)
+    # Fluent-style tones: flat surfaces, subtle neutral hover fills, with
+    # the accent reserved for the active tab, focus and default button.
+    subtle = _mix(text, window, 0.94)
+    subtle_strong = _mix(text, window, 0.88)
+    accent_tint = _mix(highlight, window, 0.86)
+    accent_tint_text = _contrast_text(accent_tint)
+    accent_hover = _darken(highlight, 0.12)
+    hairline = _mix(border, window, 0.55)
+    muted_text = _mix(text, window, 0.40)
 
     return f"""
-    QMainWindow, QDialog {{
-        background: {window}; color: {text};
-    }}
+    QMainWindow, QDialog {{ background: {window}; color: {text}; }}
+
     QToolBar {{
-        background: qlineargradient(
-            x1:0, y1:0, x2:0, y2:1,
-            stop:0 {bg_toolbar},
-            stop:1 {window}
-        );
-        color: {text};
-        border: 0;
-        border-bottom: 1px solid {accent_soft};
-        spacing: 4px; padding: 4px;
+        background: {window}; color: {text};
+        border: 0; border-bottom: 1px solid {hairline};
+        spacing: 2px; padding: 6px 8px;
     }}
     QToolBar::separator {{
-        background: {border}; width: 1px; margin: 4px 6px;
+        background: {hairline}; width: 1px; margin: 7px 6px;
     }}
     QToolButton {{
         background: transparent; color: {text};
-        padding: 5px 10px; border-radius: 4px; border: none;
+        padding: 6px 12px; border-radius: 6px; border: none;
     }}
-    QToolButton:hover {{
-        background: {accent_soft}; color: {accent_soft_text};
+    QToolButton:hover {{ background: {subtle}; }}
+    QToolButton:pressed {{ background: {subtle_strong}; }}
+    QToolButton:checked {{
+        background: {accent_tint}; color: {accent_tint_text};
     }}
-    QToolButton:pressed, QToolButton:checked {{
-        background: {accent_strong};
-        color: {_contrast_text(accent_strong)};
+    QToolButton::menu-indicator {{ image: none; width: 0; }}
+
+    QMenuBar {{ background: {window}; color: {text}; border: 0; }}
+    QMenuBar::item {{
+        padding: 6px 10px; border-radius: 6px; background: transparent;
     }}
-    QToolButton::menu-indicator {{
-        subcontrol-position: right center; right: 4px;
-    }}
-    QMenuBar {{ background: {window}; color: {text}; }}
-    QMenuBar::item {{ padding: 4px 10px; }}
-    QMenuBar::item:selected {{
-        background: {highlight}; color: {highlight_text};
-    }}
+    QMenuBar::item:selected {{ background: {subtle}; }}
+
     QMenu {{
-        background: {bg_menu}; color: {text};
-        border: 1px solid {border}; padding: 4px;
+        background: {window}; color: {text};
+        border: 1px solid {hairline}; border-radius: 8px; padding: 6px;
     }}
-    QMenu::item {{ padding: 4px 18px; border-radius: 3px; }}
-    QMenu::item:selected {{
-        background: {accent_soft}; color: {accent_soft_text};
-    }}
+    QMenu::item {{ padding: 6px 28px 6px 14px; border-radius: 6px; }}
+    QMenu::item:selected {{ background: {subtle}; }}
     QMenu::separator {{
-        height: 1px; background: {border}; margin: 4px 8px;
+        height: 1px; background: {hairline}; margin: 6px 10px;
     }}
+
     QTabWidget::pane {{
-        background: {base}; border: 1px solid {border};
+        background: {base}; border: 1px solid {hairline};
+        border-radius: 8px;
     }}
+    QTabBar {{ qproperty-drawBase: 0; }}
     QTabBar::tab {{
-        background: {tab_bg}; color: {text};
-        padding: 6px 14px;
-        border: 1px solid {border};
-        border-bottom: none;
-        border-top-left-radius: 4px; border-top-right-radius: 4px;
-        margin-right: 2px;
+        background: transparent; color: {muted_text};
+        padding: 8px 16px; border: 0; margin-right: 2px;
+        border-top-left-radius: 8px; border-top-right-radius: 8px;
     }}
+    QTabBar::tab:hover:!selected {{ background: {subtle}; color: {text}; }}
     QTabBar::tab:selected {{
-        background: {tab_selected};
+        background: {base}; color: {text};
         border-bottom: 2px solid {highlight};
     }}
-    QTabBar::tab:hover:!selected {{ background: {tab_hover}; }}
-    QPlainTextEdit, QTextEdit {{
+
+    QPlainTextEdit, QTextEdit, QLineEdit, QListWidget,
+    QComboBox, QSpinBox, QDoubleSpinBox {{
         background: {base}; color: {text};
-        selection-background-color: {highlight};
-        selection-color: {highlight_text};
-        border: 1px solid {border};
+        border: 1px solid {hairline}; border-radius: 8px; padding: 6px 8px;
+        selection-background-color: {accent_tint}; selection-color: {text};
     }}
+    QPlainTextEdit:focus, QTextEdit:focus, QLineEdit:focus,
+    QListWidget:focus, QComboBox:focus, QSpinBox:focus,
+    QDoubleSpinBox:focus {{ border: 1px solid {highlight}; }}
+    QComboBox::drop-down {{ border: 0; width: 22px; }}
+
+    QGroupBox {{
+        border: 1px solid {hairline}; border-radius: 8px;
+        margin-top: 10px; padding: 10px 8px 8px;
+    }}
+    QGroupBox::title {{
+        subcontrol-origin: margin; left: 10px; padding: 0 4px;
+        color: {muted_text};
+    }}
+    QCheckBox, QRadioButton, QLabel {{
+        color: {text}; background: transparent;
+    }}
+
     QStatusBar {{
-        background: {bg_statusbar}; color: {muted_text};
-        border-top: 1px solid {border};
+        background: {window}; color: {muted_text};
+        border-top: 1px solid {hairline};
     }}
-    QSplitter::handle {{
-        background: {border};
-    }}
-    QSplitter::handle:hover {{ background: {accent_soft}; }}
+    QStatusBar::item {{ border: 0; }}
+
+    QSplitter::handle {{ background: transparent; }}
+    QSplitter::handle:hover {{ background: {subtle}; }}
+
     QScrollBar:vertical {{
-        background: {base}; border: 0; width: 10px;
+        background: transparent; border: 0; width: 12px; margin: 0;
     }}
     QScrollBar:horizontal {{
-        background: {base}; border: 0; height: 10px;
+        background: transparent; border: 0; height: 12px; margin: 0;
     }}
-    QScrollBar::handle:vertical,
-    QScrollBar::handle:horizontal {{
-        background: {scrollbar_handle};
-        border-radius: 4px; margin: 2px;
-        min-height: 24px; min-width: 24px;
+    QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{
+        background: {subtle_strong}; border-radius: 5px; margin: 3px;
+        min-height: 32px; min-width: 32px;
     }}
-    QScrollBar::handle:vertical:hover,
-    QScrollBar::handle:horizontal:hover {{
-        background: {highlight};
-    }}
+    QScrollBar::handle:hover {{ background: {muted_text}; }}
     QScrollBar::add-line, QScrollBar::sub-line {{
         background: transparent; border: 0; width: 0; height: 0;
     }}
-    QLineEdit, QListWidget {{
-        background: {base}; color: {text};
-        border: 1px solid {border}; padding: 4px;
-        selection-background-color: {highlight};
-        selection-color: {highlight_text};
+    QScrollBar::add-page, QScrollBar::sub-page {{
+        background: transparent;
     }}
-    QLineEdit:focus, QListWidget:focus {{
-        border: 1px solid {highlight};
+
+    QPushButton {{
+        background: {subtle}; color: {text};
+        border: 1px solid {hairline}; border-radius: 6px;
+        padding: 6px 16px;
     }}
-    QDialogButtonBox QPushButton {{
-        background: {bg_menu}; color: {text};
-        border: 1px solid {border};
-        padding: 5px 14px; border-radius: 4px;
-    }}
-    QDialogButtonBox QPushButton:hover {{
-        background: {accent_soft}; color: {accent_soft_text};
-    }}
-    QDialogButtonBox QPushButton:default {{
+    QPushButton:hover {{ background: {subtle_strong}; }}
+    QPushButton:pressed {{ background: {subtle_strong}; }}
+    QPushButton:default {{
         background: {highlight}; color: {highlight_text};
         border-color: {highlight};
+    }}
+    QPushButton:default:hover {{
+        background: {accent_hover}; border-color: {accent_hover};
+    }}
+
+    QToolTip {{
+        background: {window}; color: {text};
+        border: 1px solid {hairline}; border-radius: 6px; padding: 4px 8px;
     }}
     """
