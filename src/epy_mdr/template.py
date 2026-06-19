@@ -250,6 +250,28 @@ _CONTINUOUS_CSS = """
 """
 
 
+def _watermark_css(metadata: dict[str, str]) -> str:
+    """Return CSS painting a faint grayscale watermark behind the document.
+
+    Restricted to screen media so it shows live in the preview and the HTML
+    export; the PDF export stamps its own watermark via ``_pdf_footer`` so it
+    prints reliably on every page.
+    """
+    watermark = (metadata.get("watermark") or "").strip()
+    if not watermark:
+        return ""
+    src = html.escape(watermark, quote=True)
+    return (
+        "@media screen {\n"
+        "body::after {\n"
+        '  content: ""; position: fixed; inset: 0;\n'
+        f'  background: url("{src}") center / 40% no-repeat;\n'
+        "  opacity: 0.08; filter: grayscale(1);\n"
+        "  pointer-events: none; z-index: -1;\n"
+        "}\n}\n"
+    )
+
+
 def build_html_document(
     body: str,
     base_dir: Path | None,
@@ -318,6 +340,7 @@ def build_html_document(
         f"{base_css}\n"
         f"{theme_css}\n"
         f"{_CONTINUOUS_CSS if continuous else ''}\n"
+        f"{_watermark_css(meta)}"
         "</style>\n"
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.resources
+import shutil
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -1119,6 +1120,25 @@ class MarkdownWindow(QMainWindow):
             f"Deleted template: {name}", 3000
         )
 
+    @staticmethod
+    def _localize_asset(tab: MarkdownTab, value: str) -> str:
+        """Copy a picked image into the document's ``figures/`` directory.
+
+        Returns a project-relative path (``figures/<name>``) so the logo or
+        watermark travels with the document and resolves in the preview and
+        every export. Values that are already relative, missing on disk, or
+        belong to an unsaved document are returned unchanged.
+        """
+        src = Path(value)
+        if tab.path is None or not src.is_absolute() or not src.is_file():
+            return value
+        figures = tab.path.parent / "figures"
+        figures.mkdir(parents=True, exist_ok=True)
+        dst = figures / src.name
+        if src.resolve() != dst.resolve() and not dst.exists():
+            shutil.copy2(str(src), str(dst))
+        return f"figures/{dst.name}"
+
     def _edit_document_properties(self) -> None:
         """Open the Document properties form and write the front matter."""
         from epy_mdr.document_properties_dialog import (  # noqa: PLC0415
@@ -1135,6 +1155,10 @@ class MarkdownWindow(QMainWindow):
             return
         updated = text
         for field, value, raw in dialog.updates():
+            # Copy a picked logo / watermark into the project so it travels
+            # with the document and resolves in the preview and exports.
+            if field in ("logo", "watermark") and value:
+                value = self._localize_asset(tab, value)
             updated = snippets.set_metadata_field(
                 updated, field, value, raw=raw
             )
@@ -1144,6 +1168,12 @@ class MarkdownWindow(QMainWindow):
             cursor.select(cursor.SelectionType.Document)
             cursor.insertText(updated)
             cursor.endEditBlock()
+            # Repaint the preview immediately so the cover, logo and
+            # watermark reflect the new properties without waiting.
+            tab.set_theme_css(
+                self._current_theme.to_css(),
+                self._current_theme.css_vars.get("bg", ""),
+            )
         # Keep the page-size radio + preview in sync with any change.
         self._sync_page_size_menu()
         self.statusBar().showMessage("Document properties updated", 3000)
