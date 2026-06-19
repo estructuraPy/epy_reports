@@ -241,6 +241,15 @@ def _cover_page_block(metadata: dict[str, str]) -> str:
     return "\n".join(parts)
 
 
+_CONTINUOUS_CSS = """
+/* Continuous HTML export: hide the print/page structure so the document
+   reads as one continuous web page — no page breaks and no page-number
+   leaders in the indexes (those only make sense in the paginated PDF). */
+.page-break { display: none !important; }
+.toc-dots, .page-num { display: none !important; }
+"""
+
+
 def build_html_document(
     body: str,
     base_dir: Path | None,
@@ -251,6 +260,7 @@ def build_html_document(
     paged: bool = False,
     page_size: str = "letter",
     for_export: bool = False,
+    continuous: bool = False,
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -275,6 +285,9 @@ def build_html_document(
             ``@page`` rule so the document is paginated for PDF export
             (per-page margins, footnotes at the foot of their page). The
             live preview leaves this off.
+        continuous: When ``True``, hide the print/page structure (page
+            breaks and index page numbers) so the HTML reads as one
+            continuous web page. Used by the HTML export.
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -304,6 +317,7 @@ def build_html_document(
         "<style>\n"
         f"{base_css}\n"
         f"{theme_css}\n"
+        f"{_CONTINUOUS_CSS if continuous else ''}\n"
         "</style>\n"
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"

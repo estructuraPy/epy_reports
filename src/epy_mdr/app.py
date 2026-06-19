@@ -1357,6 +1357,7 @@ class MarkdownWindow(QMainWindow):
             base_dir=base_dir,
             title=title,
             theme_css=self._current_theme.to_css(),
+            continuous=True,
         )
         target.write_text(html, encoding="utf-8")
         self.statusBar().showMessage(f"Saved HTML: {target}", 3000)

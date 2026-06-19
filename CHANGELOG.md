@@ -4,6 +4,13 @@ All notable changes to `epy_mdr` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **HTML export is now continuous.** The exported HTML hides the print/page
+  structure (page breaks and the page-number leaders in the indexes) so the
+  document reads as one continuous web page. The PDF export is unchanged.
+
 ## [0.5.0] — 2026-06-18
 
 ### Added

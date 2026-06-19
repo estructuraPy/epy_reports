@@ -1166,6 +1166,7 @@ def render_markdown(
     paged: bool = False,
     page_size: str = "letter",
     for_export: bool = False,
+    continuous: bool = False,
 ) -> str:
     """Render Quarto/Pandoc Markdown ``source`` to a full HTML page.
 
@@ -1196,6 +1197,9 @@ def render_markdown(
         for_export: When ``True``, paginate the document with Paged.js for
             PDF export (per-page margins, footnotes at the foot of their
             page). Leave off for the live preview.
+        continuous: When ``True``, hide the print/page structure (page
+            breaks and index page numbers) so the HTML reads as one
+            continuous web page. Used by the HTML export.
 
     Returns:
         A standalone HTML5 document ready for the preview pane or to
@@ -1233,4 +1237,5 @@ def render_markdown(
         paged=paged,
         page_size=page_size,
         for_export=for_export,
+        continuous=continuous,
     )
