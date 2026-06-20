@@ -147,7 +147,34 @@ window._epy_init_mermaid = function () {
       tertiaryColor: v('--epy-bg', '#ffffff')
     }
   });
-  return mermaid.run({ querySelector: '.mermaid' });
+  // Use mermaid.render() (measures in its own container on <body>) instead
+  // of mermaid.run() so a diagram inside a hidden/paged element still
+  // renders at full size.
+  var els = Array.prototype.slice.call(
+    document.querySelectorAll('pre.mermaid, .mermaid')
+  );
+  return Promise.all(els.map(function (el, i) {
+    var src = el.textContent;
+    return mermaid.render('epy-mermaid-' + i, src).then(function (out) {
+      var div = document.createElement('div');
+      div.className = 'mermaid';
+      div.innerHTML = out.svg;
+      var svg = div.querySelector('svg');
+      if (svg) {
+        var vb = (svg.getAttribute('viewBox') || '').split(/\\s+/);
+        var w = parseFloat(vb[2]) || 0, h = parseFloat(vb[3]) || 0;
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.style.maxWidth = '100%';
+        svg.style.height = 'auto';
+        if (w) { svg.style.width = w + 'px'; }
+        if (w && h) { svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h); }
+      }
+      el.replaceWith(div);
+    }).catch(function (e) {
+      el.textContent = 'mermaid: ' + ((e && e.message) || e);
+    });
+  }));
 };
 </script>
 """

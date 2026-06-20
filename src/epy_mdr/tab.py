@@ -44,6 +44,7 @@ from epy_mdr.template import is_truthy
 from epy_mdr.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
+POS_POLL_MS = 400
 UNTITLED = "untitled.md"
 
 # Reads the preview's scroll position as a 0..1 ratio so the next render can
@@ -158,6 +159,21 @@ class MarkdownTab(QWidget):
         self._render_timer.setSingleShot(True)
         self._render_timer.setInterval(RENDER_DEBOUNCE_MS)
         self._render_timer.timeout.connect(self._render)
+
+        # The scroll position is polled into ``_last_pos`` on a timer so a
+        # re-render can return to it WITHOUT making the reload depend on an
+        # async callback (a dropped callback would leave the preview, and
+        # theme switches, never updating).
+        self._last_pos = ""
+        # A monotonic query param makes every preview URL unique. Loading the
+        # same file path with only a changed ``#fragment`` is an in-page
+        # navigation that does NOT reload — which silently swallowed theme
+        # switches; the changing ``?r=`` forces a full reload every time.
+        self._render_seq = 0
+        self._pos_timer = QTimer(self)
+        self._pos_timer.setInterval(POS_POLL_MS)
+        self._pos_timer.timeout.connect(self._poll_position)
+        self._pos_timer.start()
 
         self.editor.textChanged.connect(self._on_text_changed)
 
@@ -1088,20 +1104,25 @@ class MarkdownTab(QWidget):
         preview_path = self._preview_tmp_dir / "preview.html"
         preview_path.write_text(html, encoding="utf-8")
         url = QUrl.fromLocalFile(str(preview_path.resolve()))
-        if preserve:
-            self.view.page().runJavaScript(
-                _CAPTURE_POS_JS,
-                lambda pos: self._load_preview(url, pos),
-            )
-        else:
-            self._load_preview(url, None)
-
-    def _load_preview(self, url: QUrl, pos: object) -> None:
-        """Load ``url`` into the preview, optionally with a restore hash."""
-        if isinstance(pos, str) and pos:
-            url = QUrl(url)
-            url.setFragment(pos)
+        # Load immediately and unconditionally; ``?r=`` forces a real reload
+        # and, when preserving, the ``#fragment`` carries the scroll ratio to
+        # return to. Never wait on a callback.
+        self._render_seq += 1
+        url.setQuery(f"r={self._render_seq}")
+        if preserve and self._last_pos:
+            url.setFragment(self._last_pos)
         self.view.load(url)
+
+    def _poll_position(self) -> None:
+        """Cache the preview scroll position for the next render."""
+        page = self.view.page()
+        if page is not None:
+            page.runJavaScript(_CAPTURE_POS_JS, self._store_position)
+
+    def _store_position(self, pos: object) -> None:
+        """Record a captured ``epypos=…`` token (ignore empty/None)."""
+        if isinstance(pos, str) and pos:
+            self._last_pos = pos
 
     def cleanup_preview_tmp(self) -> None:
         """Delete the temp dir backing the live preview (call on close)."""
