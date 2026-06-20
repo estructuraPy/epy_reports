@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 
 from epy_mdr import snippets
 from epy_mdr.checklist_dialog import ChecklistDialog
+from epy_mdr.columns_dialog import ThreeColumnDialog, TwoColumnDialog
 from epy_mdr.equation_dialog import EquationDialog
 from epy_mdr.figure_dialog import FigureDialog
 from epy_mdr.footnote_dialog import FootnoteDialog
@@ -777,6 +778,28 @@ class MarkdownTab(QWidget):
         # build_markdown already starts with a blank line, so we only
         # need to move to a new line when we are not at the start of
         # the document and the leading blank line is not enough.
+        cursor.insertText(md)
+        self.editor.setFocus()
+
+    def insert_two_columns(self) -> None:
+        """Open TwoColumnDialog; insert a two-column fenced-div block."""
+        dialog = TwoColumnDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        # build_markdown starts with a blank line for separation.
+        cursor.insertText(md)
+        self.editor.setFocus()
+
+    def insert_three_columns(self) -> None:
+        """Open ThreeColumnDialog; insert a three-column fenced-div block."""
+        dialog = ThreeColumnDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        md = dialog.build_markdown()
+        cursor = self.editor.textCursor()
+        # build_markdown starts with a blank line for separation.
         cursor.insertText(md)
         self.editor.setFocus()
 

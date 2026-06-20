@@ -581,6 +581,28 @@ section.cover-page .cover-date {
     font-style: italic;
 }
 
+/* ---------- Multi-column layouts (fenced-div +fenced_divs) ---------- */
+
+/* Pandoc emits: <div class="columns"> … <div class="column" style="width:50%"> */
+.columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+.column {
+    flex: 1 1 0;
+    min-width: 0;
+}
+/* When Pandoc writes an inline width style, override the flex-basis so the
+   declared percentage is honoured instead of the equal-share default. */
+.column[style*="width"] {
+    flex: 0 1 auto;
+}
+@media print {
+    .columns { gap: 0.75rem; }
+}
+
 /* ---------- A4 page view (preview only) ---------- */
 
 body.paged {

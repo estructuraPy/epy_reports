@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Two-column and three-column content blocks.** *Elements ▸ Two-column
+  block* (`Ctrl+Shift+2`) and *Elements ▸ Three-column block* (`Ctrl+Shift+3`)
+  insert a Pandoc fenced-div layout (`:::: {.columns}` / `::: {.column
+  width="…"}`). A dialog lets you set the column widths before inserting; the
+  default is 50/50 and 33/33/34 respectively. The bundled CSS renders the
+  blocks side by side in HTML and PDF output.
+
 ### Changed
 - **HTML export is now continuous.** The exported HTML hides the print/page
   structure (page breaks and the page-number leaders in the indexes) so the

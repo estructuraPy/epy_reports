@@ -376,6 +376,18 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_checklist")
         )
 
+        self.act_ins_two_columns = QAction("Two-column block", self)
+        self.act_ins_two_columns.setShortcut(QKeySequence("Ctrl+Shift+2"))
+        self.act_ins_two_columns.triggered.connect(
+            lambda: self._on_active_tab("insert_two_columns")
+        )
+
+        self.act_ins_three_columns = QAction("Three-column block", self)
+        self.act_ins_three_columns.setShortcut(QKeySequence("Ctrl+Shift+3"))
+        self.act_ins_three_columns.triggered.connect(
+            lambda: self._on_active_tab("insert_three_columns")
+        )
+
         self.act_ins_equation = QAction("Equation", self)
         self.act_ins_equation.setShortcut(QKeySequence("Ctrl+Shift+Q"))
         self.act_ins_equation.triggered.connect(
@@ -523,6 +535,8 @@ class MarkdownWindow(QMainWindow):
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_table)
         self.elements_menu.addAction(self.act_ins_checklist)
+        self.elements_menu.addAction(self.act_ins_two_columns)
+        self.elements_menu.addAction(self.act_ins_three_columns)
         self.elements_menu.addAction(self.act_ins_equation)
         self.elements_menu.addAction(self.act_ins_footnote)
         self.elements_menu.addSeparator()

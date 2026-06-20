@@ -40,6 +40,7 @@ y luego expórtelo con `Ctrl+P` para verlo como PDF.
 | Enlace | `Ctrl+K` |
 | Figura / tabla / ecuación | `Ctrl+Shift+F` / `Ctrl+Shift+T` / `Ctrl+Shift+Q` |
 | Llamado / bloque de código / lista de tareas | `Ctrl+Shift+C` / `Ctrl+Shift+K` / `Ctrl+Shift+L` |
+| Bloque de dos columnas / tres columnas | `Ctrl+Shift+2` / `Ctrl+Shift+3` |
 | Nota al pie / salto de página | `Ctrl+Shift+O` / `Ctrl+Shift+G` |
 | Referencia cruzada / selector de citas | `Ctrl+R` / `Ctrl+Shift+B` |
 | Propiedades del documento (portada/encabezado/pie) | `Ctrl+Shift+Y` |
@@ -145,6 +146,69 @@ de elementos y un título opcional en negrita.
 En la exportación a **HTML** las casillas de la lista de tareas son
 interactivas: los lectores pueden marcarlas y desmarcarlas en el navegador.
 En el PDF se imprimen como casillas estáticas.
+:::
+
+# Bloques de columnas
+
+**Cómo insertarlo:** *Elementos ▸ Bloque de dos columnas* (`Ctrl+Shift+2`) o
+*Elementos ▸ Bloque de tres columnas* (`Ctrl+Shift+3`). Un diálogo permite
+ajustar el ancho de cada columna antes de insertar el bloque; la distribución
+predeterminada es 50/50 para dos columnas y 33/33/34 para tres.
+
+Los bloques de columnas usan la sintaxis de divs cercados de Pandoc — un
+contendor externo `:::: {.columns}` con un div interno
+`::: {.column width="…"}` por columna. La regla CSS `display:flex` del HTML y
+el PDF exportado mantiene las columnas una al lado de la otra:
+
+```markdown
+:::: {.columns}
+::: {.column width="50%"}
+**Columna izquierda**
+
+Aquí puede poner cualquier contenido: texto, una tabla, un bloque de código,
+un llamado.
+:::
+::: {.column width="50%"}
+**Columna derecha**
+
+Los dos paneles quedan uno al lado del otro en la salida HTML y PDF.
+:::
+::::
+```
+
+:::: {.columns}
+::: {.column width="50%"}
+**Columna izquierda**
+
+Aquí puede poner cualquier contenido: texto, una tabla, un bloque de código,
+un llamado.
+:::
+::: {.column width="50%"}
+**Columna derecha**
+
+Los dos paneles quedan uno al lado del otro en la salida HTML y PDF.
+:::
+::::
+
+Un bloque de tres columnas sigue el mismo patrón con tres divs internos:
+
+```markdown
+:::: {.columns}
+::: {.column width="33%"}
+Columna A
+:::
+::: {.column width="33%"}
+Columna B
+:::
+::: {.column width="34%"}
+Columna C
+:::
+::::
+```
+
+::: {.callout-tip title="Anchos flexibles"}
+No está limitado a distribuciones iguales. El diálogo acepta cualquier porcentaje
+entero que sume 100, por lo que un diseño 30/70 es igual de sencillo.
 :::
 
 # Citas y llamados

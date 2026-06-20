@@ -39,6 +39,7 @@ below it. Edit freely, then export with `Ctrl+P` to see it as a PDF.
 | Link | `Ctrl+K` |
 | Figure / table / equation | `Ctrl+Shift+F` / `Ctrl+Shift+T` / `Ctrl+Shift+Q` |
 | Callout / code block / checklist | `Ctrl+Shift+C` / `Ctrl+Shift+K` / `Ctrl+Shift+L` |
+| Two-column block / Three-column block | `Ctrl+Shift+2` / `Ctrl+Shift+3` |
 | Footnote / page break | `Ctrl+Shift+O` / `Ctrl+Shift+G` |
 | Cross-reference / citation picker | `Ctrl+R` / `Ctrl+Shift+B` |
 | Document properties (cover/header/footer) | `Ctrl+Shift+Y` |
@@ -140,6 +141,66 @@ and an optional bold title.
 ::: {.callout-tip title="Interactive in HTML"}
 In the **HTML** export the task-list checkboxes are live — readers can tick
 and untick them in the browser. In the PDF they print as static boxes.
+:::
+
+# Column blocks
+
+**Insert it:** *Elements ▸ Two-column block* (`Ctrl+Shift+2`) or *Elements ▸
+Three-column block* (`Ctrl+Shift+3`). A dialog lets you adjust the column
+widths before the block is inserted; the default split is 50/50 for two
+columns and 33/33/34 for three.
+
+Column blocks use Pandoc fenced-div syntax — a `:::: {.columns}` outer fence
+with one `::: {.column width="…"}` inner div per column. The CSS `display:flex`
+rule in the exported HTML and PDF keeps the columns side by side:
+
+```markdown
+:::: {.columns}
+::: {.column width="50%"}
+**Left column**
+
+Put any content here — text, a table, a code block, a callout.
+:::
+::: {.column width="50%"}
+**Right column**
+
+The two panels sit side by side in HTML and PDF output.
+:::
+::::
+```
+
+:::: {.columns}
+::: {.column width="50%"}
+**Left column**
+
+Put any content here — text, a table, a code block, a callout.
+:::
+::: {.column width="50%"}
+**Right column**
+
+The two panels sit side by side in HTML and PDF output.
+:::
+::::
+
+A three-column block follows the same pattern with three inner divs:
+
+```markdown
+:::: {.columns}
+::: {.column width="33%"}
+Column A
+:::
+::: {.column width="33%"}
+Column B
+:::
+::: {.column width="34%"}
+Column C
+:::
+::::
+```
+
+::: {.callout-tip title="Flexible widths"}
+You are not limited to equal splits. The dialog accepts any integer
+percentages that add up to 100, so a 30/70 layout is just as easy.
 :::
 
 # Quotes and callouts

@@ -15,8 +15,8 @@ it as a starting template: keep the structure, replace the content.
 
 The tour covers text formatting in @sec-text, mathematics in
 @sec-math, figures in @sec-figures, tables in @sec-tables, code in
-@sec-code, callouts in @sec-callouts and bibliography handling in
-@sec-citations.
+@sec-code, callouts in @sec-callouts, column layouts in @sec-columns
+and bibliography handling in @sec-citations.
 
 > The same Pandoc render is used for the on-screen preview and for the
 > PDF, HTML and DOCX exports, so what you see in the preview is what
@@ -167,6 +167,67 @@ A wrong shear-reinforcement detail can trigger a brittle failure with
 no warning; the wind-induced collapse of the Tacoma Narrows bridge in
 1940 is a classical reminder [@tacoma1941collapse].
 :::
+
+# Column layouts {#sec-columns}
+
+Place content side by side with a `:::: {.columns}` fenced-div block.
+Use *Elements ▸ Two-column block* (`Ctrl+Shift+2`) or *Elements ▸
+Three-column block* (`Ctrl+Shift+3`) to insert one from the menu.
+
+**Two-column block (50 / 50):**
+
+:::: {.columns}
+::: {.column width="50%"}
+**Gravity load summary**
+
+| Load | Value |
+| --- | --- |
+| Dead (D) | 5.0 kPa |
+| Live (L) | 2.4 kPa |
+| Roof live ($L_r$) | 1.0 kPa |
+
+The governing ASCE 7 combination is $1.2D + 1.6L$, giving a factored
+floor pressure of **9.84 kPa**.
+:::
+::: {.column width="50%"}
+**Lateral load summary**
+
+The seismic base shear is $V = C_s W$ (see @eq-avmin for the section
+geometry). For the design spectrum:
+
+- $S_{DS} = 1.0\,g$, $S_{D1} = 0.5\,g$
+- $R = 8$ (special moment frame)
+- $C_s = 0.125$
+
+Wind governs for slender structures above 60 m.
+:::
+::::
+
+**Three-column block (33 / 33 / 34):**
+
+:::: {.columns}
+::: {.column width="33%"}
+**Concrete C25**
+
+- $f'_c = 25\,\text{MPa}$
+- $E_c = 25\,\text{GPa}$
+- $\nu = 0.20$
+:::
+::: {.column width="33%"}
+**Rebar A615 Gr.60**
+
+- $f_y = 420\,\text{MPa}$
+- $E_s = 200\,\text{GPa}$
+- $\varepsilon_{su} = 0.090$
+:::
+::: {.column width="34%"}
+**Steel A992**
+
+- $F_y = 345\,\text{MPa}$
+- $E = 200\,\text{GPa}$
+- $F_u = 450\,\text{MPa}$
+:::
+::::
 
 # Citations {#sec-citations}
 

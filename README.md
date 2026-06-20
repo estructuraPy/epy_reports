@@ -21,7 +21,7 @@ no Python toolchain required:
 | Preview | Live HTML preview via Pandoc (`pypandoc-binary`) |
 | Themes | 9 layout presets — academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical |
 | References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs resolved in preview & exports (Figure 1, Table 1, …) |
-| Snippets | Section / figure / table / equation / code block / callout — each element gets a short editable Reference ID, separate from its caption |
+| Snippets | Section / figure / table / equation / code block / callout / two-column block / three-column block — each element gets a short editable Reference ID, separate from its caption |
 | Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), DOCX (`Ctrl+Shift+D`), Print (`Ctrl+Alt+P`), epy_docs |
 | Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_mdr.spec`) |
 | Windows | Optional shell association via `winreg_assoc.py` |
@@ -84,6 +84,7 @@ unsaved changes you will be prompted to save first.
 - `Ctrl+1`–`Ctrl+6` heading levels · `Ctrl+0` strip heading
 - `Ctrl+B` bold · `Ctrl+I` italic · `Ctrl+E` code · `Ctrl+K` link
 - `Ctrl+Shift+H/F/T/Q/K/C` section / figure / table / equation / fenced code / callout
+- `Ctrl+Shift+2` two-column block · `Ctrl+Shift+3` three-column block
 - `Ctrl+R` cross-reference picker · `Ctrl+Shift+B` link `.bib`
 - `Ctrl+P` PDF · `Ctrl+Shift+P` HTML · `Ctrl+Shift+D` DOCX · `Ctrl+Alt+P` print
 
