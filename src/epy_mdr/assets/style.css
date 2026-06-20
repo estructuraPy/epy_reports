@@ -481,8 +481,8 @@ body.paged .page-break {
     height: 32px;
     margin-top: 1em;
     margin-bottom: 1em;
-    margin-left: -25mm;
-    margin-right: -25mm;
+    margin-left: calc(-1 * var(--page-margin, 25mm));
+    margin-right: calc(-1 * var(--page-margin, 25mm));
     background: #8a9099;
     border-top: 2px solid rgba(0, 0, 0, 0.18);
     border-bottom: 2px solid rgba(0, 0, 0, 0.18);
@@ -614,7 +614,7 @@ body.paged {
 body.paged .doc-content {
     box-sizing: border-box;
     margin: 0 auto;
-    padding: 25mm;
+    padding: var(--page-margin, 25mm);
     background: var(--bg, #ffffff);
     box-shadow: 0 3px 16px rgba(0, 0, 0, 0.4);
 }

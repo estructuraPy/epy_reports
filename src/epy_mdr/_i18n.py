@@ -191,6 +191,7 @@ _ES: dict[str, str] = {
     "Author:": "Autor:",
     "Date:": "Fecha:",
     "Page size:": "Tamaño de página:",
+    "Margin:": "Margen:",
     "Text:": "Texto:",
     "Render a dedicated cover page": "Generar una portada dedicada",
     'Stamp "Page X of Y"': 'Estampar "Página X de Y"',

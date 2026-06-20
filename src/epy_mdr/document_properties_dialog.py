@@ -69,6 +69,9 @@ class DocumentPropertiesDialog(QDialog):
         if cur_size in _PAGE_SIZES:
             self.page_size_combo.setCurrentIndex(_PAGE_SIZES.index(cur_size))
 
+        self.margin_edit = QLineEdit(self._orig.get("margin", ""))
+        self.margin_edit.setPlaceholderText("25mm")
+
         title_box = QGroupBox("Title block")
         title_grid = QGridLayout(title_box)
         title_grid.addWidget(QLabel("Title:"), 0, 0)
@@ -81,6 +84,8 @@ class DocumentPropertiesDialog(QDialog):
         title_grid.addWidget(self.date_edit, 2, 3)
         title_grid.addWidget(QLabel("Page size:"), 3, 0)
         title_grid.addWidget(self.page_size_combo, 3, 1)
+        title_grid.addWidget(QLabel("Margin:"), 3, 2)
+        title_grid.addWidget(self.margin_edit, 3, 3)
 
         # --- Cover page ---------------------------------------------------
         self.cover_check = QCheckBox("Render a dedicated cover page")
@@ -186,6 +191,7 @@ class DocumentPropertiesDialog(QDialog):
         add_text("subtitle", self.subtitle_edit.text())
         add_text("author", self.author_edit.text())
         add_text("date", self.date_edit.text())
+        add_text("margin", self.margin_edit.text())
         add_text("logo", self.logo_edit.text())
         add_text("watermark", self.watermark_edit.text())
         add_text("footer", self.footer_edit.text())

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import re
 from functools import lru_cache
 from importlib import resources
 from pathlib import Path
@@ -233,8 +234,35 @@ def _diagram_block(diagrams: frozenset[str]) -> str:
 # Page sizes as CSS ``@page { size }`` keywords.
 _PAGE_SIZE_CSS = {"letter": "letter", "a4": "A4", "legal": "legal"}
 
+# Default page margin shared by the paged preview and the PDF export.
+# Overridable from the front matter ``margin:`` key.
+DEFAULT_PAGE_MARGIN = "25mm"
+_MARGIN_RE = re.compile(r"^\d+(?:\.\d+)?(mm|cm|in|px|pt|pc|em|rem)?$")
 
-def _pagedjs_head(page_size: str) -> str:
+
+def read_page_margin(metadata: dict[str, str]) -> str:
+    """Return a sanitised CSS length for the page margin.
+
+    Accepts a CSS length such as ``20mm`` / ``1in`` / ``2.5cm``; a bare
+    number is read as millimetres. Unrecognised input falls back to
+    :data:`DEFAULT_PAGE_MARGIN`, so the value is always safe to inline into
+    CSS without escaping.
+    """
+    raw = (metadata.get("margin") or "").strip().lower()
+    if not raw:
+        return DEFAULT_PAGE_MARGIN
+    match = _MARGIN_RE.match(raw)
+    if not match:
+        return DEFAULT_PAGE_MARGIN
+    return raw if match.group(1) else f"{raw}mm"
+
+
+def _margin_var_css(metadata: dict[str, str]) -> str:
+    """Emit the ``--page-margin`` custom property for the paged preview."""
+    return f":root {{ --page-margin: {read_page_margin(metadata)}; }}\n"
+
+
+def _pagedjs_head(page_size: str, margin: str = DEFAULT_PAGE_MARGIN) -> str:
     """Return the export-only Paged.js block: page CSS, polyfill and runner.
 
     Used only for PDF export. ``window.PagedConfig.auto = false`` is set
@@ -247,7 +275,7 @@ def _pagedjs_head(page_size: str) -> str:
     size_css = _PAGE_SIZE_CSS.get(size_key, "letter")
     css = (
         "<style>\n"
-        f"@page {{ size: {size_css}; margin: 25mm; }}\n"
+        f"@page {{ size: {size_css}; margin: {margin}; }}\n"
         ".footnote { float: footnote; }\n"
         ".pagedjs_footnote_area { font-size: var(--caption-size, 10pt); }\n"
         ".pagedjs_footnote_area > div { padding-top: 0.4em; }\n"
@@ -484,8 +512,11 @@ def build_html_document(
     classes.append(f"size-{size_key}")
     body_class = f' class="{" ".join(classes)}"'
     # Paged.js (and its @page rule) is injected only for PDF export, after
-    # the MathJax bundle so the runner can wait for typesetting first.
-    pagedjs = _pagedjs_head(size_key) if for_export else ""
+    # the MathJax bundle so the runner can wait for typesetting first. The
+    # margin comes from the front matter and is shared with the preview via
+    # the ``--page-margin`` custom property below.
+    page_margin = read_page_margin(meta)
+    pagedjs = _pagedjs_head(size_key, page_margin) if for_export else ""
     # The live preview restores its scroll position after a re-render; the
     # export paths (Paged.js PDF, standalone continuous HTML) carry no
     # restore hash, so the hook is preview-only.
@@ -500,6 +531,7 @@ def build_html_document(
         "<style>\n"
         f"{base_css}\n"
         f"{theme_css}\n"
+        f"{_margin_var_css(meta)}"
         f"{_CONTINUOUS_CSS if continuous else ''}\n"
         f"{_watermark_css(meta)}"
         "</style>\n"

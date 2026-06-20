@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Adjustable page margin.** *Document properties ▸ Margin* sets the
+  front-matter `margin:` key (a CSS length such as `20mm`, `1in` or a bare
+  number read as millimetres). The same value drives the paged preview and
+  the PDF `@page` margin, so the preview matches the export. Defaults to
+  `25mm`.
 - **Two-column and three-column content blocks.** *Elements ▸ Two-column
   block* (`Ctrl+Shift+2`) and *Elements ▸ Three-column block* (`Ctrl+Shift+3`)
   insert a Pandoc fenced-div layout (`:::: {.columns}` / `::: {.column
