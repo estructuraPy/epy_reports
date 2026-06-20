@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_mdr.checklist_dialog import ChecklistDialog
+from epy_reports.checklist_dialog import ChecklistDialog
 
 # ---------------------------------------------------------------------------
 # Module-scoped QApplication (required for any QWidget instantiation)

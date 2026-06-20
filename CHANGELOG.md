@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `epy_mdr` are documented here.
+All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -187,7 +187,7 @@ version. (Supersedes the same-day 0.4.0-0.6.10 point releases.)
 
 ### Added
 - `docs_bridge.py`: thin optional bridge to `epy_docs`; lazy imports keep
-  epy_mdr fully functional when `epy_docs` is not installed.  Public API:
+  epy_reports fully functional when `epy_docs` is not installed.  Public API:
   `epy_docs_available()`, `list_layouts()`, `list_document_types()`,
   `render_document()`.  Raises `BridgeUnavailableError` on missing package.
 - `docs_export_dialog.py`: `DocsExportDialog` — modal dialog with Layout /
@@ -214,7 +214,7 @@ version. (Supersedes the same-day 0.4.0-0.6.10 point releases.)
 - Table dialog (`Ctrl+Shift+T`): columns / rows / header / caption.
 - Checklist dialog (`Ctrl+Shift+L`): item count + optional bold title.
 - Insert image from file dialog; the image is copied into `figures/`.
-- Official branding: app icon/logo from `assets_build/epy_mdr.png`;
+- Official branding: app icon/logo from `assets_build/epy_reports.png`;
   window/taskbar icon; Help > About dialog with author credit, mailto,
   LinkedIn and company links, and the ANM Ingeniería / estructuraPy
   logos.
@@ -242,7 +242,7 @@ version. (Supersedes the same-day 0.4.0-0.6.10 point releases.)
   (`{#sec-/fig-/tbl-/eq-}`).
 - Snippets for section, figure, table, equation, fenced code, and callout.
 - Export to PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), and Print (`Ctrl+Alt+P`).
-- PyInstaller packaging via `build.py` + `epy_mdr.spec` (frozen `.exe`).
+- PyInstaller packaging via `build.py` + `epy_reports.spec` (frozen `.exe`).
 - Optional Windows shell association via `winreg_assoc.py`.
-- Persistent theme selection via `QSettings("ANM Ingeniería", "epy_mdr")`.
-- Public entry points: `epy_mdr` (gui-script) and `python -m epy_mdr`.
+- Persistent theme selection via `QSettings("ANM Ingeniería", "epy_reports")`.
+- Public entry points: `epy_reports` (gui-script) and `python -m epy_reports`.

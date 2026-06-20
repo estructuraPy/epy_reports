@@ -1,6 +1,6 @@
 # Newmark — full-feature example
 
-A real, publication-style document that exercises **every** epy_mdr feature in
+A real, publication-style document that exercises **every** epy_reports feature in
 one file, so you can see what the editor produces end to end.
 
 The document is a technical biography of **Nathan M. Newmark (1910–1981)**,
@@ -39,7 +39,7 @@ Output lands in `examples/newmark/_render/themes/` (git-ignored):
 `professional`, `scientific`, `technical`.
 
 Pre-rendered PDFs for all nine themes are attached to the
-[latest release](https://github.com/estructuraPy/epy_mdr/releases/latest) so
+[latest release](https://github.com/estructuraPy/epy_reports/releases/latest) so
 you can compare them without rendering locally.
 
 ## A note on typography

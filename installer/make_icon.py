@@ -1,11 +1,11 @@
-"""Generate epy_mdr application icons.
+"""Generate epy_reports application icons.
 
 Produces:
-  assets_build/epy_mdr.ico  — multi-size ICO (16, 32, 48, 256 px)
+  assets_build/epy_reports.ico  — multi-size ICO (16, 32, 48, 256 px)
 
-The source image is assets_build/epy_mdr.png (user-supplied logo, 704x524).
+The source image is assets_build/epy_reports.png (user-supplied logo, 704x524).
 Each ICO frame letterboxes the logo onto a square transparent canvas,
-preserving aspect ratio (centered).  epy_mdr.png is NOT overwritten.
+preserving aspect ratio (centered).  epy_reports.png is NOT overwritten.
 
 Run from the project root:
     python installer/make_icon.py
@@ -26,7 +26,7 @@ SIZES = [16, 32, 48, 256]
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "assets_build"
-SRC_PNG = OUT_DIR / "epy_mdr.png"
+SRC_PNG = OUT_DIR / "epy_reports.png"
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ def generate() -> None:
     src = Image.open(SRC_PNG).convert("RGBA")
     frames = [_letterbox(src, s) for s in SIZES]
 
-    ico_path = OUT_DIR / "epy_mdr.ico"
+    ico_path = OUT_DIR / "epy_reports.ico"
     _write_ico(frames, ico_path)
 
     count = _verify_ico(ico_path)
@@ -133,6 +133,6 @@ def generate() -> None:
 
 
 if __name__ == "__main__":
-    print("Generating epy_mdr icons...")
+    print("Generating epy_reports icons...")
     generate()
     print("Done.")

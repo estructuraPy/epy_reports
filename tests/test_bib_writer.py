@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_mdr import bib
-from epy_mdr.bib import (
+from epy_reports import bib
+from epy_reports.bib import (
     ENTRY_TYPES,
     REQUIRED_FIELDS,
     BibEntryDraft,
@@ -18,7 +18,7 @@ from epy_mdr.bib import (
     serialize_draft,
     suggest_key,
 )
-from epy_mdr.bib_dialog import BibEntryDialog
+from epy_reports.bib_dialog import BibEntryDialog
 
 _app: QApplication | None = None
 

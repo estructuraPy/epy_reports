@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
-from epy_mdr.renderer import export_docx
+from epy_reports.renderer import export_docx
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -42,7 +42,7 @@ def _capture_extra_args(md: str, ref: Path | None) -> list[str]:
     ):
         captured.append(list(extra_args or []))
 
-    with patch("epy_mdr.renderer.pypandoc.convert_text", fake_convert):
+    with patch("epy_reports.renderer.pypandoc.convert_text", fake_convert):
         export_docx(
             md,
             Path("/fake/out.docx"),
@@ -101,7 +101,7 @@ def test_real_export_corporate_template(tmp_path: Path):
 
     # Resolve the bundled corporate template via importlib.resources.
     try:
-        pkg = importlib.resources.files("epy_mdr.assets.reference_docx")
+        pkg = importlib.resources.files("epy_reports.assets.reference_docx")
         ref_resource = pkg / "corporate.docx"
         with importlib.resources.as_file(ref_resource) as ref_path:
             assert ref_path.is_file(), (

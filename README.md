@@ -1,17 +1,17 @@
-# epy_mdr
+# epy_reports
 
 Lightweight **Quarto / Markdown** editor with live preview, BibTeX-aware cross-references, snippets, and one-click PDF / HTML export. Standalone GUI of the **ePy Suite**.
 
 ## Download
 
 Pre-built installers ship with every tagged release on the
-**[Releases page](https://github.com/estructuraPy/epy_mdr/releases/latest)** —
+**[Releases page](https://github.com/estructuraPy/epy_reports/releases/latest)** —
 no Python toolchain required:
 
 | Platform | Asset | Install |
 |----------|-------|---------|
-| Windows | `epy_mdr-setup-<version>.exe` | Run the Inno Setup installer |
-| Debian / Ubuntu | `epy-mdr_<version>_all.deb` | `sudo dpkg -i epy-mdr_<version>_all.deb` |
+| Windows | `epy_reports-setup-<version>.exe` | Run the Inno Setup installer |
+| Debian / Ubuntu | `epy-reports_<version>_all.deb` | `sudo dpkg -i epy-reports_<version>_all.deb` |
 
 ## Features
 
@@ -23,7 +23,7 @@ no Python toolchain required:
 | References | BibTeX `bibliography:` injection, `@key` picker, `{#sec-/fig-/tbl-/eq-}` cross-refs resolved in preview & exports (Figure 1, Table 1, …) |
 | Snippets | Section / figure / table / equation / code block / callout / two-column block / three-column block — each element gets a short editable Reference ID, separate from its caption |
 | Export | PDF (`Ctrl+P`), HTML (`Ctrl+Shift+P`), DOCX (`Ctrl+Shift+D`), Print (`Ctrl+Alt+P`), epy_docs |
-| Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_mdr.spec`) |
+| Packaging | Frozen `.exe` build via PyInstaller (`build.py` + `epy_reports.spec`) |
 | Windows | Optional shell association via `winreg_assoc.py` |
 
 ## Install (dev)
@@ -35,8 +35,8 @@ pip install -e .
 ## Run
 
 ```bash
-epy_mdr            # via gui-script entry point
-python -m epy_mdr  # equivalent
+epy_reports            # via gui-script entry point
+python -m epy_reports  # equivalent
 ```
 
 ## Build frozen .exe (Windows)
@@ -44,7 +44,7 @@ python -m epy_mdr  # equivalent
 ```bash
 pip install -e ".[build]"
 python build.py
-# output -> dist/epy_mdr/epy_mdr.exe
+# output -> dist/epy_reports/epy_reports.exe
 ```
 
 ## Export via epy_docs (commercial add-on)
@@ -56,7 +56,7 @@ layout templates.
 
 epy_docs is a **commercial, privately distributed package by
 [ANM Ingeniería](https://www.anmingenieria.com/)** — it is not available on
-PyPI. epy_mdr detects it at runtime: when it is not installed the action is
+PyPI. epy_reports detects it at runtime: when it is not installed the action is
 simply disabled (greyed out with a tooltip) and **every other feature of the
 editor works normally**.
 
@@ -105,7 +105,7 @@ HTML (`Ctrl+Shift+P`) and DOCX (`Ctrl+Shift+D`) exports preserve the active them
 ## Project layout
 
 ```
-src/epy_mdr/
+src/epy_reports/
 ├── __init__.py        ← __version__
 ├── __main__.py        ← python -m entrypoint
 ├── app.py             ← MarkdownWindow (main GUI)
@@ -126,9 +126,9 @@ src/epy_mdr/
 
 ## License
 
-The epy_mdr **source code** is MIT — see [LICENSE](LICENSE).
+The epy_reports **source code** is MIT — see [LICENSE](LICENSE).
 
 The bundled **brand images, layout themes and Word reference templates**
 are proprietary assets of ANM Ingeniería, licensed only for use within
-epy_mdr; the bundled Pandoc executable is GPL and Qt is LGPL. See
+epy_reports; the bundled Pandoc executable is GPL and Qt is LGPL. See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full picture.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_mdr import snippets
+from epy_reports import snippets
 
 
 def test_image_markdown_includes_width():

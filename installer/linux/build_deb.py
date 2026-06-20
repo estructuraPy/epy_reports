@@ -1,4 +1,4 @@
-"""Build a Debian .deb package for epy_mdr.
+"""Build a Debian .deb package for epy_reports.
 
 This script is a pure-Python, cross-platform .deb assembler — it can be run
 on Windows (to build a .deb for Linux) or directly on a Debian/Ubuntu host.
@@ -14,7 +14,7 @@ Run from the project root:
     python installer/linux/build_deb.py
 
 Output:
-    installer/dist/epy-mdr_<version>_all.deb
+    installer/dist/epy-reports_<version>_all.deb
 
 The script prints a verification listing of the ar members at the end.
 """
@@ -30,13 +30,13 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-PKG_NAME = "epy-mdr"
+PKG_NAME = "epy-reports"
 PKG_VERSION = "0.5.0"
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
 DESCRIPTION_LONG = """\
- epy_mdr is a desktop Markdown and Quarto (.qmd) editor built with PySide6.
+ epy_reports is a desktop Markdown and Quarto (.qmd) editor built with PySide6.
  .
  Features:
   * Live side-by-side preview rendered by pandoc
@@ -46,10 +46,10 @@ DESCRIPTION_LONG = """\
   * Registers itself as a handler for .md, .markdown, and .qmd files
  .
  Installation note: system-wide MIME defaults require the user to run
- "xdg-mime default epy_mdr.desktop text/markdown" in their own session,
- or to select epy_mdr in their file manager's "Open With" dialog.
+ "xdg-mime default epy_reports.desktop text/markdown" in their own session,
+ or to select epy_reports in their file manager's "Open With" dialog.
  The postinst script updates system MIME and desktop caches and adds
- epy_mdr to /usr/share/applications/defaults.list as a best-effort hint."""
+ epy_reports to /usr/share/applications/defaults.list as a best-effort hint."""
 
 # python3-venv is required so the postinst can build an isolated
 # virtual environment for the pip-only runtime deps (PEP 668: the
@@ -61,7 +61,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 OUT_DIR = ROOT / "installer" / "dist"
 
 # Source tree roots
-SRC_PKG = ROOT / "src" / "epy_mdr"
+SRC_PKG = ROOT / "src" / "epy_reports"
 
 # pypandoc location — pure-Python files only (no binaries)
 import pypandoc as _pypandoc
@@ -161,14 +161,14 @@ def _build_control_tar() -> bytes:
             #!/bin/sh
             set -e
 
-            VENV="/usr/lib/epy-mdr/venv"
+            VENV="/usr/lib/epy-reports/venv"
 
             # PEP 668: the system Python on Debian 12+/Ubuntu 23.04+ is
             # marked externally-managed, so `pip install` into it fails.
             # Build a dedicated virtual environment for the pip-only
             # runtime dependencies — PySide6 (GUI), pypdf + reportlab
             # (PDF footer / page-number stamping) and Pillow (grayscale
-            # watermark) — and let the launcher in /usr/bin/epy-mdr run
+            # watermark) — and let the launcher in /usr/bin/epy-reports run
             # from it.
             if [ ! -d "$VENV" ]; then
                 python3 -m venv "$VENV"
@@ -181,28 +181,28 @@ def _build_control_tar() -> bytes:
                 update-mime-database /usr/share/mime || true
             fi
 
-            # Refresh the desktop file cache so epy_mdr appears in menus.
+            # Refresh the desktop file cache so epy_reports appears in menus.
             if command -v update-desktop-database >/dev/null 2>&1; then
                 update-desktop-database /usr/share/applications || true
             fi
 
-            # Register epy_mdr in /usr/share/applications/defaults.list as a
+            # Register epy_reports in /usr/share/applications/defaults.list as a
             # best-effort system-wide hint.  Desktop environments that honour
-            # defaults.list (GNOME/XFCE/LXDE) will offer epy_mdr when the
+            # defaults.list (GNOME/XFCE/LXDE) will offer epy_reports when the
             # user first opens a .md/.markdown/.qmd file.
             #
             # NOTE: xdg-mime called here as root only sets the root user's
             # mimeapps.list, NOT individual users' defaults.  Each user must
-            # run "xdg-mime default epy_mdr.desktop text/markdown" in their
-            # own session to make epy_mdr their personal default, or simply
-            # choose "Open with > epy_mdr > Always" in their file manager.
+            # run "xdg-mime default epy_reports.desktop text/markdown" in their
+            # own session to make epy_reports their personal default, or simply
+            # choose "Open with > epy_reports > Always" in their file manager.
             DEFAULTS="/usr/share/applications/defaults.list"
             if [ ! -f "$DEFAULTS" ]; then
                 echo "[Default Applications]" > "$DEFAULTS"
             fi
             for mime in text/markdown text/x-markdown text/x-quarto-markdown; do
                 if ! grep -q "^${mime}=" "$DEFAULTS" 2>/dev/null; then
-                    echo "${mime}=epy_mdr.desktop" >> "$DEFAULTS"
+                    echo "${mime}=epy_reports.desktop" >> "$DEFAULTS"
                 fi
             done
 
@@ -215,12 +215,12 @@ def _build_control_tar() -> bytes:
             #!/bin/sh
             set -e
 
-            # Remove epy_mdr entries from /usr/share/applications/defaults.list
+            # Remove epy_reports entries from /usr/share/applications/defaults.list
             DEFAULTS="/usr/share/applications/defaults.list"
             if [ -f "$DEFAULTS" ]; then
-                sed -i '/^text\\/markdown=epy_mdr.desktop$/d' "$DEFAULTS" || true
-                sed -i '/^text\\/x-markdown=epy_mdr.desktop$/d' "$DEFAULTS" || true
-                sed -i '/^text\\/x-quarto-markdown=epy_mdr.desktop$/d' "$DEFAULTS" || true
+                sed -i '/^text\\/markdown=epy_reports.desktop$/d' "$DEFAULTS" || true
+                sed -i '/^text\\/x-markdown=epy_reports.desktop$/d' "$DEFAULTS" || true
+                sed -i '/^text\\/x-quarto-markdown=epy_reports.desktop$/d' "$DEFAULTS" || true
             fi
 
             exit 0
@@ -236,8 +236,8 @@ def _build_control_tar() -> bytes:
             # time, so dpkg does not track it.  Remove it on uninstall /
             # purge and drop the now-empty package directory.
             if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-                rm -rf /usr/lib/epy-mdr/venv
-                rmdir /usr/lib/epy-mdr 2>/dev/null || true
+                rm -rf /usr/lib/epy-reports/venv
+                rmdir /usr/lib/epy-reports 2>/dev/null || true
             fi
 
             exit 0
@@ -260,7 +260,7 @@ def _build_data_tar(png_path: Path) -> bytes:
             "./usr/bin",
             "./usr/lib",
             f"./usr/lib/{PKG_NAME}",
-            f"./usr/lib/{PKG_NAME}/epy_mdr",
+            f"./usr/lib/{PKG_NAME}/epy_reports",
             f"./usr/lib/{PKG_NAME}/pypandoc",
             "./usr/share",
             "./usr/share/applications",
@@ -273,22 +273,22 @@ def _build_data_tar(png_path: Path) -> bytes:
         ]:
             _tar_add_dir(tf, d)
 
-        # /usr/bin/epy_mdr launcher shell script
+        # /usr/bin/epy_reports launcher shell script
         # Run from the dedicated virtualenv the postinst builds: it holds
         # PySide6/pypdf/reportlab (PEP 668 keeps these out of the system
-        # Python).  sys.path is extended with /usr/lib/epy-mdr so the
-        # bundled epy_mdr package and pypandoc shim are importable on top
+        # Python).  sys.path is extended with /usr/lib/epy-reports so the
+        # bundled epy_reports package and pypandoc shim are importable on top
         # of the venv's site-packages.
         launcher = textwrap.dedent("""\
             #!/bin/sh
-            exec /usr/lib/epy-mdr/venv/bin/python -c "import sys; sys.path.insert(0, '/usr/lib/epy-mdr'); from epy_mdr.app import main; sys.exit(main())" "$@"
+            exec /usr/lib/epy-reports/venv/bin/python -c "import sys; sys.path.insert(0, '/usr/lib/epy-reports'); from epy_reports.app import main; sys.exit(main())" "$@"
         """)
         _tar_add_data(tf, f"./usr/bin/{PKG_NAME}", launcher.encode(),
                       mode=0o755)
 
-        # epy_mdr Python package
+        # epy_reports Python package
         _tar_add_tree(tf, SRC_PKG,
-                      f"./usr/lib/{PKG_NAME}/epy_mdr")
+                      f"./usr/lib/{PKG_NAME}/epy_reports")
 
         # pypandoc — pure-Python only; the pandoc binary is NOT vendored
         # because on Ubuntu the `pandoc` apt package is already listed in
@@ -313,16 +313,16 @@ def _build_data_tar(png_path: Path) -> bytes:
             [Desktop Entry]
             Version=1.0
             Type=Application
-            Name=epy_mdr
+            Name=epy_reports
             Comment={DESCRIPTION_SHORT}
-            Exec=epy-mdr %F
-            Icon=epy_mdr
+            Exec=epy-reports %F
+            Icon=epy_reports
             Terminal=false
             Categories=Office;TextEditor;
             MimeType=text/markdown;text/x-markdown;text/x-quarto-markdown;
             StartupNotify=true
         """)
-        _tar_add_data(tf, "./usr/share/applications/epy_mdr.desktop",
+        _tar_add_data(tf, "./usr/share/applications/epy_reports.desktop",
                       desktop.encode(), mode=0o644)
 
         # MIME type definition for text/x-quarto-markdown (*.qmd)
@@ -338,7 +338,7 @@ def _build_data_tar(png_path: Path) -> bytes:
               </mime-type>
             </mime-info>
         """)
-        _tar_add_data(tf, "./usr/share/mime/packages/epy_mdr.xml",
+        _tar_add_data(tf, "./usr/share/mime/packages/epy_reports.xml",
                       mime_xml.encode(), mode=0o644)
 
         # App icon (256x256 PNG)
@@ -346,7 +346,7 @@ def _build_data_tar(png_path: Path) -> bytes:
             icon_data = png_path.read_bytes()
             _tar_add_data(
                 tf,
-                "./usr/share/icons/hicolor/256x256/apps/epy_mdr.png",
+                "./usr/share/icons/hicolor/256x256/apps/epy_reports.png",
                 icon_data,
                 mode=0o644,
             )
@@ -403,7 +403,7 @@ def _verify_deb(path: Path) -> None:
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    png_path = ROOT / "assets_build" / "epy_mdr.png"
+    png_path = ROOT / "assets_build" / "epy_reports.png"
 
     print("Building control.tar.gz ...")
     control_tar = _build_control_tar()

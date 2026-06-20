@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_mdr.renderer import render_markdown
+from epy_reports.renderer import render_markdown
 
 _SRC = "# Title\n\nBody paragraph.\n"
 

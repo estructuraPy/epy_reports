@@ -1,4 +1,4 @@
-"""Refresh the epy_mdr editor screenshots (editor.png / editor_es.png).
+"""Refresh the epy_reports editor screenshots (editor.png / editor_es.png).
 
 Renders the real Fluent-styled main window with a representative document
 so the bundled manual shows the current UI. Run it on the native platform
@@ -29,12 +29,12 @@ from PySide6.QtCore import (  # noqa: E402
 )
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from epy_mdr import _i18n as i18n  # noqa: E402
-from epy_mdr import themes  # noqa: E402
-from epy_mdr._design import document_css  # noqa: E402
-from epy_mdr.app import MarkdownWindow  # noqa: E402
+from epy_reports import _i18n as i18n  # noqa: E402
+from epy_reports import themes  # noqa: E402
+from epy_reports._design import document_css  # noqa: E402
+from epy_reports.app import MarkdownWindow  # noqa: E402
 
-OUT = ROOT / "src" / "epy_mdr" / "assets" / "screenshots"
+OUT = ROOT / "src" / "epy_reports" / "assets" / "screenshots"
 
 DEMO_DOC = """\
 ---

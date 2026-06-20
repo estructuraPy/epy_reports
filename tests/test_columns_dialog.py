@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_mdr.columns_dialog import ThreeColumnDialog, TwoColumnDialog
+from epy_reports.columns_dialog import ThreeColumnDialog, TwoColumnDialog
 
 # ---------------------------------------------------------------------------
 # Module-scoped QApplication (required for any QWidget instantiation)
@@ -215,7 +215,7 @@ def test_three_col_trailing_newline(qapp):
 
 def test_two_col_renders_to_html(qapp):
     """Two-column block renders to HTML with div.columns and column content."""
-    from epy_mdr.renderer import render_markdown
+    from epy_reports.renderer import render_markdown
 
     dlg = TwoColumnDialog()
     dlg.left_edit.setPlainText("Left text")
@@ -230,7 +230,7 @@ def test_two_col_renders_to_html(qapp):
 
 def test_three_col_renders_to_html(qapp):
     """Three-column block renders to HTML with content from all three cols."""
-    from epy_mdr.renderer import render_markdown
+    from epy_reports.renderer import render_markdown
 
     dlg = ThreeColumnDialog()
     dlg.col1_edit.setPlainText("ColAlpha")

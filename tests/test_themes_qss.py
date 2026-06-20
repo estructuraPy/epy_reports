@@ -18,7 +18,7 @@ import re
 
 import pytest
 
-from epy_mdr.epyson import (
+from epy_reports.epyson import (
     _darken,
     _hex_to_rgb,
     _is_dark,
@@ -27,7 +27,7 @@ from epy_mdr.epyson import (
     _tonal_variants,
     qss_for,
 )
-from epy_mdr.themes import THEMES
+from epy_reports.themes import THEMES
 
 _HEX_RE = re.compile(r"#[0-9A-Fa-f]{6}\b")
 # Qt also accepts 8-digit (#RRGGBBAA); we only emit 6-digit codes.

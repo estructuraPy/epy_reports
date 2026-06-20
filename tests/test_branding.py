@@ -3,7 +3,7 @@
 Checks:
 - Three branding images are resolvable via importlib.resources and
   return non-empty bytes.
-- The ICO file at assets_build/epy_mdr.ico has exactly 4 size entries
+- The ICO file at assets_build/epy_reports.ico has exactly 4 size entries
   (parsed from the ICONDIR binary header).
 - AboutDialog is importable without a QApplication crash, instantiates
   without error, and contains the expected author strings in its labels.
@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QApplication, QLabel
 
-from epy_mdr.about_dialog import AboutDialog
+from epy_reports.about_dialog import AboutDialog
 
 # ---------------------------------------------------------------------------
 # Module-scoped QApplication (required for any QWidget instantiation)
@@ -41,13 +41,13 @@ def qapp():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("filename", [
-    "epy_mdr.png",
+    "epy_reports.png",
     "estructurapy.png",
     "imagotipo_anm.png",
 ])
 def test_branding_resource_non_empty(filename: str):
     """Each branding image resolves via importlib.resources."""
-    pkg = importlib.resources.files("epy_mdr.assets.branding")
+    pkg = importlib.resources.files("epy_reports.assets.branding")
     data = (pkg / filename).read_bytes()
     assert len(data) > 0, f"{filename} is empty"
 
@@ -57,11 +57,11 @@ def test_branding_resource_non_empty(filename: str):
 # ---------------------------------------------------------------------------
 
 def test_ico_has_four_sizes():
-    """assets_build/epy_mdr.ico ICONDIR count == 4."""
+    """assets_build/epy_reports.ico ICONDIR count == 4."""
     ico_path = (
         Path(__file__).resolve().parent.parent
         / "assets_build"
-        / "epy_mdr.ico"
+        / "epy_reports.ico"
     )
     assert ico_path.exists(), f"ICO not found: {ico_path}"
     with open(ico_path, "rb") as fh:

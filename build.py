@@ -1,12 +1,12 @@
-"""Build the epy_mdr application bundle for the installer.
+"""Build the epy_reports application bundle for the installer.
 
 Run from the project root:
 
-    python build.py              # build dist/epy_mdr/ (installer input)
+    python build.py              # build dist/epy_reports/ (installer input)
 
-This produces the PyInstaller onedir layout under ``dist/epy_mdr/``,
+This produces the PyInstaller onedir layout under ``dist/epy_reports/``,
 which is the staging folder packaged by the Windows installer
-(``installer/windows/epy_mdr.iss``) and the Linux ``.deb`` builder.
+(``installer/windows/epy_reports.iss``) and the Linux ``.deb`` builder.
 It is an intermediate build artifact, not a distributable app — the
 shipped deliverables are the ``setup.exe`` and the ``.deb``.
 """
@@ -22,8 +22,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
-SPEC = ROOT / "epy_mdr.spec"
-APP_NAME = "epy_mdr"
+SPEC = ROOT / "epy_reports.spec"
+APP_NAME = "epy_reports"
 
 
 def _run(cmd: list[str]) -> None:
@@ -91,7 +91,7 @@ def main() -> int:
         _purge_build_artifacts()
 
     print(f"\nDone. Installer input: {produced}")
-    print("Next: build the installer (installer/windows/epy_mdr.iss).")
+    print("Next: build the installer (installer/windows/epy_reports.iss).")
     return 0
 
 

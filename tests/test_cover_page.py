@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from epy_mdr.renderer import render_markdown
-from epy_mdr.template import (
+from epy_reports.renderer import render_markdown
+from epy_reports.template import (
     _cover_page_block,
     _front_matter_block,
     _load_base_css,

@@ -15,8 +15,8 @@ abstract: |
 bibliography: newmark.bib
 cover: true
 csl: ieee
-logo: epy_mdr.png
-watermark: epy_mdr.png
+logo: epy_reports.png
+watermark: epy_reports.png
 date: 2026-06-15
 author: Ing. Angel Navarro-Mora M.Sc.
 footer: "Nathan M. Newmark (1910–1981) — ANM Ingeniería"

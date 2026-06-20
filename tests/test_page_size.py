@@ -6,7 +6,7 @@ import pytest
 from PySide6.QtGui import QPageSize
 from PySide6.QtWidgets import QApplication
 
-from epy_mdr.renderer import (
+from epy_reports.renderer import (
     DEFAULT_PAGE_SIZE,
     PAGE_SIZES,
     normalize_page_size,
@@ -110,7 +110,7 @@ def test_page_layout_uses_expected_page_size_id(
     qapp, key: str, expected_id: QPageSize.PageSizeId
 ):
     """``_page_layout`` returns a layout with the matching PageSizeId."""
-    from epy_mdr.tab import MarkdownTab
+    from epy_reports.tab import MarkdownTab
 
     layout = MarkdownTab._page_layout(key)
     assert layout.pageSize().id() == expected_id

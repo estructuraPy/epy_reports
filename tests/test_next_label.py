@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_mdr.tab import next_label_suffix
+from epy_reports.tab import next_label_suffix
 
 
 def test_empty_text_returns_one():

@@ -1,6 +1,6 @@
 # Third-Party Notices and Asset Licensing
 
-epy_mdr's **source code** is licensed under the MIT License (see
+epy_reports's **source code** is licensed under the MIT License (see
 [LICENSE](LICENSE)). The distributed application bundles or links the
 following third-party components, each governed by its own license.
 
@@ -23,15 +23,15 @@ The following bundled assets are Copyright (c) 2026
 **Ing. Angel Navarro-Mora M.Sc. / ANM Ingeniería (estructuraPy)** —
 **all rights reserved**:
 
-- `src/epy_mdr/assets/branding/` — application logo and the
+- `src/epy_reports/assets/branding/` — application logo and the
   ANM Ingeniería / estructuraPy brand images.
-- `src/epy_mdr/assets/themes/*.epyson` — layout theme definitions.
-- `src/epy_mdr/assets/reference_docx/*.docx` — Word reference
+- `src/epy_reports/assets/themes/*.epyson` — layout theme definitions.
+- `src/epy_reports/assets/reference_docx/*.docx` — Word reference
   (style) templates.
 - `assets_build/` — source images for the application icon.
 
 These assets are licensed to you **only for use as an integral part of
-unmodified epy_mdr distributions**. Extracting, modifying, rebranding,
+unmodified epy_reports distributions**. Extracting, modifying, rebranding,
 or redistributing them separately — in particular for use with other
 document-generation products — requires prior written permission from
 ANM Ingeniería (<ahnavarro@anmingenieria.com>).
@@ -40,4 +40,4 @@ ANM Ingeniería (<ahnavarro@anmingenieria.com>).
 
 The optional `epy_docs` rendering backend is a separate, commercial,
 privately distributed product of ANM Ingeniería. It is **not** included
-in this repository or in the binary distributions of epy_mdr.
+in this repository or in the binary distributions of epy_reports.

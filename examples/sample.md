@@ -1,5 +1,5 @@
 ---
-title: "epy_mdr — feature tour"
+title: "epy_reports — feature tour"
 subtitle: "Every editor capability in a single document"
 author: "Ing. Angel Navarro-Mora M.Sc."
 date: "2026-06-15"
@@ -8,7 +8,7 @@ bibliography: sample.bib
 
 # Introduction {#sec-intro}
 
-This file is a self-contained showcase of epy_mdr. It exercises every
+This file is a self-contained showcase of epy_reports. It exercises every
 feature that the editor exposes so you can compare the source you are
 reading on the left panel with the rendered output on the right. Use
 it as a starting template: keep the structure, replace the content.

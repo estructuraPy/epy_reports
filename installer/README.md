@@ -1,13 +1,13 @@
-# epy_mdr Installer Guide
+# epy_reports Installer Guide
 
 ## Overview
 
-epy_mdr ships two installer formats:
+epy_reports ships two installer formats:
 
 | Platform | File | Tool |
 |----------|------|------|
-| Windows 10/11 | `installer/dist/epy_mdr-setup-0.4.1.exe` | Inno Setup |
-| Ubuntu / Debian | `installer/dist/epy-mdr_0.4.1_all.deb` | pure-Python .deb assembler |
+| Windows 10/11 | `installer/dist/epy_reports-setup-0.4.1.exe` | Inno Setup |
+| Ubuntu / Debian | `installer/dist/epy-reports_0.4.1_all.deb` | pure-Python .deb assembler |
 
 Both install the application and register it for `.md`, `.markdown`, and `.qmd` files.
 
@@ -18,7 +18,7 @@ Both install the application and register it for `.md`, `.markdown`, and `.qmd` 
 ### Common
 ```
 pip install pillow          # required for icon generation
-python installer/make_icon.py   # generates assets_build/epy_mdr.ico + .png
+python installer/make_icon.py   # generates assets_build/epy_reports.ico + .png
 ```
 
 ### Windows
@@ -41,7 +41,7 @@ python installer/make_icon.py   # generates assets_build/epy_mdr.ico + .png
 python installer/make_icon.py
 ```
 
-Produces `assets_build/epy_mdr.ico` (16/32/48/256 px) and `assets_build/epy_mdr.png` (256 x 256).
+Produces `assets_build/epy_reports.ico` (16/32/48/256 px) and `assets_build/epy_reports.png` (256 x 256).
 
 ---
 
@@ -53,9 +53,9 @@ Produces `assets_build/epy_mdr.ico` (16/32/48/256 px) and `assets_build/epy_mdr.
 python build.py
 ```
 
-Output: `dist/epy_mdr/epy_mdr.exe` + `dist/epy_mdr/_internal/`
+Output: `dist/epy_reports/epy_reports.exe` + `dist/epy_reports/_internal/`
 
-The .ico is embedded in the executable via `epy_mdr.spec`.
+The .ico is embedded in the executable via `epy_reports.spec`.
 
 #### Step 2 — Install Inno Setup
 
@@ -70,27 +70,27 @@ https://jrsoftware.org/isdl.php
 #### Step 3 — Compile the installer
 
 ```cmd
-"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\windows\epy_mdr.iss
+"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\windows\epy_reports.iss
 ```
 
 or if system-wide:
 
 ```cmd
-"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" installer\windows\epy_mdr.iss
+"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" installer\windows\epy_reports.iss
 ```
 
-Output: `installer/dist/epy_mdr-setup-0.4.1.exe`
+Output: `installer/dist/epy_reports-setup-0.4.1.exe`
 
 #### What the Windows installer does
 
-- Per-user install to `%LOCALAPPDATA%\Programs\epy_mdr\` (no UAC prompt)
+- Per-user install to `%LOCALAPPDATA%\Programs\epy_reports\` (no UAC prompt)
 - Start Menu shortcut; optional Desktop shortcut
-- Post-install: runs `epy_mdr.exe --register --as-default` in the current user's context
-  - Writes `HKCU\Software\Classes\epy_mdr.Document.1` (ProgID)
-  - Writes `HKCU\Software\epy_mdr\Capabilities` + `RegisteredApplications` (appears in Settings)
+- Post-install: runs `epy_reports.exe --register --as-default` in the current user's context
+  - Writes `HKCU\Software\Classes\epy_reports.Document.1` (ProgID)
+  - Writes `HKCU\Software\epy_reports\Capabilities` + `RegisteredApplications` (appears in Settings)
   - Writes `OpenWithProgids` for `.md`, `.markdown`, `.qmd`
   - Writes the legacy default handler for each extension
-- Uninstall: runs `epy_mdr.exe --unregister` to clean up all HKCU keys
+- Uninstall: runs `epy_reports.exe --unregister` to clean up all HKCU keys
 
 #### Windows default-app limitation
 
@@ -99,12 +99,12 @@ Windows 10 and 11 protect file-type defaults with a signed `UserChoice` key
 shell can produce. No installer can silently change this key without triggering
 a "A program tried to change your defaults" reset.
 
-The installer writes everything correctly so epy_mdr appears in **Settings >
+The installer writes everything correctly so epy_reports appears in **Settings >
 Apps > Default apps**. The user must then:
 
-1. Open Settings > Apps > Default apps, search for "epy_mdr", and click
+1. Open Settings > Apps > Default apps, search for "epy_reports", and click
    **Set as default**, or
-2. Right-click a `.md` file > Open with > Choose another app > epy_mdr >
+2. Right-click a `.md` file > Open with > Choose another app > epy_reports >
    Always use this app.
 
 The installer's optional final checkbox ("Open Windows Default Apps settings")
@@ -118,14 +118,14 @@ launches `ms-settings:defaultapps` as a convenience shortcut.
 python installer/linux/build_deb.py
 ```
 
-Output: `installer/dist/epy-mdr_0.4.1_all.deb`
+Output: `installer/dist/epy-reports_0.4.1_all.deb`
 
 The script is pure Python (stdlib + pypandoc), runs on Windows or Linux.
 
 #### Install on Ubuntu/Debian
 
 ```bash
-sudo dpkg -i installer/dist/epy-mdr_0.4.1_all.deb
+sudo dpkg -i installer/dist/epy-reports_0.4.1_all.deb
 ```
 
 `dpkg -i` is enough — the package's `postinst` pip-installs the Python
@@ -137,12 +137,12 @@ the system has an interactive `postinst`.
 
 | Path | Content |
 |------|---------|
-| `/usr/bin/epy-mdr` | Shell launcher (exec python3 → epy_mdr.app:main) |
-| `/usr/lib/epy-mdr/epy_mdr/` | epy_mdr Python package |
-| `/usr/lib/epy-mdr/pypandoc/` | pypandoc pure-Python files |
-| `/usr/share/applications/epy_mdr.desktop` | Desktop entry (MimeType registered) |
-| `/usr/share/mime/packages/epy_mdr.xml` | MIME definition for `text/x-quarto-markdown` |
-| `/usr/share/icons/hicolor/256x256/apps/epy_mdr.png` | App icon |
+| `/usr/bin/epy-reports` | Shell launcher (exec python3 → epy_reports.app:main) |
+| `/usr/lib/epy-reports/epy_reports/` | epy_reports Python package |
+| `/usr/lib/epy-reports/pypandoc/` | pypandoc pure-Python files |
+| `/usr/share/applications/epy_reports.desktop` | Desktop entry (MimeType registered) |
+| `/usr/share/mime/packages/epy_reports.xml` | MIME definition for `text/x-quarto-markdown` |
+| `/usr/share/icons/hicolor/256x256/apps/epy_reports.png` | App icon |
 
 #### postinst actions
 
@@ -157,16 +157,16 @@ the system has an interactive `postinst`.
 XFCE, and LXDE consult when no per-user `mimeapps.list` entry exists. It is
 **not** authoritative — each desktop environment makes its own decision.
 
-To set epy_mdr as the personal default for the current user:
+To set epy_reports as the personal default for the current user:
 
 ```bash
-xdg-mime default epy_mdr.desktop text/markdown
-xdg-mime default epy_mdr.desktop text/x-markdown
-xdg-mime default epy_mdr.desktop text/x-quarto-markdown
+xdg-mime default epy_reports.desktop text/markdown
+xdg-mime default epy_reports.desktop text/x-markdown
+xdg-mime default epy_reports.desktop text/x-quarto-markdown
 ```
 
 Or right-click a `.md` file in Nautilus/Thunar → Properties → Open With →
-epy_mdr → Set as default.
+epy_reports → Set as default.
 
 Note: `xdg-mime` called as `root` in postinst only modifies root's
 `~/.config/mimeapps.list`, not individual users' configs. This is standard
@@ -182,8 +182,8 @@ Workflow file: `.github/workflows/installers.yml`
 
 | Job | Runner | Output artifact |
 |-----|--------|-----------------|
-| `windows-installer` | `windows-latest` | `epy_mdr-setup-*.exe` |
-| `ubuntu-deb` | `ubuntu-latest` | `epy-mdr_*.deb` |
+| `windows-installer` | `windows-latest` | `epy_reports-setup-*.exe` |
+| `ubuntu-deb` | `ubuntu-latest` | `epy-reports_*.deb` |
 
 The Windows CI job uses `choco install innosetup` which is available on
 `windows-latest` runners.
@@ -194,11 +194,11 @@ The Windows CI job uses `choco install innosetup` which is available on
 
 ### Windows
 Use **Settings > Apps > Installed apps** or the Start Menu uninstall entry.
-The uninstaller runs `epy_mdr.exe --unregister` which removes all HKCU keys
+The uninstaller runs `epy_reports.exe --unregister` which removes all HKCU keys
 written during installation.
 
 ### Ubuntu / Debian
 ```bash
-sudo dpkg -r epy-mdr
+sudo dpkg -r epy-reports
 ```
 The prerm script removes the `defaults.list` entries before package removal.
