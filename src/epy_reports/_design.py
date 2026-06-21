@@ -1,4 +1,4 @@
-"""Theme-driven design components shared by slides and documents.
+"""Theme-driven design components shared by slides, documents and papers.
 
 A single :func:`design_css` produces the CSS for a small vocabulary of
 composition components — lead text, accents, badges, cards, big stats,
@@ -7,11 +7,15 @@ the look stays coordinated with the rest of the deck. The ``scope`` selector
 prefix lets the same definitions style a reveal.js deck (``".reveal "``) or a
 flowing document (``""`` / ``".doc-content "``).
 
+:func:`design_block` returns the authoring skeleton for each component, so the
+three sibling apps (slides, reports, paper) expose exactly the same insert
+options from one source of truth — only the output format differs.
+
 Markup vocabulary (Pandoc fenced divs / bracketed spans):
 
-* ``::: card … :::`` — a bordered card; group several in ``::: cards``.
-* ``::: stat`` with ``**NUMBER**`` then a label — a big number with a caption;
-  group several in ``::: stats``.
+* ``::: {.card} … :::`` — a bordered card; group several in ``::: {.cards}``.
+* ``::: {.stat}`` with ``**NUMBER**`` then a label — a big number with a
+  caption; group several in ``::: {.stats}``.
 * ``[text]{.badge}`` — a pill badge.
 * ``::: {.timeline}`` over a bullet list — a vertical timeline.
 * ``::: {.agenda}`` over a list — a numbered agenda.
@@ -21,6 +25,14 @@ Markup vocabulary (Pandoc fenced divs / bracketed spans):
 from __future__ import annotations
 
 from epy_reports.themes_base import Theme
+
+__all__ = [
+    "DESIGN_BLOCKS",
+    "DESIGN_BLOCK_LABELS",
+    "design_block",
+    "design_css",
+    "document_css",
+]
 
 
 def _v(theme: Theme, key: str, default: str = "") -> str:
@@ -97,16 +109,19 @@ def design_css(theme: Theme, *, scope: str = "") -> str:
 
 /* big stats */
 {s}.stats {{
-  display: grid; gap: 1em; align-items: end;
+  display: grid; gap: 1em; align-items: end; width: 100%;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
 }}
-{s}.stat {{ text-align: center; }}
+{s}.stat {{ text-align: center; min-width: 0; }}
 {s}.stat p {{ margin: 0.1em 0; }}
 {s}.stat strong {{
-  display: block; font-size: 2.6em; font-weight: 800; line-height: 1;
-  color: {primary}; font-family: {font_head};
+  display: block; font-size: 2.2em; font-weight: 800; line-height: 1;
+  color: {primary}; font-family: {font_head}; white-space: nowrap;
 }}
 {s}.stat .stat-label {{ display: block; font-size: 0.68em; opacity: 0.8; }}
+/* shrink the figures as more stats share the row so they keep fitting */
+{s}.stats:has(.stat:nth-child(4)) .stat strong {{ font-size: 1.8em; }}
+{s}.stats:has(.stat:nth-child(5)) .stat strong {{ font-size: 1.5em; }}
 
 /* timeline */
 {s}.timeline ul {{
@@ -135,3 +150,117 @@ def design_css(theme: Theme, *, scope: str = "") -> str:
   font-size: 0.7em; font-weight: 700; font-family: {font_head};
 }}
 """
+
+
+# --- authoring skeletons --------------------------------------------------
+# The same insert options are exposed by all three sibling apps; only the
+# output format (reveal.js / flowing document / journal manuscript) differs.
+
+DESIGN_BLOCKS: tuple[str, ...] = (
+    "lead",
+    "badge",
+    "card",
+    "cards",
+    "stat",
+    "stats",
+    "timeline",
+    "agenda",
+)
+
+DESIGN_BLOCK_LABELS: dict[str, str] = {
+    "lead": "Lead text",
+    "badge": "Badge",
+    "card": "Card",
+    "cards": "Cards (grid)",
+    "stat": "Big stat",
+    "stats": "Big stats (row)",
+    "timeline": "Timeline",
+    "agenda": "Agenda",
+}
+
+_BLOCK_SKELETONS: dict[str, str] = {
+    "lead": "\n[Lead sentence that frames the section.]{.lead}\n",
+    "badge": "\n[NEW]{.badge}\n",
+    "card": (
+        "\n::: {.card}\n"
+        "### Card title\n\n"
+        "Card body text.\n"
+        ":::\n"
+    ),
+    "cards": (
+        "\n::::: {.cards}\n"
+        ":::: {.card}\n"
+        "### First\n\n"
+        "Body text.\n"
+        "::::\n"
+        ":::: {.card}\n"
+        "### Second\n\n"
+        "Body text.\n"
+        "::::\n"
+        ":::: {.card}\n"
+        "### Third\n\n"
+        "Body text.\n"
+        "::::\n"
+        ":::::\n"
+    ),
+    "stat": (
+        "\n::: {.stat}\n"
+        "**42**\n\n"
+        "[Metric label]{.stat-label}\n"
+        ":::\n"
+    ),
+    "stats": (
+        "\n::::: {.stats}\n"
+        ":::: {.stat}\n"
+        "**42**\n\n"
+        "[First metric]{.stat-label}\n"
+        "::::\n"
+        ":::: {.stat}\n"
+        "**7×**\n\n"
+        "[Second metric]{.stat-label}\n"
+        "::::\n"
+        ":::: {.stat}\n"
+        "**99%**\n\n"
+        "[Third metric]{.stat-label}\n"
+        "::::\n"
+        ":::::\n"
+    ),
+    "timeline": (
+        "\n::: {.timeline}\n"
+        "- **2024** — First milestone.\n"
+        "- **2025** — Second milestone.\n"
+        "- **2026** — Third milestone.\n"
+        ":::\n"
+    ),
+    "agenda": (
+        "\n::: {.agenda}\n"
+        "- First item\n"
+        "- Second item\n"
+        "- Third item\n"
+        ":::\n"
+    ),
+}
+
+_BLOCK_TOKENS: dict[str, str] = {
+    "lead": "Lead sentence that frames the section.",
+    "badge": "NEW",
+    "card": "Card title",
+    "cards": "First",
+    "stat": "42",
+    "stats": "42",
+    "timeline": "First milestone.",
+    "agenda": "First item",
+}
+
+
+def design_block(kind: str) -> tuple[str, str]:
+    """Return ``(markdown_skeleton, select_token)`` for a design block.
+
+    The skeleton uses Pandoc fenced-div / bracketed-span syntax so the same
+    source renders in a reveal.js deck, a flowing document and a journal
+    manuscript. ``select_token`` is the substring an editor should pre-select
+    so the user can immediately type over the placeholder.
+    """
+    skeleton = _BLOCK_SKELETONS.get(kind, _BLOCK_SKELETONS["card"])
+    token = _BLOCK_TOKENS.get(kind, "")
+    return skeleton, token

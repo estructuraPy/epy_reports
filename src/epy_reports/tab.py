@@ -863,6 +863,13 @@ class MarkdownTab(QWidget):
         """Insert a fenced Python code block skeleton."""
         self._insert_template(snippets.CODE_BLOCK_TEMPLATE, "CODE")
 
+    def insert_design_block(self, kind: str = "stat") -> None:
+        """Insert a shared design block (card, big stat, timeline, ...)."""
+        from epy_reports._design import design_block  # noqa: PLC0415
+
+        skeleton, token = design_block(kind)
+        self._insert_template(skeleton, token)
+
     def insert_callout(self, kind: str = "note") -> None:
         """Insert a Quarto fenced callout, with title prompt if needed."""
         template = snippets.CALLOUT_TEMPLATES.get(

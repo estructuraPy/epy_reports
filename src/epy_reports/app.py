@@ -400,6 +400,24 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_code_block")
         )
 
+        # Shared design blocks (cards, big stats, timelines, agendas) — the
+        # same insert options epy_slides and epy_paper expose, one engine.
+        from epy_reports._design import (  # noqa: PLC0415
+            DESIGN_BLOCK_LABELS,
+            DESIGN_BLOCKS,
+        )
+
+        self.design_actions: dict[str, QAction] = {}
+        for kind in DESIGN_BLOCKS:
+            label = DESIGN_BLOCK_LABELS.get(kind, kind.title())
+            act = QAction(label, self)
+            act.triggered.connect(
+                lambda _checked=False, k=kind: self._on_active_tab(
+                    "insert_design_block", k
+                )
+            )
+            self.design_actions[kind] = act
+
         self.act_ins_footnote = QAction("Footnote", self)
         self.act_ins_footnote.setShortcut(QKeySequence("Ctrl+Shift+O"))
         self.act_ins_footnote.triggered.connect(
@@ -544,6 +562,9 @@ class MarkdownWindow(QMainWindow):
         self.callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
             self.callout_sub.addAction(act)
+        self.design_sub = self.elements_menu.addMenu("Design block")
+        for act in self.design_actions.values():
+            self.design_sub.addAction(act)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
         self.elements_menu.addAction(self.act_ins_section_roman)
