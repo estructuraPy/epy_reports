@@ -63,8 +63,10 @@ def test_relative_path_resolves_against_base_dir(tmp_path: Path):
     assert path.name == "local.csl"
 
 
-def test_three_styles_registered():
-    assert set(CSL_STYLES) == {"ieee", "apa", "chicago"}
+def test_base_styles_registered():
+    # The CSL catalog grows over time (ASCE, Vancouver, Nature, ...); the
+    # three base styles must always stay registered.
+    assert {"ieee", "apa", "chicago"} <= set(CSL_STYLES)
 
 
 def test_default_is_ieee():
