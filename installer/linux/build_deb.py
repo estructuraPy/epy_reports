@@ -22,16 +22,29 @@ The script prints a verification listing of the ar members at the end.
 from __future__ import annotations
 
 import io
+import re
 import sys
 import tarfile
 import textwrap
 from pathlib import Path
 
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+def _read_pyproject_version() -> str:
+    """Single source of truth: read ``version`` from pyproject.toml."""
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    try:
+        text = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return "0.0.0"
+    m = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', text)
+    return m.group(1) if m else "0.0.0"
+
+
 PKG_NAME = "epy-reports"
-PKG_VERSION = "0.1.0"
+PKG_VERSION = _read_pyproject_version()
 PKG_ARCH = "all"
 MAINTAINER = "Ing. Angel Navarro-Mora M.Sc. <ahnavarro@anmingenieria.com>"
 DESCRIPTION_SHORT = "Quarto/Markdown editor with live preview and PDF/DOCX export"
