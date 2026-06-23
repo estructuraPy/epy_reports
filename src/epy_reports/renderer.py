@@ -1113,6 +1113,14 @@ def _rasterize_svgs_for_docx(
     return _SVG_IMG_RE.sub(repl, source), tmp_dir
 
 
+# Pandoc's native OMML (Word) math writer cannot parse ``\tag{}`` — a
+# MathJax-only macro the cross-reference resolver injects to number display
+# equations. Left in, each numbered equation fails to convert and degrades to
+# a raw LaTeX string in the Word document. It is stripped for DOCX only (HTML
+# and PDF render through MathJax, which handles ``\tag``).
+_DOCX_EQ_TAG_RE = re.compile(r"\\tag\{[^}]*\}\s*")
+
+
 def export_docx(
     source: str,
     target: Path,
@@ -1162,6 +1170,9 @@ def export_docx(
 
     prepared = _expand_quarto_callouts(prepared)
     prepared = _resolve_crossrefs(prepared, lang=lang)
+    # Strip the MathJax-only \tag{} so numbered equations convert to clean
+    # OMML instead of falling back to a raw LaTeX string in Word.
+    prepared = _DOCX_EQ_TAG_RE.sub("", prepared)
     # Drop preview-only index markers so they do not leak as literal
     # text into the Word document, then materialize page breaks.
     prepared = _strip_index_markers(prepared)

@@ -1,9 +1,13 @@
 """Headless Markdown -> PDF rendering for the scriptable API.
 
-Single-pass Paged.js print flow (theme page background, header/footer, page
-numbers from 1, grayscale watermark and document metadata stamped in) so
-``Report.to_pdf`` works without the GUI. The interactive editor keeps the
-richer two-pass flow (cover-aware numbering, section restarts). Requires
+Two-pass Paged.js print flow (theme page background, header/footer, grayscale
+watermark and document metadata stamped in) so ``Report.to_pdf`` produces the
+same PDF the interactive editor does — including index page numbers
+(TOC/LOF/LOT/LOE) and cover-aware, section-restarting numbering. The first
+pass records the physical page of every anchored heading/figure/table/equation
+as a PDF named destination; the index placeholders are filled from that map,
+the body is renumbered from 1, and a second pass prints the final PDF. Falls
+back to a single pass when the Qt build emits no named destinations. Requires
 PySide6; the Qt import is deferred to call time.
 """
 
@@ -24,7 +28,18 @@ def render_report_pdf(
     page_bg: str = "",
     timeout_ms: int = 60000,
 ) -> None:
-    """Render Markdown ``source`` to a paginated PDF via Paged.js."""
+    """Render Markdown ``source`` to a paginated PDF via Paged.js.
+
+    Runs the two-pass flow the interactive editor uses: a first export pass
+    records the physical page of every anchored heading/figure/table/equation
+    (Qt names them as PDF destinations), the index placeholders are filled
+    from that map and the body is renumbered from 1, then a second pass prints
+    the final PDF. Footer/header numbering restarts per ``[[section-roman]]`` /
+    ``[[section-arabic]]`` boundary. When the Qt build emits no named
+    destinations the first pass is kept as-is (single-pass fallback).
+    """
+    import shutil  # noqa: PLC0415
+
     from PySide6.QtCore import (  # noqa: PLC0415
         QElapsedTimer,
         QEventLoop,
@@ -38,6 +53,7 @@ def render_report_pdf(
 
     from epy_reports import _pdf_footer  # noqa: PLC0415
     from epy_reports.renderer import (  # noqa: PLC0415, E501
+        inject_page_numbers,
         normalize_page_size,
         render_markdown,
     )
@@ -50,14 +66,13 @@ def render_report_pdf(
     meta = parse_front_matter(source)
     page_size = normalize_page_size(meta.get("page-size"))
     lang = meta.get("lang", "en")
+    has_cover = is_truthy(meta.get("cover"))
 
     app = QApplication.instance() or QApplication([])
-    html = render_markdown(
+    export_html = render_markdown(
         source, base_dir=base_dir, theme_css=theme_css,
         page_size=page_size, for_export=True,
     )
-    tmp = out_path.with_suffix(".tmp.html")
-    tmp.write_text(html, encoding="utf-8")
 
     view = QWebEngineView()
     view.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
@@ -71,8 +86,6 @@ def render_report_pdf(
         QPageSize(page_enum), QPageLayout.Orientation.Portrait,
         QMarginsF(0, 0, 0, 0), QPageLayout.Unit.Millimeter,
     )
-
-    state = {"printed": False, "ok": False}
 
     def pump(ms: int) -> None:
         timer = QElapsedTimer()
@@ -89,9 +102,15 @@ def render_report_pdf(
             app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 30)
         return box["v"]
 
-    try:
+    def print_html(html: str, out_pdf: Path) -> bool:
+        """Load ``html``, wait for Paged.js, print to ``out_pdf``; return ok."""
+        tmp = out_pdf.with_suffix(".tmp.html")
+        tmp.write_text(html, encoding="utf-8")
         loaded = {"ok": False}
-        view.loadFinished.connect(lambda ok: loaded.__setitem__("ok", ok))
+        state = {"printed": False, "ok": False}
+        load_conn = view.loadFinished.connect(
+            lambda ok: loaded.__setitem__("ok", ok)
+        )
         view.load(QUrl.fromLocalFile(str(tmp.resolve())))
         timer = QElapsedTimer()
         timer.start()
@@ -102,21 +121,57 @@ def render_report_pdf(
         ):
             pump(150)
         pump(200)
-
-        def on_printed(_p: str, ok: bool) -> None:
-            state["ok"] = ok
-            state["printed"] = True
-
-        view.page().pdfPrintingFinished.connect(on_printed)
-        view.page().printToPdf(str(out_path), layout)
+        print_conn = view.page().pdfPrintingFinished.connect(
+            lambda _p, ok: (
+                state.__setitem__("ok", ok),
+                state.__setitem__("printed", True),
+            )
+        )
+        view.page().printToPdf(str(out_pdf), layout)
         while not state["printed"] and timer.elapsed() < timeout_ms + 10000:
             app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 30)
+        view.loadFinished.disconnect(load_conn)
+        view.page().pdfPrintingFinished.disconnect(print_conn)
+        tmp.unlink(missing_ok=True)
+        return bool(state["ok"]) and out_pdf.exists()
+
+    pass1 = out_path.with_suffix(".pass1.pdf")
+    segments: list[tuple[int, str]] | None = None
+    start_page = 1
+    try:
+        if not print_html(export_html, pass1):
+            raise RuntimeError("PDF export failed (Paged.js pass 1)")
+        anchors = _pdf_footer.extract_anchor_pages(pass1)
+        content = {
+            a: p for a, p in anchors.items()
+            if not a.startswith("epy-section-")
+        }
+        segments = sorted(
+            (p, "roman" if a.startswith("epy-section-roman-") else "arabic")
+            for a, p in anchors.items()
+            if a.startswith(("epy-section-roman-", "epy-section-arabic-"))
+        ) or None
+        if content:
+            # Index blocks emit only links, so every destination is body
+            # content; the smallest is the first content page. Cover +
+            # TOC/LOF/LOT/LOE before it are unnumbered front matter and the
+            # body is renumbered from 1.
+            start_page = min(content.values())
+            html2 = inject_page_numbers(export_html, anchors, start_page - 1)
+            if not print_html(html2, out_path):
+                raise RuntimeError("PDF export failed (Paged.js pass 2)")
+        else:
+            # No named destinations (older Qt): keep pass 1 and stamp from the
+            # page after the cover when present.
+            shutil.copyfile(pass1, out_path)
+            start_page = 2 if has_cover else 1
+            segments = None
     finally:
         view.deleteLater()
         pump(20)
-        tmp.unlink(missing_ok=True)
+        pass1.unlink(missing_ok=True)
 
-    if not (state["ok"] and out_path.exists()):
+    if not out_path.exists():
         raise RuntimeError("PDF export failed (Paged.js did not complete)")
 
     # Stamp overlays (best-effort) on a temp copy, then move into place.
@@ -134,13 +189,15 @@ def render_report_pdf(
                 _pdf_footer.add_watermark(work, wm)
         header_cells = parse_header_cells(meta.get("header"))
         if any(header_cells):
-            _pdf_footer.add_header(work, header_cells, lang=lang, start_page=1)
+            _pdf_footer.add_header(
+                work, header_cells, lang=lang, start_page=start_page
+            )
         footer_text = meta.get("footer", "")
         page_numbers = is_truthy(meta.get("page-numbers"))
         if footer_text or page_numbers:
             _pdf_footer.add_footer(
                 work, footer_text, page_numbers=page_numbers,
-                lang=lang, start_page=1,
+                lang=lang, start_page=start_page, segments=segments,
             )
         _pdf_footer.add_metadata(
             work,
@@ -152,6 +209,4 @@ def render_report_pdf(
         )
         out_path.write_bytes(work.read_bytes())
     finally:
-        import shutil  # noqa: PLC0415
-
         shutil.rmtree(work.parent, ignore_errors=True)

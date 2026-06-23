@@ -1,10 +1,10 @@
 ; Inno Setup script for epy_reports
-; Version 0.1.0
+; Version 0.1.2
 ;
 ; Build from the project root AFTER running `python build.py`:
 ;   ISCC.exe installer\windows\epy_reports.iss
 ;
-; Output: installer\dist\epy_reports-setup-0.1.0.exe
+; Output: installer\dist\epy_reports-setup-0.1.2.exe
 ;
 ; Design decisions:
 ;   - PrivilegesRequired=lowest  -> per-user install; no UAC prompt.
@@ -26,7 +26,7 @@
 ;     checkbox below launches "ms-settings:defaultapps" as a convenience.
 
 #define AppName "epy_reports"
-#define AppVersion "0.1.1"
+#define AppVersion "0.1.2"
 #define AppPublisher "Ing. Angel Navarro-Mora M.Sc."
 #define AppURL "https://github.com/estructuraPy/epy_reports"
 #define AppId "{{D9B4E1C7-2A6F-4B83-9E5D-7C1A0F3B6E24}"
