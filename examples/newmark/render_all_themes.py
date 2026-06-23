@@ -87,6 +87,10 @@ except ImportError:
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
 
+# (output suffix, source file) — the base .md is English, _es is Spanish; the
+# example ships both languages and every theme is rendered in each one.
+LANGS = [("", SOURCE), ("_es", ROOT / "newmark_es.md")]
+
 WAIT_FOR_MATHJAX_JS = r"""
 (function () {
     window._mathjax_done = false;
@@ -145,16 +149,19 @@ class ThemeExporter:
     MAX_WAIT_MS = 60_000  # Paged.js pagination of a long doc can be slow
     POLL_MS = 300
 
-    def __init__(self, theme_id: str, source: str, meta: dict, on_done) -> None:
+    def __init__(
+        self, theme_id: str, source: str, meta: dict, suffix: str, on_done
+    ) -> None:
         self.theme_id = theme_id
         self.source = source
         self.meta = meta
+        self.suffix = suffix
         self.on_done = on_done
 
-        self.html_path = OUT_DIR / f"newmark_{theme_id}.html"
-        self.pdf_path = OUT_DIR / f"newmark_{theme_id}.pdf"
-        self._pass1_pdf = OUT_DIR / f"_p1_{theme_id}.pdf"
-        self._tmp_html = ROOT / f"_tmp_{theme_id}.html"
+        self.html_path = OUT_DIR / f"newmark_{theme_id}{suffix}.html"
+        self.pdf_path = OUT_DIR / f"newmark_{theme_id}{suffix}.pdf"
+        self._pass1_pdf = OUT_DIR / f"_p1_{theme_id}{suffix}.pdf"
+        self._tmp_html = ROOT / f"_tmp_{theme_id}{suffix}.html"
 
         self._elapsed_ms = 0
         self._pending_pdf: Path | None = None
@@ -179,7 +186,8 @@ class ThemeExporter:
     # ------------------------------------------------------------------
 
     def go(self) -> None:
-        print(f"\n=== theme: {self.theme_id} ===")
+        lang = self.suffix or " (en)"
+        print(f"\n=== theme: {self.theme_id}{lang} ===")
         theme = themes.get(self.theme_id)
         self._page_bg = theme.css_vars.get("bg", "")
         page_size = normalize_page_size(self.meta.get("page-size"))
@@ -357,20 +365,27 @@ class ThemeExporter:
 
 def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    source = SOURCE.read_text(encoding="utf-8")
-    meta = parse_front_matter(source)
-
     app = QApplication.instance() or QApplication(sys.argv)
     only = sys.argv[1] if len(sys.argv) > 1 else None
-    remaining = [only] if only else list(themes.THEMES.keys())
+    theme_ids = [only] if only else list(themes.THEMES.keys())
+
+    # Flat queue of (theme_id, source_text, meta, suffix) over both languages.
+    jobs: list[tuple] = []
+    for suffix, src in LANGS:
+        if not src.is_file():
+            continue
+        text = src.read_text(encoding="utf-8")
+        meta = parse_front_matter(text)
+        for theme_id in theme_ids:
+            jobs.append((theme_id, text, meta, suffix))
 
     def kick_next() -> None:
-        if not remaining:
+        if not jobs:
             print("\nAll themes rendered.")
             app.quit()
             return
-        theme_id = remaining.pop(0)
-        exporter = ThemeExporter(theme_id, source, meta, on_done=kick_next)
+        theme_id, text, meta, suffix = jobs.pop(0)
+        exporter = ThemeExporter(theme_id, text, meta, suffix, on_done=kick_next)
         main._current = exporter  # type: ignore[attr-defined]
         exporter.go()
 

@@ -1,17 +1,14 @@
 ---
 abstract: |
-  Nathan Mortimore Newmark fue el ingeniero estructural que
-  le dio forma matemática a la respuesta dinámica de las
-  estructuras frente a sismos. Formó cuatro décadas de
-  doctorandos en la Universidad de Illinois en
-  Urbana-Champaign, diseñó la Torre Latinoamericana de la
-  Ciudad de México que sobrevivió el terremoto de 1957 sin
-  daño estructural, formuló el método de integración temporal
-  que lleva su nombre y, junto a Emilio Rosenblueth, escribió
-  el libro que fundó la ingeniería sísmica como disciplina
-  académica. Este documento reconstruye su trayectoria como
-  persona, profesional y profesor, y delinea el alcance de
-  su legado.
+  Nathan Mortimore Newmark was the structural engineer who gave mathematical
+  form to the dynamic response of structures under seismic action. He mentored
+  doctoral students for four decades at the University of Illinois at
+  Urbana-Champaign, served as consulting engineer for the Torre Latinoamericana
+  in Mexico City — a building that survived the 1957 earthquake without a single
+  structural failure — formulated the time integration method that bears his name,
+  and co-authored with Emilio Rosenblueth the textbook that established earthquake
+  engineering as an academic discipline. This document reconstructs his life as
+  a person, a professional, and a teacher, and outlines the scope of his legacy.
 bibliography: newmark.bib
 cover: true
 csl: ieee
@@ -19,11 +16,11 @@ logo: epy_reports.png
 watermark: epy_reports.png
 date: 2026-06-15
 author: Ing. Angel Navarro-Mora M.Sc.
-footer: "Nathan M. Newmark (1910–1981) — ANM Ingeniería"
-lang: es
+footer: "Nathan M. Newmark (1910–1981) — ANM Engineering"
+lang: en
 page-numbers: true
 page-size: letter
-subtitle: Vida, obra y legado del fundador de la ingeniería sísmica moderna
+subtitle: Life, Work, and Legacy of the Founder of Modern Earthquake Engineering
 title: Nathan M. Newmark (1910–1981)
 ---
 
@@ -39,133 +36,137 @@ title: Nathan M. Newmark (1910–1981)
 
 [[section-arabic]]
 
-# Introducción {#sec-intro}
+::: {.callout-note title="Disclaimer"}
+This document is a **demonstration example**. Its content is illustrative and has not been reviewed in detail; it must not be used as a basis for engineering or any other decisions. Provided as is, without warranty of any kind.
+:::
+
+# Introduction {#sec-intro}
 
 
-A principios del siglo XX, las ciudades enfrentaban los sismos casi sin defensa técnica. Los terremotos se interpretaban como catástrofes caprichosas; las estructuras buscaban resistir por rigidez bruta, una estrategia que el suelo desmentía con cada evento. Nathan Mortimore Newmark (1910–1981) lideró el cambio de paradigma: del muro rígido a la **estructura dinámica resiliente**, capaz de **gestionar la energía** del movimiento en lugar de oponerse a él. Como *Padre de la Ingeniería Sísmica* [@vargas2021newmark], su obra no solo evitó colapsos: devolvió a la humanidad la confianza para habitar verticalmente un planeta en vibración constante.[^fn-1]
+At the beginning of the twentieth century, cities faced earthquakes with almost no technical defense. Earthquakes were interpreted as capricious catastrophes; structures sought to resist by brute stiffness, a strategy the ground disproved with every event. Nathan Mortimore Newmark (1910–1981) led the paradigm shift: from the rigid wall to the **resilient dynamic structure**, capable of **managing the energy** of motion rather than opposing it. As the *Father of Earthquake Engineering* [@vargas2021newmark], his work not only prevented collapses: it gave humanity back the confidence to inhabit a constantly vibrating planet vertically.[^fn-1]
 
-Antes de Newmark, *diseño sísmico* significaba aplicar un coeficiente lateral estático del 8 al 10 % del peso a la estructura y verificar resistencia elástica. Después de Newmark, el diseño sísmico pasó a apoyarse en el espectro de respuesta, en integración temporal de la ecuación dinámica del movimiento, en la ductilidad como recurso de diseño y en la verificación de derivas. Esa transición no fue gradual ni anónima: está sostenida por cuarenta años de publicaciones de una sola persona y de su escuela en Urbana [@hall1991memoir].
-
-
-El recorrido continúa por su formación y vida personal en @sec-formacion, su práctica profesional en @sec-profesional, su labor docente en @sec-profesor, el método β en @sec-metodo, otros aportes en @sec-otros, los reconocimientos en @sec-reconocimientos y el legado vivo en @sec-legado.
+Before Newmark, *seismic design* meant applying a static lateral coefficient of 8 to 10 % of the structure's weight and checking elastic resistance. After Newmark, seismic design came to rely on the response spectrum, on time integration of the dynamic equation of motion, on ductility as a design resource, and on drift verification. That transition was neither gradual nor anonymous: it is sustained by forty years of publications from a single person and from his school at Urbana [@hall1991memoir].
 
 
-::: {.callout-important title="Por qué importa"}
-La integración temporal del método β y el espectro de respuesta de @newmarkHall1982 son la base computacional de prácticamente todo software de análisis estructural moderno (SAP2000, ETABS, OpenSees, ANSYS, ABAQUS). Cuando un ingeniero corre un *time-history* hoy, está ejecutando un algoritmo escrito por Newmark en 1959.
+The discussion continues with his education and personal life in @sec-formacion, his professional practice in @sec-profesional, his teaching career in @sec-profesor, the beta method in @sec-metodo, other contributions in @sec-otros, honors and awards in @sec-reconocimientos, and his enduring legacy in @sec-legado.
+
+
+::: {.callout-important title="Why It Matters"}
+The time integration of the beta method and the response spectra of @newmarkHall1982 are the computational foundation of virtually every modern structural analysis software package (SAP2000, ETABS, OpenSees, ANSYS, ABAQUS). When an engineer runs a time-history analysis today, they are executing an algorithm written by Newmark in 1959.
 :::
 
 
-[^fn-1]: La denominación "Padre de la Ingeniería Sísmica" es de uso extendido en la comunidad académica hispanohablante; en la literatura técnica anglosajona se prefiere "founder of earthquake engineering as an academic discipline" [@hall1991memoir].
+[^fn-1]: The designation "Father of Earthquake Engineering" is widely used in the Spanish-speaking academic community; English-language technical literature prefers "founder of earthquake engineering as an academic discipline" [@hall1991memoir].
 
 
 [[pagebreak]]
 
-# Vida y formación {#sec-formacion}
+# Life and Education {#sec-formacion}
 
 
-![Nathan M. Newmark (1910–1981). Retrato del archivo de la Universidad de Illinois Urbana-Champaign. Fuente: Wikimedia Commons.](newmark_portrait.jpg){#fig-portrait width=40%}
+![Nathan M. Newmark (1910–1981). Portrait from the University of Illinois Urbana-Champaign archives. Source: Wikimedia Commons.](newmark_portrait.jpg){#fig-portrait width=40%}
 
-El hombre del retrato de @fig-portrait nació el 22 de septiembre de 1910 en Plainfield, Nueva Jersey, hijo de Abraham S. Newmark y Mollie Nathanson [@hall1991memoir]. Su talento matemático se manifestó temprano: a los 19 años ya había terminado su licenciatura en ingeniería civil en la Universidad de Rutgers (1930), con múltiples honores y premios especiales que lo ubicaron como el mejor de su promoción.
+The man in the portrait of @fig-portrait was born on September 22, 1910, in Plainfield, New Jersey, the son of Abraham S. Newmark and Mollie Nathanson [@hall1991memoir]. His mathematical talent manifested early: by the age of 19 he had already completed his bachelor's degree in civil engineering at Rutgers University (1930), earning multiple honors and special prizes that placed him at the top of his graduating class.
 
-Su madurez técnica se consolidó en la Universidad de Illinois en Urbana-Champaign (UIUC), bajo la tutela de tres figuras legendarias: **Hardy Cross** (autor del método de distribución de momentos), **Harold M. Westergaard** y **Frank E. Richart** [@hall1991memoir]. Obtuvo su maestría en 1932 y el doctorado en 1934, ambos en Urbana. Su ascenso fue meteórico: en 1943, a los 33 años, fue nombrado *Research Professor* **saltándose el rango intermedio de profesor asociado** — un hito administrativo casi inaudito en la academia estadounidense.
+His technical maturity was consolidated at the University of Illinois at Urbana-Champaign (UIUC), under the mentorship of three legendary figures: **Hardy Cross** (originator of the moment distribution method), **Harold M. Westergaard**, and **Frank E. Richart** [@hall1991memoir]. He earned his master's degree in 1932 and his doctorate in 1934, both at Urbana. His rise was meteoric: in 1943, at age 33, he was appointed *Research Professor* **bypassing the intermediate rank of associate professor** — an administrative milestone virtually unheard of in American academia.
 
-En el ámbito personal, su vida estuvo anclada por su esposa **Anne May Cohen** (matrimonio en 1931) y sus tres hijos, Richard, Linda y Susan. Permaneció en Urbana toda su carrera profesional: cuarenta y tres años en la facultad de ingeniería civil, hasta su retiro formal en 1976. Murió el 25 de enero de 1981, a los 70 años, poco después de haber comenzado a escribir, junto con William J. Hall, el libro póstumo *Earthquake Spectra and Design* [@newmarkHall1982].
+On a personal level, his life was anchored by his wife **Anne May Cohen** (married 1931) and their three children, Richard, Linda, and Susan. He remained at Urbana throughout his entire professional career: forty-three years on the civil engineering faculty, until his formal retirement in 1976. He died on January 25, 1981, at the age of 70, shortly after having begun to write, together with William J. Hall, the posthumous book *Earthquake Spectra and Design* [@newmarkHall1982].
 
 
 ::: {.callout-note}
-Es inusual que un ingeniero de su estatura haya pasado toda su carrera en una sola institución. Recibió ofertas constantes de Berkeley, Stanford, MIT y Caltech; las declinó todas. Urbana era, en sus palabras, *el lugar donde puedo trabajar sin distracciones*.
+It is unusual for an engineer of his stature to have spent his entire career at a single institution. He received constant offers from Berkeley, Stanford, MIT, and Caltech; he declined them all. Urbana was, in his words, *the place where I can work without distractions*.
 :::
 
 
 [[pagebreak]]
 
-# Trayectoria profesional {#sec-profesional}
+# Professional Career {#sec-profesional}
 
 
-Aunque académico de carrera, Newmark mantuvo una práctica consultora intensa que alimentó su investigación con casos reales — desde el conflicto bélico hasta la infraestructura civil más crítica del hemisferio occidental.
+Although an academic by vocation, Newmark maintained an intense consulting practice that fed his research with real-world cases — from wartime service to the most critical civil infrastructure in the Western Hemisphere.
 
 
-## Servicio bélico y defensa {#sec-guerra}
+## Wartime Service and Defense {#sec-guerra}
 
 
-Durante la Segunda Guerra Mundial, Newmark sirvió como consultor del *National Defense Research Committee* (NDRC) y de la *Office of Scientific Research and Development* (OSRD), parte de su servicio en la Zona de Guerra del Pacífico [@hall1991memoir]. Más adelante contribuyó al desarrollo de los sistemas balísticos **Minute Man** y **MX**, diseñando los silos enterrados resistentes a explosión nuclear cercana. Por estas contribuciones estratégicas, el presidente Truman le entregó en 1948 el *President's Certificate of Merit*.
+During World War II, Newmark served as a consultant to the *National Defense Research Committee* (NDRC) and the *Office of Scientific Research and Development* (OSRD), part of his service in the Pacific War Zone [@hall1991memoir]. He later contributed to the development of the **Minuteman** and **MX** ballistic missile systems, designing buried silos resistant to nearby nuclear detonation. For these strategic contributions, President Truman awarded him the *President's Certificate of Merit* in 1948.
 
 
-## La Torre Latinoamericana {#sec-torre}
+## The Torre Latinoamericana {#sec-torre}
 
 
-El proyecto de consultoría más célebre de Newmark fue la Torre Latinoamericana en la Ciudad de México (1956). Junto con Adolfo Zeevaert y Leonardo Zeevaert, diseñó la primera estructura alta del mundo concebida explícitamente para resistir un sismo de magnitud 7.5 sobre un suelo lacustre de baja capacidad portante. La estrategia combinó:
+Newmark's most celebrated consulting project was the Torre Latinoamericana in Mexico City (1956). Together with Adolfo Zeevaert and Leonardo Zeevaert, he designed the first tall building in the world conceived explicitly to resist a magnitude-7.5 earthquake on soft lacustrine soils with low bearing capacity. The strategy combined:
 
-1. Fundación tipo cajón flotante con 361 pilotes de fricción.
-2. Marco rígido de acero estructural con columnas de doble cajón.
-3. Periodo fundamental sintonizado para evitar la región amplificada del espectro del suelo blando.
+1. A floating box foundation with 361 friction piles.
+2. A structural steel rigid frame with double-box columns.
+3. A fundamental period tuned to avoid the amplified region of the soft-soil spectrum.
 
-El 28 de julio de 1957 un terremoto de magnitud 7.7 con epicentro en Guerrero golpeó la Ciudad de México. Varios edificios se colapsaron. La Torre Latinoamericana, ocupada y operativa, no sufrió **ni un solo daño estructural**. El sismo de magnitud 8.0 de 1985, que devastó decenas de edificios, tampoco la afectó.
-
-
-## Infraestructura crítica {#sec-encargos}
+On July 28, 1957, a magnitude-7.7 earthquake with epicenter in Guerrero struck Mexico City. Several buildings collapsed. The Torre Latinoamericana, occupied and fully operational, suffered **not a single structural failure**. The magnitude-8.0 earthquake of 1985, which devastated dozens of buildings, left it unaffected as well.
 
 
-- **Sistema BART** (Bay Area Rapid Transit), San Francisco — criterios sísmicos de diseño del sistema de tránsito rápido que conecta el norte de California sobre la zona de fallas más activa de Estados Unidos [@hall1991memoir].
-- **Oleoducto Trans-Alaska** — diseño sísmico del que en su momento fue el mayor proyecto privado de infraestructura del mundo, atravesando 1\,287 km y tres sistemas de fallas activas [@hall1991memoir].
-- **Fundación de la Torre Sears** (hoy Willis Tower), Chicago, 1970 — consultoría sobre interacción suelo-estructura.
-- **~70 plantas de energía nuclear** (Atomic Energy Commission) más múltiples instalaciones de **gas natural licuado (GNL)** durante sus últimos diecisiete años de carrera [@hall1991memoir]. Su criterio de diseño *Safe Shutdown Earthquake* todavía sobrevive en la regulación nuclear.
+## Critical Infrastructure {#sec-encargos}
+
+
+- **BART system** (Bay Area Rapid Transit), San Francisco — seismic design criteria for the rapid transit system connecting Northern California across the most active fault zone in the United States [@hall1991memoir].
+- **Trans-Alaska Pipeline** — seismic design of what was at the time the largest private infrastructure project in the world, spanning 1\,287 km across three active fault systems [@hall1991memoir].
+- **Sears Tower foundation** (today Willis Tower), Chicago, 1970 — consulting on soil-structure interaction.
+- **~70 nuclear power plants** (Atomic Energy Commission) plus multiple **liquefied natural gas (LNG)** facilities during the last seventeen years of his career [@hall1991memoir]. His *Safe Shutdown Earthquake* design criterion still survives in nuclear regulation.
 
 
 [[pagebreak]]
 
-# El profesor {#sec-profesor}
+# The Teacher {#sec-profesor}
 
 
-Lo que distinguió a Newmark del resto de los académicos de su generación fue su intensidad como mentor doctoral. Entre 1934 y 1976 supervisó a más de cincuenta doctorandos. Buena parte de la ingeniería estructural moderna se entiende como una rama del árbol genealógico académico de Newmark:
+What set Newmark apart from the other academics of his generation was his intensity as a doctoral mentor. Between 1934 and 1976 he supervised more than fifty doctoral students. Much of modern structural engineering can be understood as a branch of Newmark's academic genealogical tree:
 
 
-| Estudiante / colaborador | Aporte principal |
+| Student / collaborator | Principal contribution |
 | --- | --- |
-| Anestis S. Veletsos | Comportamiento inelástico [@veletsosNewmark1960] |
-| Mete Sözen | Diseño sismo-resistente de hormigón armado |
-| William J. Hall | Espectros de diseño [@newmarkHall1982] |
-| William C. Schnobrich | Análisis de placas y cáscaras |
-| Anil K. Chopra | Dinámica estructural moderna [@chopra2017dynamics] |
-| Emilio Rosenblueth | Coautor del primer texto sísmico [@newmarkRosenblueth1971] |
+| Anestis S. Veletsos | Inelastic behavior [@veletsosNewmark1960] |
+| Mete Sözen | Seismic design of reinforced concrete |
+| William J. Hall | Design spectra [@newmarkHall1982] |
+| William C. Schnobrich | Plate and shell analysis |
+| Anil K. Chopra | Modern structural dynamics [@chopra2017dynamics] |
+| Emilio Rosenblueth | Co-author of the first seismic engineering text [@newmarkRosenblueth1971] |
 
-: Algunos discípulos de Newmark y su aporte principal. {#tbl-discipulos}
-
-
-@tbl-discipulos lista apenas una fracción de su descendencia académica. El curso *CE 472 — Structural Dynamics*, que Newmark dictó durante más de tres décadas en Urbana, formó a generaciones enteras de ingenieros sísmicos en cuatro continentes.
-
-Newmark fue también pionero de la **computación científica** aplicada a la ingeniería estructural. Entre 1947 y 1957 presidió el *Digital Computer Laboratory* de la UIUC, donde tuvo un papel decisivo en el desarrollo de la **ILLIAC-II**, una de las primeras computadoras digitales a gran escala del mundo [@hall1991memoir]. Ese esfuerzo posicionó a la universidad como líder mundial en la aplicación de la computación al análisis dinámico de estructuras — la base instrumental que diez años después haría posible el método β. Como jefe del Departamento de Ingeniería Civil entre 1956 y 1973, elevó la institución a un prestigio internacional sin precedentes.
+: Selected Newmark students and their principal contributions. {#tbl-discipulos}
 
 
-::: {.callout-tip title="Su estilo de enseñanza"}
-Hall lo recuerda así: *Nathan no enseñaba fórmulas; enseñaba a derivarlas. Si un estudiante llegaba a su oficina con una pregunta sobre el método β, se iba dos horas después con seis páginas de álgebra a mano y la convicción de que él mismo lo había deducido.*
+@tbl-discipulos lists only a fraction of his academic descendants. The course *CE 472 — Structural Dynamics*, which Newmark taught for more than three decades at Urbana, trained entire generations of earthquake engineers on four continents.
+
+Newmark was also a pioneer of **scientific computing** applied to structural engineering. Between 1947 and 1957 he chaired the *Digital Computer Laboratory* at UIUC, where he played a decisive role in the development of the **ILLIAC-II**, one of the first large-scale digital computers in the world [@hall1991memoir]. That effort positioned the university as a world leader in applying computing to structural dynamic analysis — the instrumental foundation that, ten years later, would make the beta method possible. As head of the Department of Civil Engineering from 1956 to 1973, he elevated the institution to an unprecedented level of international prestige.
+
+
+::: {.callout-tip title="His Teaching Style"}
+Hall recalls: *Nathan didn't teach formulas; he taught how to derive them. If a student came to his office with a question about the beta method, they left two hours later with six pages of hand algebra and the conviction that they had deduced it themselves.*
 :::
 
 
 [[pagebreak]]
 
-# El método β {#sec-metodo}
+# The Beta Method {#sec-metodo}
 
 
-En 1959 Newmark publicó en el *Journal of the Engineering Mechanics Division* de la ASCE un artículo de 28 páginas que cambió el análisis dinámico para siempre: *A Method of Computation for Structural Dynamics* [@newmark1959method]. Propuso una familia de algoritmos de integración temporal de un solo paso, controlados por dos parámetros $\beta$ y $\gamma$, capaces de pasar de explícitos a implícitos cambiando un solo número.
+In 1959 Newmark published a 28-page article in the *Journal of the Engineering Mechanics Division* of ASCE that changed dynamic analysis forever: *A Method of Computation for Structural Dynamics* [@newmark1959method]. He proposed a family of single-step time integration algorithms controlled by two parameters $\beta$ and $\gamma$, capable of ranging from explicit to implicit by changing a single number.
 
 
-## Formulación {#sec-formulacion}
+## Formulation {#sec-formulacion}
 
 
-Considere el sistema con un grado de libertad de la @fig-sdof, con masa $m$, rigidez $k$, amortiguamiento $c$ y excitación por aceleración del suelo $\ddot u_{g}(t)$.
+Consider the single-degree-of-freedom (SDOF) system of @fig-sdof, with mass $m$, stiffness $k$, damping $c$, and ground acceleration excitation $\ddot u_{g}(t)$.
 
 
-![Sistema masa-resorte-amortiguador (SDOF) sometido a una aceleración del suelo $\ddot u_{g}(t)$.](sdof.svg){#fig-sdof width=55%}
+![Mass-spring-damper (SDOF) system subjected to a ground acceleration $\ddot u_{g}(t)$.](sdof.svg){#fig-sdof width=55%}
 
-La ecuación de movimiento de la @fig-sdof es
+The equation of motion for the system of @fig-sdof is
 
 
 $$
 m\,\ddot u(t) + c\,\dot u(t) + k\,u(t) = -\,m\,\ddot u_{g}(t)
 $$ {#eq-eom}
 
-Newmark planteó la solución temporal mediante aproximaciones truncadas en serie de Taylor para la velocidad y el desplazamiento en el paso $n+1$:[^fn-2]
+Newmark proposed the time-domain solution via truncated Taylor-series approximations for the velocity and displacement at step $n+1$:[^fn-2]
 
 
 $$
@@ -176,40 +177,40 @@ $$
 u_{n+1} \;=\; u_{n} + \Delta t\,\dot u_{n} + \frac{\Delta t^{2}}{2}\,\bigl[ (1-2\beta)\,\ddot u_{n} + 2\beta\,\ddot u_{n+1} \bigr]
 $$ {#eq-disp}
 
-@eq-vel y @eq-disp definen la familia β. La aceleración en $n+1$ se obtiene sustituyendo en @eq-eom y resolviendo un sistema lineal en $\ddot u_{n+1}$.
+@eq-vel and @eq-disp define the beta family. The acceleration at $n+1$ is obtained by substituting into @eq-eom and solving a linear system for $\ddot u_{n+1}$.
 
 
-[^fn-2]: La derivación completa, con prueba de consistencia y estimación de error de truncamiento, se encuentra en el artículo original [@newmark1959method, pp. 67–94].
+[^fn-2]: The complete derivation, with a consistency proof and truncation error estimate, is found in the original article [@newmark1959method, pp. 67–94].
 
 
-## Variantes clásicas {#sec-variantes}
+## Classical Variants {#sec-variantes}
 
 
-Tres elecciones de $(\beta, \gamma)$ son universalmente conocidas:
+Three choices of $(\beta, \gamma)$ are universally recognized:
 
 
-| Variante | β | γ | Tipo | Estabilidad |
+| Variant | β | γ | Type | Stability |
 | --- | --- | --- | --- | --- |
-| Aceleración promedio | 1/4 | 1/2 | Implícito | Incondicionalmente estable |
-| Aceleración lineal | 1/6 | 1/2 | Implícito | Estable si $\Delta t / T \leq 0.551$ |
-| Diferencia central | 0 | 1/2 | Explícito | Estable si $\Delta t / T \leq 1/\pi$ |
-| Backward difference | 1/2 | 1 | Implícito | Estable, alta disipación numérica |
+| Average acceleration | 1/4 | 1/2 | Implicit | Unconditionally stable |
+| Linear acceleration | 1/6 | 1/2 | Implicit | Stable if $\Delta t / T \leq 0.551$ |
+| Central difference | 0 | 1/2 | Explicit | Stable if $\Delta t / T \leq 1/\pi$ |
+| Backward difference | 1/2 | 1 | Implicit | Stable, high numerical dissipation |
 
-: Variantes clásicas del método β. {#tbl-variantes}
-
-
-@tbl-variantes resume el compromiso esencial: la aceleración promedio preserva exactamente la energía pero distorsiona la fase; la aceleración lineal tiene mejor precisión en fase pero exige pasos finos; la diferencia central es explícita —no requiere resolver ningún sistema lineal— pero su límite de estabilidad la vuelve costosa para sistemas con altas frecuencias.
+: Classical variants of the beta method. {#tbl-variantes}
 
 
-![Hipótesis de variación de la aceleración $\ddot u(t)$ entre $t_{n}$ y $t_{n+1} = t_{n} + \Delta t$. El parámetro $\beta$ codifica la forma asumida del integrando: $\beta = 1/6$ corresponde a variación lineal, $\beta = 1/4$ a un promedio constante y $\beta = 1/8$ a una aproximación escalonada.](beta_assumptions.svg){#fig-beta width=75%}
-
-@fig-beta expone el significado físico de $\beta$: no es un número cualquiera, sino la elección de la forma asumida para la aceleración entre dos pasos consecutivos. Distintos $\beta$ corresponden a distintas reglas de integración numérica de $\ddot u(t)$ en $[t_{n},\, t_{n+1}]$. La estabilidad incondicional se obtiene cuando $2\beta \geq \gamma \geq 1/2$.
+@tbl-variantes summarizes the essential trade-off: average acceleration preserves energy exactly but introduces phase distortion; linear acceleration offers better phase accuracy but requires fine time steps; central difference is explicit — requiring no linear system solve — but its stability limit makes it costly for systems with high-frequency content.
 
 
-## Implementación de referencia {#sec-codigo}
+![Assumed acceleration $\ddot u(t)$ variation between $t_{n}$ and $t_{n+1} = t_{n} + \Delta t$. The parameter $\beta$ encodes the assumed shape of the integrand: $\beta = 1/6$ corresponds to linear variation, $\beta = 1/4$ to a constant average, and $\beta = 1/8$ to a stepped approximation.](beta_assumptions.svg){#fig-beta width=75%}
+
+@fig-beta exposes the physical meaning of $\beta$: it is not an arbitrary number, but the choice of the assumed shape of the acceleration between two consecutive steps. Different values of $\beta$ correspond to different numerical integration rules for $\ddot u(t)$ over $[t_{n},\, t_{n+1}]$. Unconditional stability is achieved when $2\beta \geq \gamma \geq 1/2$.
 
 
-La estructura algorítmica de un paso del método β para un SDOF lineal es compacta:
+## Reference Implementation {#sec-codigo}
+
+
+The algorithmic structure of a single beta-method step for a linear SDOF system is compact:
 
 
 ```python
@@ -236,86 +237,86 @@ def newmark_step(m, c, k, u, v, a, p_next, dt, beta=0.25, gamma=0.5):
 ```
 
 
-Este patrón —reescribir el sistema dinámico como una ecuación pseudo-estática con rigidez efectiva $k^{*}$ y carga efectiva $p^{*}$— es la forma canónica que aparece en todos los textos modernos [@chopra2017dynamics; @bathe2014fem].
+This pattern — recasting the dynamic system as a pseudo-static equation with effective stiffness $k^{*}$ and effective load $p^{*}$ — is the canonical form that appears in all modern textbooks [@chopra2017dynamics; @bathe2014fem].
 
 
 [[pagebreak]]
 
-# Otros aportes {#sec-otros}
+# Other Contributions {#sec-otros}
 
 
-::: {.callout-warning title="Más que el método β"}
-Reducir la obra de Newmark al método β es injusto. Sus contribuciones posteriores en sismología aplicada y mecánica de suelos fueron igualmente decisivas.
+::: {.callout-warning title="More Than the Beta Method"}
+Reducing Newmark's work to the beta method is unfair. His later contributions in applied seismology and soil mechanics were equally decisive.
 :::
 
 
-## Método del bloque deslizante (1965) {#sec-bloque}
+## The Sliding Block Method (1965) {#sec-bloque}
 
 
-En la *Fifth Rankine Lecture* [@newmark1965sliding] Newmark introdujo un modelo simple para estimar el desplazamiento permanente inducido por un sismo sobre una masa de suelo o estructura potencialmente deslizante. La idea: integrar dos veces, durante los intervalos en que la aceleración del registro excede el valor crítico $a_{c}$, la ecuación
+In the *Fifth Rankine Lecture* [@newmark1965sliding] Newmark introduced a simple model for estimating the permanent displacement induced by an earthquake on a potentially sliding soil mass or structure. The idea: integrate twice, during intervals in which the acceleration of the record exceeds the critical value $a_{c}$, the equation
 
 
 $$
 \ddot d(t) = \ddot u_{g}(t) - a_{c}\,\operatorname{sgn}\!\bigl( \dot d(t) \bigr)
 $$ {#eq-bloque}
 
-@eq-bloque sigue siendo, sesenta años después, la base normativa para la verificación sísmica de presas, taludes y muros de contención en prácticamente todos los códigos del mundo. Su vigencia se manifiesta en estudios recientes sobre los deslizamientos de **Bullas (2002)** y **La Paca (2005)** en Murcia, España [@rodriguezPeces2011newmark]. El mismo trabajo señala una lección operativa: las evaluaciones a escala regional (píxeles de 25 m) producen estimaciones incorrectas o nulas, mientras que los análisis a 2.5 m por píxel identifican con exactitud las áreas de ruptura — argumento decisivo a favor de los **mapas de desplazamiento de alta resolución** como producto normativo.
+@eq-bloque remains, sixty years later, the normative basis for seismic verification of dams, slopes, and retaining walls in virtually every code worldwide. Its continuing relevance is demonstrated in recent studies on the **Bullas (2002)** and **La Paca (2005)** landslides in Murcia, Spain [@rodriguezPeces2011newmark]. That same work highlights an operational lesson: regional-scale assessments (25 m pixels) produce incorrect or null estimates, while 2.5 m per pixel analyses accurately identify the rupture zones — a decisive argument in favor of **high-resolution displacement maps** as a normative product.
 
 
-## Espectro Newmark-Hall {#sec-espectro}
+## The Newmark-Hall Spectrum {#sec-espectro}
 
 
-Con William J. Hall, Newmark consolidó el concepto de **espectro suavizado de diseño**: dada una aceleración pico del terreno (PGA), una velocidad pico (PGV) y un desplazamiento pico (PGD), se obtienen tres regiones del espectro (aceleración, velocidad y desplazamiento constante) ajustadas por factores empíricos que dependen del amortiguamiento. El espectro Newmark-Hall apareció en su forma canónica en [@newmarkHall1982] y dominó la práctica del diseño sísmico durante tres décadas.
+Together with William J. Hall, Newmark consolidated the concept of the **smoothed design spectrum**: given a peak ground acceleration (PGA), a peak ground velocity (PGV), and a peak ground displacement (PGD), three spectral regions (constant acceleration, constant velocity, and constant displacement) are obtained, adjusted by empirical factors that depend on damping. The Newmark-Hall spectrum appeared in its canonical form in [@newmarkHall1982] and dominated seismic design practice for three decades.
 
 
-## Diseño basado en ductilidad {#sec-ductilidad}
+## Ductility-Based Design {#sec-ductilidad}
 
 
-Newmark formalizó las dos hipótesis fundamentales del diseño dúctil:
+Newmark formalized the two fundamental hypotheses of ductile design:
 
-- **Igual desplazamiento** (períodos largos $T > T_{c}$): el desplazamiento máximo del sistema inelástico es igual al del sistema elástico de la misma rigidez inicial.
-- **Igual energía** (períodos intermedios): la energía absorbida por el sistema inelástico iguala a la del sistema elástico.
+- **Equal displacement** (long periods $T > T_{c}$): the maximum displacement of the inelastic system equals that of the elastic system with the same initial stiffness.
+- **Equal energy** (intermediate periods): the energy absorbed by the inelastic system equals that of the elastic system.
 
-Ambas, derivadas de simulaciones con @veletsosNewmark1960, son el fundamento del concepto moderno de **factor de reducción de respuesta R** que aparece en el ASCE 7, el Eurocódigo 8 y la mayoría de los códigos sísmicos.
+Both hypotheses, derived from simulations with @veletsosNewmark1960, are the foundation of the modern concept of the **response modification factor R** that appears in ASCE 7, Eurocode 8, and most seismic codes worldwide.
 
 
 [[pagebreak]]
 
-# Reconocimientos {#sec-reconocimientos}
+# Awards and Recognition {#sec-reconocimientos}
 
 
-- ***President's Certificate of Merit*** (1948), entregado por Harry S. Truman, por su servicio a la NDRC y la OSRD durante la Segunda Guerra Mundial [@hall1991memoir].
-- Miembro **fundador** de la **National Academy of Engineering** (1964), en el primer grupo de elegidos al constituirse la academia [@hall1991memoir].
-- **National Medal of Science** (1968), entregada por Lyndon B. Johnson, *por su liderazgo en la creación de la ingeniería estructural moderna basada en mecánica racional*.
+- ***President's Certificate of Merit*** (1948), awarded by Harry S. Truman, for his service to the NDRC and the OSRD during World War II [@hall1991memoir].
+- **Founding member** of the **National Academy of Engineering** (1964), in the first cohort elected when the academy was established [@hall1991memoir].
+- **National Medal of Science** (1968), awarded by Lyndon B. Johnson, *for his leadership in creating modern structural engineering based on rational mechanics*.
 - *John von Neumann Lecture* (1969), American Society of Mechanical Engineers.
 - *Foreign Member of the Royal Society* (1975).
-- **Gold Medal de la Institution of Structural Engineers** del Reino Unido (1980): apenas **el segundo ingeniero estadounidense en los 57 años de historia de la institución** en recibirla [@hall1991memoir].
-- **Norman Medal** de la ASCE en cinco ocasiones (un récord absoluto histórico).
-- Doctorados *honoris causa* de Princeton, Lehigh, Notre Dame, Liège y ocho universidades adicionales.
+- **Gold Medal of the Institution of Structural Engineers** of the United Kingdom (1980): only **the second American engineer in the institution's 57-year history** to receive it [@hall1991memoir].
+- **Norman Medal** of the ASCE on five occasions (an absolute all-time record).
+- Honorary doctorates from Princeton, Lehigh, Notre Dame, Liège, and eight additional universities.
 
 
-# Legado {#sec-legado}
+# Legacy {#sec-legado}
 
 
-::: {.callout-caution title="Disciplina, no caja de herramientas"}
-La ingeniería sísmica como disciplina académica con currículum propio, doctorandos propios y revistas propias no existía antes de Newmark. Cuando murió en 1981, ya era impensable diseñar una estructura crítica sin la maquinaria conceptual que él había construido.
+::: {.callout-caution title="A Discipline, Not a Toolbox"}
+Earthquake engineering as an academic discipline — with its own curriculum, its own doctoral programs, and its own journals — did not exist before Newmark. When he died in 1981, it was already unthinkable to design a critical structure without the conceptual machinery he had built.
 :::
 
 
-**Tres semanas después** de su muerte en 1981, la UIUC renombró su edificio de ingeniería civil como **Newmark Civil Engineering Laboratory** [@hall1991memoir]. Es el edificio donde se forman cada año cerca de cien doctorandos de ingeniería estructural.
+**Three weeks after** his death in 1981, UIUC renamed its civil engineering building the **Newmark Civil Engineering Laboratory** [@hall1991memoir]. It is the building where approximately one hundred structural engineering doctoral students are trained each year.
 
-La *EERI Distinguished Lecture* lleva su nombre desde 1985 y se otorga anualmente al ingeniero o investigador con la contribución más significativa a la ingeniería sísmica del año anterior.
+The *EERI Distinguished Lecture* has borne his name since 1985 and is awarded annually to the engineer or researcher with the most significant contribution to earthquake engineering in the preceding year.
 
-Sus dos libros, *Fundamentals of Earthquake Engineering* [@newmarkRosenblueth1971] y *Earthquake Spectra and Design* [@newmarkHall1982], se siguen citando, vendiendo y prescribiendo como bibliografía obligatoria en cursos de maestría y doctorado a lo largo del mundo. El segundo, publicado un año después de su muerte, fue completado por William J. Hall a partir de manuscritos y notas de clase que el propio Newmark había dejado preparadas.
+His two books, *Fundamentals of Earthquake Engineering* [@newmarkRosenblueth1971] and *Earthquake Spectra and Design* [@newmarkHall1982], are still cited, sold, and assigned as required reading in master's and doctoral courses around the world. The second, published a year after his death, was completed by William J. Hall from manuscripts and lecture notes that Newmark himself had left prepared.
 
-Como resume @hall1991memoir en su *Biographical Memoir* para la National Academy of Sciences, Newmark fue *"una universidad en sí mismo"* — un hombre cuya intuición técnica se equilibraba con un interés genuino por las personas. Hall sintetiza así su legado:
+As @hall1991memoir summarizes in his *Biographical Memoir* for the National Academy of Sciences, Newmark was *"a university unto himself"* — a man whose technical intuition was balanced by a genuine interest in people. Hall distills his legacy thus:
 
-> *"Casi todo ingeniero estructural en ejercicio en algún lugar del mundo usa diariamente, sin saberlo, una idea de Nathan Newmark. Esa es, probablemente, la forma más honesta de medir su legado."*
+> *"Almost every practicing structural engineer somewhere in the world uses, daily and unknowingly, an idea of Nathan Newmark. That is, probably, the most honest way to measure his legacy."*
 
 
 [[pagebreak]]
 
-# Referencias {.unnumbered}
+# References {.unnumbered}
 
 
 ::: {#refs}
