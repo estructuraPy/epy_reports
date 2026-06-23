@@ -42,10 +42,10 @@ def render_report_pdf(
         render_markdown,
     )
     from epy_reports.snippets import (  # noqa: PLC0415
-        is_truthy,
         parse_front_matter,
         parse_header_cells,
     )
+    from epy_reports.template import is_truthy  # noqa: PLC0415
 
     meta = parse_front_matter(source)
     page_size = normalize_page_size(meta.get("page-size"))
