@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Headless by default.** `PySide6` moved from a hard dependency to an optional
+  `[gui]` extra. `pip install epy_reports` now installs the engine headless (the
+  `Report` facade renders HTML/DOCX with Qt imported lazily); the desktop app and
+  the Paged.js PDF export require `pip install epy_reports[gui]`. This lets Lito
+  and the LitoClaw IDE embed the engine without pulling Qt.
+
 ### Added
 - **Adjustable page margin.** *Document properties ▸ Margin* sets the
   front-matter `margin:` key (a CSS length such as `20mm`, `1in` or a bare

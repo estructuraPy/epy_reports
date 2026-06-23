@@ -17,7 +17,6 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "PySide6>=6.6",
     "pypandoc-binary>=1.13",
     "pypdf>=4.0",
     "reportlab>=4.0",
@@ -31,6 +30,11 @@ Issues = "https://github.com/estructuraPy/epy_reports/issues"
 Changelog = "https://github.com/estructuraPy/epy_reports/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+# Qt powers the desktop GUI and Paged.js PDF export (to_pdf); the headless
+# facade (Report → HTML/DOCX) imports it lazily, so it is an OPTIONAL extra.
+# Lito + the IDE install headless: `pip install epy_reports`; desktop app:
+# `pip install epy_reports[gui]`.
+gui = ["PySide6>=6.6"]
 build = ["pyinstaller>=6.6"]
 # NOTE: the epy_docs rendering backend is a commercial, privately
 # distributed package (not on PyPI). It is detected at runtime when
