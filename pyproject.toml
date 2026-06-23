@@ -1,6 +1,6 @@
 [project]
 name = "epy_reports"
-version = "0.1.2"
+version = "0.1.3"
 description = "Markdown report editor with live preview and one-click PDF export."
 authors = [
     { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },

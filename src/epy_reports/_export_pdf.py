@@ -103,7 +103,7 @@ def render_report_pdf(
         return box["v"]
 
     def print_html(html: str, out_pdf: Path) -> bool:
-        """Load ``html``, wait for Paged.js, print to ``out_pdf``; return ok."""
+        """Load ``html``, wait for Paged.js, then print to ``out_pdf``."""
         tmp = out_pdf.with_suffix(".tmp.html")
         tmp.write_text(html, encoding="utf-8")
         loaded = {"ok": False}

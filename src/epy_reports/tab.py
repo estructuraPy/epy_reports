@@ -320,6 +320,11 @@ class MarkdownTab(QWidget):
                 final destination path so the caller can report it.
         """
         text = self.editor.toPlainText()
+        # Stop the live-preview debounce so a pending re-render cannot fire
+        # mid-export and load the preview page into the same view the export
+        # is printing from (which would make printToPdf fail and the file
+        # never be written). It re-arms on the next edit (single-shot).
+        self._render_timer.stop()
         meta = snippets.parse_front_matter(text)
         footer_text = meta.get("footer", "")
         page_numbers = is_truthy(meta.get("page-numbers"))

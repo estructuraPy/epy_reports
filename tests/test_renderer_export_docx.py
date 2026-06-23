@@ -9,6 +9,7 @@ Covers:
 from __future__ import annotations
 
 import importlib.resources
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -96,7 +97,7 @@ def test_wrap_preserve_always_present():
 
 
 def test_real_export_corporate_template(tmp_path: Path):
-    """Real Pandoc + corporate reference template produces a docx > 50 KB."""
+    """Real Pandoc + corporate reference template embeds the theme styles."""
     pytest.importorskip("pypandoc", reason="pypandoc not available")
 
     # Resolve the bundled corporate template via importlib.resources.
@@ -114,11 +115,18 @@ def test_real_export_corporate_template(tmp_path: Path):
         pytest.skip(f"reference_docx assets not available: {exc}")
 
     assert out.exists(), "Output .docx was not created"
+    # The clean, theme-styled reference embeds the named styles but no logo
+    # image (the old ANM-branded template bloated the file past 50 KB with an
+    # embedded PNG). A styled export still lands well above the no-reference
+    # baseline; assert the reference's styles actually came through.
     size = out.stat().st_size
-    assert size > 50_000, (
-        f"Output .docx is only {size} bytes — expected >50 KB with "
-        "embedded styles from the reference template"
+    assert size > 12_000, (
+        f"Output .docx is only {size} bytes — expected the reference "
+        "template's styles to be embedded"
     )
+    with zipfile.ZipFile(out) as zf:
+        styles = zf.read("word/styles.xml").decode("utf-8", "ignore")
+    assert "Heading1" in styles, "reference heading styles were not embedded"
 
 
 def test_real_export_no_reference(tmp_path: Path):
