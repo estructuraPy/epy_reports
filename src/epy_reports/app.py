@@ -250,6 +250,8 @@ class MarkdownWindow(QMainWindow):
         self._build_theme_actions()
 
         # Custom-theme editor actions (live in the Theme submenu).
+        self.act_theme_gallery = QAction("Browse themes…", self)
+        self.act_theme_gallery.triggered.connect(self._open_theme_gallery)
         self.act_new_theme = QAction("New theme…", self)
         self.act_new_theme.triggered.connect(
             lambda: self._open_theme_editor(edit_id=None)
@@ -400,23 +402,12 @@ class MarkdownWindow(QMainWindow):
             lambda: self._on_active_tab("insert_code_block")
         )
 
-        # Shared design blocks (cards, big stats, timelines, agendas) — the
-        # same insert options epy_slides and epy_paper expose, one engine.
-        from epy_reports._design import (  # noqa: PLC0415
-            DESIGN_BLOCK_LABELS,
-            DESIGN_BLOCKS,
+        # Shared design blocks (cards, big stats, timelines, agendas) opened
+        # through a visual picker, like the slide-layout picker in epy_slides.
+        self.act_design_block = QAction("Design block…", self)
+        self.act_design_block.triggered.connect(
+            self._open_design_block_picker
         )
-
-        self.design_actions: dict[str, QAction] = {}
-        for kind in DESIGN_BLOCKS:
-            label = DESIGN_BLOCK_LABELS.get(kind, kind.title())
-            act = QAction(label, self)
-            act.triggered.connect(
-                lambda _checked=False, k=kind: self._on_active_tab(
-                    "insert_design_block", k
-                )
-            )
-            self.design_actions[kind] = act
 
         self.act_ins_footnote = QAction("Footnote", self)
         self.act_ins_footnote.setShortcut(QKeySequence("Ctrl+Shift+O"))
@@ -562,9 +553,7 @@ class MarkdownWindow(QMainWindow):
         self.callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
             self.callout_sub.addAction(act)
-        self.design_sub = self.elements_menu.addMenu("Design block")
-        for act in self.design_actions.values():
-            self.design_sub.addAction(act)
+        self.elements_menu.addAction(self.act_design_block)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
         self.elements_menu.addAction(self.act_ins_section_roman)
@@ -845,6 +834,7 @@ class MarkdownWindow(QMainWindow):
         for act in self.theme_group.actions():
             self.theme_sub.addAction(act)
         self.theme_sub.addSeparator()
+        self.theme_sub.addAction(self.act_theme_gallery)
         self.theme_sub.addAction(self.act_new_theme)
         self.theme_sub.addAction(self.act_edit_theme)
         self.theme_sub.addAction(self.act_delete_theme)
@@ -865,6 +855,32 @@ class MarkdownWindow(QMainWindow):
             self._retranslate_ui()
         if select_id:
             self._apply_theme(select_id)
+
+    def _open_theme_gallery(self) -> None:
+        """Open the theme gallery; apply the chosen theme on accept."""
+        from epy_reports.theme_gallery_dialog import (  # noqa: PLC0415
+            ThemeGalleryDialog,
+        )
+
+        dialog = ThemeGalleryDialog(self, current_id=self._current_theme.id)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        theme_id = dialog.selected_theme_id()
+        if theme_id:
+            self._apply_theme(theme_id)
+
+    def _open_design_block_picker(self) -> None:
+        """Open the design-block picker; insert the chosen block on accept."""
+        from epy_reports.design_block_dialog import (  # noqa: PLC0415
+            DesignBlockDialog,
+        )
+
+        dialog = DesignBlockDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        kind = dialog.selected_kind()
+        if kind:
+            self._on_active_tab("insert_design_block", kind)
 
     def _open_theme_editor(self, edit_id: str | None = None) -> None:
         """Open the theme editor; on save, persist and select the theme."""
