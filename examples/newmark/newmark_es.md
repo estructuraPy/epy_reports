@@ -39,8 +39,8 @@ title: Nathan M. Newmark (1910–1981)
 
 [[section-arabic]]
 
-::: {.callout-note title="Aviso"}
-Este documento es un **ejemplo con fines demostrativos**. Su contenido es ilustrativo y no ha sido revisado en detalle; no debe usarse como base para decisiones de ingeniería ni de ningún otro tipo. Se entrega tal cual, sin garantía de ningún tipo.
+::: {.disclosure}
+Este documento es un ejemplo ilustrativo preparado con asistencia de IA; revise su contenido antes de utilizarlo.
 :::
 
 # Introducción {#sec-intro}
