@@ -4,6 +4,12 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] — 2026-06-24
+
+### Changed
+- **Example footer.** The Newmark example footer now reads *ANM Ingeniería* in
+  both languages (the English deck previously read "ANM Engineering").
+
 ## [0.1.4] — 2026-06-23
 
 ### Added

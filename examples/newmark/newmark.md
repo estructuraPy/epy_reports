@@ -16,7 +16,7 @@ logo: epy_reports.png
 watermark: epy_reports.png
 date: 2026-06-15
 author: Ing. Angel Navarro-Mora M.Sc.
-footer: "Nathan M. Newmark (1910–1981) — ANM Engineering"
+footer: "Nathan M. Newmark (1910–1981) — ANM Ingeniería"
 lang: en
 page-numbers: true
 page-size: letter
