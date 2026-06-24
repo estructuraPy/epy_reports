@@ -36,6 +36,7 @@ _BLOCK_DESC = {
     "stats": "A row of big numbers with captions.",
     "timeline": "A vertical timeline over a list.",
     "agenda": "A numbered agenda over a list.",
+    "disclosure": "An insertable disclosure note (e.g. an AI-use disclosure).",
 }
 
 

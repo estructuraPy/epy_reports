@@ -1,14 +1,11 @@
-"""Small QPainter previews for the design-block picker and theme gallery.
+"""Small QPainter previews for the slide-layout picker and theme gallery.
 
 No web rendering is involved: a *layout* preview is a neutral schematic of the
-document regions (so the user reads the block TYPE at a glance), and a *theme*
+slide regions (so the user reads the slide TYPE at a glance), and a *theme*
 preview is a colour/typography swatch built straight from the :class:`Theme`
 palette (so the user reads the visual STYLE). Both are cheap QPainter draws
 that need only a running ``QApplication``, so the pickers stay instant and the
 previews are unit-testable offscreen.
-
-This module is shared verbatim with epy_slides and epy_papers (only the import
-of :class:`Theme` differs) so the three apps look and behave identically.
 """
 
 from __future__ import annotations
@@ -250,13 +247,19 @@ def _draw_layout_body(p: QPainter, c: QRectF, layout_id: str) -> None:
         _rounded(
             p, QRectF(x + pw + 6, y + h * 0.62, tw * 0.5, 3.0), _ACCENT, 1.5
         )
+    elif layout_id == "disclosure":
+        # A quiet note box with a left accent bar (no title) — reads as a
+        # disclosure/disclaimer rather than a titled section.
+        _rounded(p, QRectF(x, body_top, w, body_h - 2), _MUTED, 3.0)
+        _rounded(p, QRectF(x, body_top, 3.0, body_h - 2), _INK_STRONG, 1.5)
+        _bars(p, x + 8, body_top + 5, w - 14, n=2, color=_INK, h=2.5, gap=4.5)
     else:  # "title-content" and any unknown id → title + bullets
         title()
         _bars(p, x, body_top, w * 0.85, n=3, color=_INK)
 
 
 def layout_preview(layout_id: str, size: QSize = LAYOUT_THUMB) -> QPixmap:
-    """Return a neutral schematic thumbnail of ``layout_id`` (block type)."""
+    """Return a neutral schematic thumbnail of ``layout_id`` (slide type)."""
     pix = QPixmap(size)
     pix.fill(Qt.GlobalColor.transparent)
     p = QPainter(pix)

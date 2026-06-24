@@ -149,6 +149,15 @@ def design_css(theme: Theme, *, scope: str = "") -> str:
   border-radius: 50%; background: {primary}; color: {bg};
   font-size: 0.7em; font-weight: 700; font-family: {font_head};
 }}
+
+/* disclosure — a quiet, insertable note (e.g. an AI-use disclosure) */
+{s}.disclosure {{
+  margin: 0.8em 0; padding: 0.5em 0.85em;
+  border-left: 3px solid {border}; border-radius: 6px;
+  background: {soft}; color: {fg}; font-size: 0.82em; opacity: 0.85;
+}}
+{s}.disclosure > :first-child {{ margin-top: 0; }}
+{s}.disclosure > :last-child {{ margin-bottom: 0; }}
 """
 
 
@@ -165,6 +174,7 @@ DESIGN_BLOCKS: tuple[str, ...] = (
     "stats",
     "timeline",
     "agenda",
+    "disclosure",
 )
 
 DESIGN_BLOCK_LABELS: dict[str, str] = {
@@ -176,6 +186,7 @@ DESIGN_BLOCK_LABELS: dict[str, str] = {
     "stats": "Big stats (row)",
     "timeline": "Timeline",
     "agenda": "Agenda",
+    "disclosure": "Disclosure",
 }
 
 _BLOCK_SKELETONS: dict[str, str] = {
@@ -239,6 +250,12 @@ _BLOCK_SKELETONS: dict[str, str] = {
         "- Third item\n"
         ":::\n"
     ),
+    "disclosure": (
+        "\n::: {.disclosure}\n"
+        "**Disclosure** — This document was prepared with the assistance of "
+        "AI; review its content before relying on it.\n"
+        ":::\n"
+    ),
 }
 
 _BLOCK_TOKENS: dict[str, str] = {
@@ -250,6 +267,10 @@ _BLOCK_TOKENS: dict[str, str] = {
     "stats": "42",
     "timeline": "First milestone.",
     "agenda": "First item",
+    "disclosure": (
+        "This document was prepared with the assistance of AI; review its "
+        "content before relying on it."
+    ),
 }
 
 

@@ -20,11 +20,12 @@ _SELECTORS = (
     ".stats",
     ".timeline",
     ".agenda",
+    ".disclosure",
 )
 
 
 def test_every_block_has_label_skeleton_and_token():
-    assert len(DESIGN_BLOCKS) == 8
+    assert len(DESIGN_BLOCKS) == 9
     for kind in DESIGN_BLOCKS:
         assert kind in DESIGN_BLOCK_LABELS
         skeleton, token = design_block(kind)
