@@ -29,7 +29,10 @@ from epy_reports.themes_base import Theme
 __all__ = [
     "DESIGN_BLOCKS",
     "DESIGN_BLOCK_LABELS",
+    "DISCLOSURE_PRESETS",
+    "DISCLOSURE_KINDS",
     "design_block",
+    "disclosure_block",
     "design_css",
     "document_css",
 ]
@@ -174,7 +177,6 @@ DESIGN_BLOCKS: tuple[str, ...] = (
     "stats",
     "timeline",
     "agenda",
-    "disclosure",
 )
 
 DESIGN_BLOCK_LABELS: dict[str, str] = {
@@ -186,7 +188,6 @@ DESIGN_BLOCK_LABELS: dict[str, str] = {
     "stats": "Big stats (row)",
     "timeline": "Timeline",
     "agenda": "Agenda",
-    "disclosure": "Disclosure",
 }
 
 _BLOCK_SKELETONS: dict[str, str] = {
@@ -250,12 +251,6 @@ _BLOCK_SKELETONS: dict[str, str] = {
         "- Third item\n"
         ":::\n"
     ),
-    "disclosure": (
-        "\n::: {.disclosure}\n"
-        "**Disclosure** — This document was prepared with the assistance of "
-        "AI; review its content before relying on it.\n"
-        ":::\n"
-    ),
 }
 
 _BLOCK_TOKENS: dict[str, str] = {
@@ -267,10 +262,6 @@ _BLOCK_TOKENS: dict[str, str] = {
     "stats": "42",
     "timeline": "First milestone.",
     "agenda": "First item",
-    "disclosure": (
-        "This document was prepared with the assistance of AI; review its "
-        "content before relying on it."
-    ),
 }
 
 
@@ -285,3 +276,50 @@ def design_block(kind: str) -> tuple[str, str]:
     skeleton = _BLOCK_SKELETONS.get(kind, _BLOCK_SKELETONS["card"])
     token = _BLOCK_TOKENS.get(kind, "")
     return skeleton, token
+
+
+# --- disclosures ----------------------------------------------------------
+# A disclosure is an insertable, theme-styled note (see the ``.disclosure``
+# CSS in :func:`design_css`) that states a condition of use. It is NOT tied to
+# AI: the presets below cover the common cases — AI assistance, document
+# integrity, confidentiality and draft status — and the inserted text is fully
+# editable, so any wording can replace a preset. All three sibling apps expose
+# the same set from this one source of truth (only the output format differs).
+
+DISCLOSURE_PRESETS: dict[str, tuple[str, str]] = {
+    "ai": (
+        "AI assistance",
+        "This document was prepared with the assistance of AI; review its "
+        "content before relying on it.",
+    ),
+    "integrity": (
+        "Document integrity",
+        "This document is valid only when used in its entirety; partial "
+        "reproduction or extraction may misrepresent its content.",
+    ),
+    "confidential": (
+        "Confidentiality",
+        "Confidential — intended solely for the named recipient; do not "
+        "distribute without authorization.",
+    ),
+    "draft": (
+        "Draft",
+        "Draft — provisional content, not for distribution and subject to "
+        "change.",
+    ),
+}
+
+DISCLOSURE_KINDS: tuple[str, ...] = tuple(DISCLOSURE_PRESETS)
+
+
+def disclosure_block(kind: str = "ai") -> tuple[str, str]:
+    """Return ``(markdown_skeleton, select_token)`` for a disclosure preset.
+
+    The skeleton wraps the preset text in a ``::: {.disclosure}`` fenced div so
+    it renders as a quiet, theme-styled note in every app. ``select_token`` is
+    the body text an editor should pre-select so the user can immediately type
+    over it. Unknown kinds fall back to the AI-use disclosure.
+    """
+    _, text = DISCLOSURE_PRESETS.get(kind, DISCLOSURE_PRESETS["ai"])
+    skeleton = f"\n::: {{.disclosure}}\n{text}\n:::\n"
+    return skeleton, text

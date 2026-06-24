@@ -247,12 +247,6 @@ def _draw_layout_body(p: QPainter, c: QRectF, layout_id: str) -> None:
         _rounded(
             p, QRectF(x + pw + 6, y + h * 0.62, tw * 0.5, 3.0), _ACCENT, 1.5
         )
-    elif layout_id == "disclosure":
-        # A quiet note box with a left accent bar (no title) — reads as a
-        # disclosure/disclaimer rather than a titled section.
-        _rounded(p, QRectF(x, body_top, w, body_h - 2), _MUTED, 3.0)
-        _rounded(p, QRectF(x, body_top, 3.0, body_h - 2), _INK_STRONG, 1.5)
-        _bars(p, x + 8, body_top + 5, w - 14, n=2, color=_INK, h=2.5, gap=4.5)
     else:  # "title-content" and any unknown id → title + bullets
         title()
         _bars(p, x, body_top, w * 0.85, n=3, color=_INK)

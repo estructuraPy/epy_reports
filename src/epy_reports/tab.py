@@ -875,6 +875,13 @@ class MarkdownTab(QWidget):
         skeleton, token = design_block(kind)
         self._insert_template(skeleton, token)
 
+    def insert_disclosure(self, kind: str = "ai") -> None:
+        """Insert a disclosure note (AI use, document integrity, ...)."""
+        from epy_reports._design import disclosure_block  # noqa: PLC0415
+
+        skeleton, token = disclosure_block(kind)
+        self._insert_template(skeleton, token)
+
     def insert_callout(self, kind: str = "note") -> None:
         """Insert a Quarto fenced callout, with title prompt if needed."""
         template = snippets.CALLOUT_TEMPLATES.get(

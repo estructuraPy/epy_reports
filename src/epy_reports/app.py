@@ -471,6 +471,17 @@ class MarkdownWindow(QMainWindow):
         # Convenience: Ctrl+Shift+C inserts a basic note callout.
         self.callout_actions[0].setShortcut(QKeySequence("Ctrl+Shift+C"))
 
+        from epy_reports._design import DISCLOSURE_PRESETS  # noqa: PLC0415
+        self.disclosure_actions: list[QAction] = []
+        for d_kind, (d_label, _d_text) in DISCLOSURE_PRESETS.items():
+            d_act = QAction(f"Disclosure: {d_label}", self)
+            d_act.triggered.connect(
+                lambda checked=False, k=d_kind: self._on_active_tab(
+                    "insert_disclosure", k
+                )
+            )
+            self.disclosure_actions.append(d_act)
+
         self.act_cross_ref = QAction("Insert reference...", self)
         self.act_cross_ref.setShortcut(QKeySequence("Ctrl+R"))
         self.act_cross_ref.triggered.connect(
@@ -553,6 +564,9 @@ class MarkdownWindow(QMainWindow):
         self.callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
             self.callout_sub.addAction(act)
+        self.disclosure_sub = self.elements_menu.addMenu("Disclosure")
+        for act in self.disclosure_actions:
+            self.disclosure_sub.addAction(act)
         self.elements_menu.addAction(self.act_design_block)
         self.elements_menu.addSeparator()
         self.elements_menu.addAction(self.act_ins_page_break)
