@@ -43,6 +43,19 @@ title: Nathan M. Newmark (1910–1981)
 Este documento es un ejemplo ilustrativo preparado con asistencia de IA; revise su contenido antes de utilizarlo.
 :::
 
+::: {.callout-note title="Sobre este ejemplo"}
+Este informe es un ejemplo de **epy_reports**, parte de la suite de documentos
+ePy (código abierto). Su fuente —y los ejemplos hermanos de epy_slides y
+epy_papers— están en GitHub:
+
+- Informe Newmark (epy_reports):
+  <https://github.com/estructuraPy/epy_reports/tree/main/examples/newmark>
+- Presentación Empire State (epy_slides):
+  <https://github.com/estructuraPy/epy_slides/tree/main/examples/empire_state_building>
+- Artículo Puente de Brooklyn (epy_papers):
+  <https://github.com/estructuraPy/epy_papers/tree/main/examples/brooklyn_bridge>
+:::
+
 # Introducción {#sec-intro}
 
 
