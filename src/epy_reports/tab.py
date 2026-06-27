@@ -1131,14 +1131,23 @@ class MarkdownTab(QWidget):
         title = (
             self._path.name if self._path is not None else UNTITLED
         )
-        html = render_markdown(
-            text,
-            base_dir=base_dir,
-            title=title,
-            theme_css=self._theme_css,
-            paged=paged,
-            page_size=page_size,
-        )
+        try:
+            html = render_markdown(
+                text,
+                base_dir=base_dir,
+                title=title,
+                theme_css=self._theme_css,
+                paged=paged,
+                page_size=page_size,
+            )
+        except Exception as exc:
+            msg = str(exc).replace("&", "&amp;").replace("<", "&lt;")
+            html = (
+                "<!doctype html><html><head><meta charset='utf-8'></head>"
+                "<body style='font-family:monospace;padding:1em;color:#c00'>"
+                f"<b>Render error</b><pre>{msg}</pre>"
+                "</body></html>"
+            )
         if not hasattr(self, "_preview_tmp_dir"):
             self._preview_tmp_dir = Path(
                 tempfile.mkdtemp(prefix="epy_reports_preview_")
