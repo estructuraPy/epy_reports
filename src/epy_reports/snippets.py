@@ -107,6 +107,16 @@ PRIMARY_PLACEHOLDER: dict[str, str] = {
 # ----------------------------------------------------------------------
 
 
+def strip_front_matter(text: str) -> str:
+    """Return the document body with the YAML front-matter block removed."""
+    if not text.startswith("---"):
+        return text
+    end = text.find("\n---", 3)
+    if end < 0:
+        return text
+    return text[end + 4:]
+
+
 def parse_front_matter(text: str) -> dict[str, str]:
     """Extract top-level ``key: value`` pairs from a YAML block.
 

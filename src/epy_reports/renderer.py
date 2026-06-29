@@ -26,7 +26,7 @@ from epy_reports._media_export import (
     simplify_components_for_export,
     substitute_diagram_images,
 )
-from epy_reports.snippets import parse_front_matter
+from epy_reports.snippets import parse_front_matter, strip_front_matter
 from epy_reports.template import build_html_document
 
 # Citation Style Language: short names users can type in YAML (``csl:
@@ -164,7 +164,7 @@ PANDOC_FORMAT = (
     "+tex_math_dollars"
     "+tex_math_single_backslash"
     "+inline_notes"
-    "+yaml_metadata_block"
+    "-yaml_metadata_block"
     "+pipe_tables"
     "+grid_tables"
     "+raw_html"
@@ -1159,9 +1159,10 @@ def export_docx(
     # Word has no diagram engine and ignores the component CSS, so render
     # each Mermaid/nomnoml diagram to a themed PNG (best-effort) and rewrite
     # the design components into native Word structures before Pandoc runs.
-    prepared = source
+    source_body = strip_front_matter(source)
+    prepared = source_body
     diag_tmp: Path | None = None
-    diagrams = collect_diagrams(source)
+    diagrams = collect_diagrams(source_body)
     if diagrams:
         diag_tmp = Path(tempfile.mkdtemp(prefix="epy_reports_docx_diag_"))
         pngs = render_diagram_pngs(diagrams, diag_tmp, theme_css=theme_css)
@@ -1183,6 +1184,12 @@ def export_docx(
     # tokens in Word; the reference-doc supplies the monospace
     # "Source Code" paragraph style.
     extra_args = ["--wrap=preserve", "--syntax-highlighting=tango"]
+    # Pass front matter so pandoc sets document title/author in the DOCX.
+    # yaml_metadata_block is disabled globally; metadata must be injected.
+    for _key in ("title", "subtitle", "author", "date"):
+        _val = metadata.get(_key)
+        if _val:
+            extra_args.append(f"--metadata={_key}:{_val}")
     if base_dir is not None:
         extra_args.append(f"--resource-path={base_dir}")
         if svg_tmp is not None:
@@ -1259,7 +1266,8 @@ def render_markdown(
         title = metadata["title"]
 
     lang = metadata.get("lang", "en")
-    prepared = _expand_quarto_callouts(source)
+    source_body = strip_front_matter(source)
+    prepared = _expand_quarto_callouts(source_body)
     prepared = _resolve_crossrefs(prepared, lang=lang)
     prepared = inject_heading_ids(prepared)
     prepared = _expand_page_breaks(prepared)
