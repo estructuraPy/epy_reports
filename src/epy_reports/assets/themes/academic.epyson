@@ -43,7 +43,7 @@
     }
   },
   "palette": {
-    "description": "Paleta institucional EICO-TEC: azul oscuro #00243F, verde oliva #576A3D, grises y beige",
+    "description": "Paleta institucional: azul oscuro #00243F, verde oliva #576A3D, grises y beige",
     "border_color": [87, 106, 61],
     "caption_color": [0, 36, 63],
     "code": {"background": [240, 240, 240], "text": [0, 36, 63]},
