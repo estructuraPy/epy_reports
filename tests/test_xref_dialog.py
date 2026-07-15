@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import pytest
-from epy_editor_kit.snippets import Label
 from PySide6.QtWidgets import QApplication
 
 from epy_reports.bib import BibEntry
+from epy_reports.snippets import Label
 from epy_reports.xref_dialog import CrossRefDialog
 
 _app: QApplication | None = None

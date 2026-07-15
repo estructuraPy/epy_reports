@@ -18,7 +18,6 @@ from importlib import resources
 from pathlib import Path
 
 import pypandoc
-from epy_editor_kit.snippets import parse_front_matter, strip_front_matter
 
 from epy_reports._diagrams import diagram_engines, expand_diagrams
 from epy_reports._media_export import (
@@ -27,6 +26,7 @@ from epy_reports._media_export import (
     simplify_components_for_export,
     substitute_diagram_images,
 )
+from epy_reports.snippets import parse_front_matter, strip_front_matter
 from epy_reports.template import build_html_document
 
 # Citation Style Language: short names users can type in YAML (``csl:

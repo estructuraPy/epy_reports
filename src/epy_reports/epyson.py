@@ -14,9 +14,10 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from epy_editor_kit.themes_base import Theme
 from PySide6.QtGui import QColor, QFont, QPalette
 from PySide6.QtWidgets import QApplication
+
+from epy_reports.themes_base import Theme
 
 ASSETS_PACKAGE = "epy_reports.assets.themes"
 

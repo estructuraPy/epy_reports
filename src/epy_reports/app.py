@@ -9,7 +9,6 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from epy_editor_kit import snippets
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import (
     QAction,
@@ -32,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_reports import _i18n as i18n
-from epy_reports import bib, themes
+from epy_reports import bib, snippets, themes
 from epy_reports._design import document_css
 from epy_reports.about_dialog import _load_branding_pixmap
 from epy_reports.docs_bridge import epy_docs_available

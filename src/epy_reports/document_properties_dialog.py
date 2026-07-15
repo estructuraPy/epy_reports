@@ -4,14 +4,13 @@ Gathers the publishing front-matter keys — title/subtitle/author/date,
 the cover page, the running header (a 2x3 grid of cells), the footer,
 page numbers and page size — and returns them as a list of
 ``(field, value, raw)`` updates the caller writes into the YAML front
-matter with :func:`epy_editor_kit.snippets.set_metadata_field`.
+matter with :func:`epy_reports.snippets.set_metadata_field`.
 """
 
 from __future__ import annotations
 
 import json
 
-from epy_editor_kit import snippets
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -28,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_reports import _i18n as i18n
+from epy_reports import snippets
 
 _PAGE_SIZES = ["letter", "a4", "legal"]
 _PAGE_SIZE_LABELS = {"letter": "Letter", "a4": "A4", "legal": "Legal"}
@@ -49,7 +49,7 @@ class DocumentPropertiesDialog(QDialog):
         Args:
             parent: Optional parent widget.
             meta: Front-matter values of the current document (as parsed
-                by :func:`epy_editor_kit.snippets.parse_front_matter`).
+                by :func:`epy_reports.snippets.parse_front_matter`).
         """
         super().__init__(parent)
         self.setWindowTitle("Document properties")

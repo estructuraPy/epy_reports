@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from epy_editor_kit.themes_base import Theme
-
 from epy_reports._design import design_css, document_css
+from epy_reports.themes_base import Theme
 
 _THEME = Theme(
     id="t",

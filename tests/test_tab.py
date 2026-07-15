@@ -404,7 +404,7 @@ def test_insert_cross_reference_inserts_label(tab):
             return QDialog.DialogCode.Accepted
 
         def selected_label(self):
-            from epy_editor_kit.snippets import Label
+            from epy_reports.snippets import Label
 
             return Label(kind="fig", name="fig-1")
 

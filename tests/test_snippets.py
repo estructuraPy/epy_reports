@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from epy_editor_kit import snippets
-from epy_editor_kit.snippets import (
+from epy_reports import snippets
+from epy_reports.snippets import (
     find_labels,
     parse_front_matter,
     parse_header_cells,
