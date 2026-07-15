@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from epy_editor_kit.themes_base import Theme
 from PySide6.QtWidgets import QApplication
 
 from epy_reports import epyson, themes
-from epy_reports.themes_base import Theme
 
 _app: QApplication | None = None
 

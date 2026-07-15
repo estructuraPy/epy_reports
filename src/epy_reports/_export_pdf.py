@@ -40,6 +40,10 @@ def render_report_pdf(
     """
     import shutil  # noqa: PLC0415
 
+    from epy_editor_kit.snippets import (  # noqa: PLC0415
+        parse_front_matter,
+        parse_header_cells,
+    )
     from PySide6.QtCore import (  # noqa: PLC0415
         QElapsedTimer,
         QEventLoop,
@@ -56,10 +60,6 @@ def render_report_pdf(
         inject_page_numbers,
         normalize_page_size,
         render_markdown,
-    )
-    from epy_reports.snippets import (  # noqa: PLC0415
-        parse_front_matter,
-        parse_header_cells,
     )
     from epy_reports.template import is_truthy  # noqa: PLC0415
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from epy_editor_kit.latex_catalog import CATALOG, LatexEntry
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -17,7 +18,6 @@ from PySide6.QtWidgets import (
 )
 
 from epy_reports import _i18n as i18n
-from epy_reports.latex_catalog import CATALOG, LatexEntry
 
 
 class EquationDialog(QDialog):

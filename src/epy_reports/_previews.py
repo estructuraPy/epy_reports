@@ -10,10 +10,9 @@ previews are unit-testable offscreen.
 
 from __future__ import annotations
 
+from epy_editor_kit.themes_base import Theme
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
-
-from epy_reports.themes_base import Theme
 
 # Default thumbnail sizes used by the pickers.
 LAYOUT_THUMB = QSize(104, 64)

@@ -24,7 +24,7 @@ Markup vocabulary (Pandoc fenced divs / bracketed spans):
 
 from __future__ import annotations
 
-from epy_reports.themes_base import Theme
+from epy_editor_kit.themes_base import Theme
 
 __all__ = [
     "DESIGN_BLOCKS",

@@ -17,6 +17,8 @@ Public API:
 
 from __future__ import annotations
 
+from epy_editor_kit.themes_base import Theme
+
 from epy_reports.epyson import (
     apply_palette,
     build_epyson,
@@ -27,7 +29,6 @@ from epy_reports.epyson import (
     user_theme_ids,
     user_themes_dir,
 )
-from epy_reports.themes_base import Theme
 
 DEFAULT_THEME_ID = "corporate"
 

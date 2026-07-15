@@ -22,6 +22,7 @@ dependencies = [
     "pypdf>=4.0",
     "reportlab>=4.0",
     "Pillow>=10.0",
+    "epy-editor-kit @ git+https://github.com/estructuraPy/epy_editor_kit.git",
 ]
 
 [project.urls]
@@ -36,7 +37,7 @@ build = ["pyinstaller>=6.6"]
 # distributed package (not on PyPI). It is detected at runtime when
 # installed; do NOT add it here — a public extra pointing at an
 # unregistered PyPI name is a dependency-confusion vector.
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.11.0"]
 
 [project.gui-scripts]
 epy_reports = "epy_reports.app:main"
@@ -70,9 +71,6 @@ convention = "google"
 "test_*.py" = ["D"]
 "build.py" = ["D"]
 "epy_reports.spec" = ["D", "F821", "E501"]
-# Data catalog: one symbol entry per line (label + Spanish tooltip);
-# wrapping the rows to 79 chars would hurt, not help, readability.
-"src/epy_reports/latex_catalog.py" = ["E501"]
 # Embedded JavaScript reflow script lives in a triple-quoted string;
 # its lines are JS, not Python, and must stay verbatim.
 "src/epy_reports/template.py" = ["E501"]

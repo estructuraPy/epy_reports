@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from epy_editor_kit.snippets import KIND_DESCRIPTIONS, Label
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
@@ -16,7 +17,6 @@ from PySide6.QtWidgets import (
 
 from epy_reports import _i18n as i18n
 from epy_reports.bib import BibEntry
-from epy_reports.snippets import KIND_DESCRIPTIONS, Label
 
 CITE_DESCRIPTION = "Citation"
 

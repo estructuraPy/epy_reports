@@ -9,6 +9,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
+from epy_editor_kit import snippets
 from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import (
     QFont,
@@ -29,7 +30,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import snippets
 from epy_reports.checklist_dialog import ChecklistDialog
 from epy_reports.columns_dialog import ThreeColumnDialog, TwoColumnDialog
 from epy_reports.equation_dialog import EquationDialog
