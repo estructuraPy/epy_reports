@@ -53,6 +53,8 @@ ROOT = Path(__file__).resolve().parent
 # Prefer an installed epy_reports; fall back to the in-repo source tree so the
 # example runs straight from a clone without `pip install -e .`.
 try:
+    from epy_editor_kit.snippets import parse_front_matter, parse_header_cells
+
     from epy_reports import themes
     from epy_reports._pdf_footer import (
         add_footer,
@@ -66,9 +68,10 @@ try:
         normalize_page_size,
         render_markdown,
     )
-    from epy_reports.snippets import parse_front_matter, parse_header_cells
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
+    from epy_editor_kit.snippets import parse_front_matter, parse_header_cells
+
     from epy_reports import themes
     from epy_reports._pdf_footer import (
         add_footer,
@@ -82,7 +85,6 @@ except ImportError:
         normalize_page_size,
         render_markdown,
     )
-    from epy_reports.snippets import parse_front_matter, parse_header_cells
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
