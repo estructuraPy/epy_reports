@@ -49,7 +49,7 @@ ePy (código abierto). Su fuente —y los ejemplos hermanos de epy_slides y
 epy_papers— están en GitHub:
 
 - Informe Newmark (epy_reports):
-  <https://github.com/estructuraPy/epy_reports/tree/main/examples/newmark>
+  <https://github.com/estructuraPy/epy_reports/tree/main/tutorials/newmark>
 - Presentación Empire State (epy_slides):
   <https://github.com/estructuraPy/epy_slides/tree/main/examples/empire_state_building>
 - Artículo Puente de Brooklyn (epy_papers):

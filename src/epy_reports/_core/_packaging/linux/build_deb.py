@@ -11,10 +11,10 @@ A .deb is an ar(1) archive with three members in this exact order:
 The ar format uses fixed 60-byte ASCII headers; see ar(5).
 
 Run from the project root:
-    python installer/linux/build_deb.py
+    python src/epy_reports/_core/_packaging/linux/build_deb.py
 
 Output:
-    installer/dist/epy-reports_<version>_all.deb
+    dist/epy-reports_<version>_all.deb
 
 The script prints a verification listing of the ar members at the end.
 """
@@ -34,7 +34,10 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 def _read_pyproject_version() -> str:
     """Single source of truth: read ``version`` from pyproject.toml."""
-    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    # This file lives at src/epy_reports/_core/_packaging/linux/, five
+    # levels below the repo root (linux -> _packaging -> _core ->
+    # epy_reports -> src -> root).
+    pyproject = Path(__file__).resolve().parents[5] / "pyproject.toml"
     try:
         text = pyproject.read_text(encoding="utf-8")
     except OSError:
@@ -70,8 +73,13 @@ DESCRIPTION_LONG = """\
 # refuses direct `pip install`).
 DEPENDS = "python3 (>= 3.10), python3-venv, pandoc"
 
-ROOT = Path(__file__).resolve().parent.parent.parent
-OUT_DIR = ROOT / "installer" / "dist"
+# Repo root: five levels above this file (see _read_pyproject_version).
+ROOT = Path(__file__).resolve().parents[5]
+OUT_DIR = ROOT / "dist"
+
+# Packaging-tooling directory: this file's own parent (sibling of
+# assets_build/, where the source icon PNG lives).
+PACKAGING_DIR = Path(__file__).resolve().parents[1]
 
 # Source tree roots
 SRC_PKG = ROOT / "src" / "epy_reports"
@@ -416,7 +424,7 @@ def _verify_deb(path: Path) -> None:
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    png_path = ROOT / "assets_build" / "epy_reports.png"
+    png_path = PACKAGING_DIR / "assets_build" / "epy_reports.png"
 
     print("Building control.tar.gz ...")
     control_tar = _build_control_tar()

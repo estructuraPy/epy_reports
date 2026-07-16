@@ -23,12 +23,14 @@ The following bundled assets are Copyright (c) 2026
 **Ing. Angel Navarro-Mora M.Sc. / ANM Ingeniería (estructuraPy)** —
 **all rights reserved**:
 
-- `src/epy_reports/assets/branding/` — application logo and the
+- `src/epy_reports/_config/_assets/branding/` — application logo and the
   ANM Ingeniería / estructuraPy brand images.
-- `src/epy_reports/assets/themes/*.epyson` — layout theme definitions.
-- `src/epy_reports/assets/reference_docx/*.docx` — Word reference
+- `src/epy_reports/_config/_assets/themes/*.epyson` — layout theme
+  definitions.
+- `src/epy_reports/_config/_assets/reference_docx/*.docx` — Word reference
   (style) templates.
-- `assets_build/` — source images for the application icon.
+- `src/epy_reports/_core/_packaging/assets_build/` — source images for the
+  application icon.
 
 These assets are licensed to you **only for use as an integral part of
 unmodified epy_reports distributions**. Extracting, modifying, rebranding,

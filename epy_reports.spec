@@ -4,7 +4,9 @@
 from pathlib import Path as _Path
 import pypandoc
 
-_ICON = str(_Path("assets_build/epy_reports.ico"))
+_ICON = str(
+    _Path("src/epy_reports/_core/_packaging/assets_build/epy_reports.ico")
+)
 from PyInstaller.utils.hooks import (
     collect_data_files,
     collect_dynamic_libs,
@@ -15,9 +17,9 @@ datas = []
 datas += collect_data_files("pypandoc", include_py_files=False)
 # epy_reports is built from src/ via pathex (it may not be pip-installed), so
 # collect_data_files cannot resolve it reliably — bundle the assets tree
-# explicitly. Keeping the epy_reports/assets/... layout preserves
+# explicitly. Keeping the epy_reports/_config/_assets/... layout preserves
 # importlib.resources lookups at runtime.
-_ASSETS = _Path("src/epy_reports/assets")
+_ASSETS = _Path("src/epy_reports/_config/_assets")
 datas += [
     (str(p), str(_Path("epy_reports") / p.relative_to("src/epy_reports").parent))
     for p in _ASSETS.rglob("*")
@@ -37,17 +39,17 @@ binaries.append((_pandoc, "pypandoc/files"))
 
 hiddenimports = []
 hiddenimports += collect_submodules("pypandoc")
-# importlib.resources.files("epy_reports.assets.themes") imports these packages
-# dynamically; PyInstaller cannot detect that statically.
+# importlib.resources.files("epy_reports._config._assets.themes") imports
+# these packages dynamically; PyInstaller cannot detect that statically.
 hiddenimports += [
-    "epy_reports.assets",
-    "epy_reports.assets.branding",
-    "epy_reports.assets.themes",
-    "epy_reports.assets.reference_docx",
-    "epy_reports.assets.mathjax",
-    "epy_reports.assets.csl",
-    "epy_reports.assets.mermaid",
-    "epy_reports.assets.nomnoml",
+    "epy_reports._config._assets",
+    "epy_reports._config._assets.branding",
+    "epy_reports._config._assets.themes",
+    "epy_reports._config._assets.reference_docx",
+    "epy_reports._config._assets.mathjax",
+    "epy_reports._config._assets.csl",
+    "epy_reports._config._assets.mermaid",
+    "epy_reports._config._assets.nomnoml",
     # Lazy-imported inside _pdf_footer.add_watermark for the grayscale
     # watermark; PyInstaller may miss the in-function import.
     "PIL",

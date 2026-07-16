@@ -6,7 +6,8 @@ Run from the project root:
 
 This produces the PyInstaller onedir layout under ``dist/epy_reports/``,
 which is the staging folder packaged by the Windows installer
-(``installer/windows/epy_reports.iss``) and the Linux ``.deb`` builder.
+(``src/epy_reports/_core/_packaging/windows/epy_reports.iss``) and the
+Linux ``.deb`` builder.
 It is an intermediate build artifact, not a distributable app — the
 shipped deliverables are the ``setup.exe`` and the ``.deb``.
 """
@@ -91,7 +92,10 @@ def main() -> int:
         _purge_build_artifacts()
 
     print(f"\nDone. Installer input: {produced}")
-    print("Next: build the installer (installer/windows/epy_reports.iss).")
+    print(
+        "Next: build the installer "
+        "(src/epy_reports/_core/_packaging/windows/epy_reports.iss)."
+    )
     return 0
 
 

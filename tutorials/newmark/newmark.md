@@ -46,7 +46,7 @@ document suite. Its source — and the sibling examples for epy_slides and
 epy_papers — are on GitHub:
 
 - Newmark report (epy_reports):
-  <https://github.com/estructuraPy/epy_reports/tree/main/examples/newmark>
+  <https://github.com/estructuraPy/epy_reports/tree/main/tutorials/newmark>
 - Empire State deck (epy_slides):
   <https://github.com/estructuraPy/epy_slides/tree/main/examples/empire_state_building>
 - Brooklyn Bridge paper (epy_papers):

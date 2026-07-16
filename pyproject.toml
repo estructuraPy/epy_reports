@@ -47,10 +47,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/epy_reports"]
-# assets/ is a sub-package (has __init__.py) so hatchling already
+# _config/_assets/ is a sub-package (has __init__.py) so hatchling already
 # walks into it and bundles every asset alongside the .py files —
 # no force-include needed. Re-introducing one would double-add
-# `epy_reports/assets/__init__.py` and fail metadata generation.
+# `epy_reports/_config/_assets/__init__.py` and fail metadata generation.
+# _core/_packaging/ holds dev/build/release tooling (icon generator, .deb
+# assembler, Inno Setup script, build-time source images) that must never
+# ship inside the wheel — exclude it explicitly.
+exclude = ["src/epy_reports/_core/_packaging"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -77,6 +81,7 @@ convention = "google"
 # its lines are JS, not Python, and must stay verbatim.
 "src/epy_reports/template.py" = ["E501"]
 # Example scripts favor readability over library docstring/line rules.
-"examples/**/*.py" = ["D", "SIM105", "E501"]
-# Installer build scripts embed shell heredocs and long literal paths.
-"installer/**/*.py" = ["D", "E402", "E501"]
+"tutorials/**/*.py" = ["D", "SIM105", "E501"]
+# Build/release tooling (installer + dev scripts) embeds shell heredocs,
+# long literal paths and sys.path bootstrap imports.
+"src/epy_reports/_core/_packaging/**/*.py" = ["D", "E402", "E501"]

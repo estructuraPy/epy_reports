@@ -30,11 +30,11 @@ available in English (`newmark.md`) and Spanish (`newmark_es.md`). It uses:
 
 ```bash
 pip install -e ".[build]"   # from the repo root, once
-cd examples/newmark
+cd tutorials/newmark
 python render_all_themes.py
 ```
 
-Output lands in `examples/newmark/_render/themes/` (git-ignored):
+Output lands in `tutorials/newmark/_render/themes/` (git-ignored):
 `newmark_<theme>.html` and `newmark_<theme>.pdf` for each of the nine themes —
 `academic`, `classic`, `corporate`, `creative`, `handwritten`, `minimal`,
 `professional`, `scientific`, `technical`. Both languages are rendered: the

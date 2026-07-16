@@ -6,8 +6,8 @@ epy_reports ships two installer formats:
 
 | Platform | File | Tool |
 |----------|------|------|
-| Windows 10/11 | `installer/dist/epy_reports-setup-0.4.1.exe` | Inno Setup |
-| Ubuntu / Debian | `installer/dist/epy-reports_0.4.1_all.deb` | pure-Python .deb assembler |
+| Windows 10/11 | `dist/epy_reports-setup-0.4.1.exe` | Inno Setup |
+| Ubuntu / Debian | `dist/epy-reports_0.4.1_all.deb` | pure-Python .deb assembler |
 
 Both install the application and register it for `.md`, `.markdown`, and `.qmd` files.
 
@@ -18,7 +18,7 @@ Both install the application and register it for `.md`, `.markdown`, and `.qmd` 
 ### Common
 ```
 pip install pillow          # required for icon generation
-python installer/make_icon.py   # generates assets_build/epy_reports.ico + .png
+python src/epy_reports/_core/_packaging/make_icon.py   # generates assets_build/epy_reports.ico + .png
 ```
 
 ### Windows
@@ -38,10 +38,11 @@ python installer/make_icon.py   # generates assets_build/epy_reports.ico + .png
 ### 1. Generate icons (required before any build)
 
 ```bash
-python installer/make_icon.py
+python src/epy_reports/_core/_packaging/make_icon.py
 ```
 
-Produces `assets_build/epy_reports.ico` (16/32/48/256 px) and `assets_build/epy_reports.png` (256 x 256).
+Produces `src/epy_reports/_core/_packaging/assets_build/epy_reports.ico` (16/32/48/256 px)
+and `src/epy_reports/_core/_packaging/assets_build/epy_reports.png` (256 x 256).
 
 ---
 
@@ -70,16 +71,16 @@ https://jrsoftware.org/isdl.php
 #### Step 3 — Compile the installer
 
 ```cmd
-"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" installer\windows\epy_reports.iss
+"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" src\epy_reports\_core\_packaging\windows\epy_reports.iss
 ```
 
 or if system-wide:
 
 ```cmd
-"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" installer\windows\epy_reports.iss
+"%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" src\epy_reports\_core\_packaging\windows\epy_reports.iss
 ```
 
-Output: `installer/dist/epy_reports-setup-0.4.1.exe`
+Output: `dist/epy_reports-setup-0.4.1.exe`
 
 #### What the Windows installer does
 
@@ -115,17 +116,17 @@ launches `ms-settings:defaultapps` as a convenience shortcut.
 ### 3. Ubuntu .deb
 
 ```bash
-python installer/linux/build_deb.py
+python src/epy_reports/_core/_packaging/linux/build_deb.py
 ```
 
-Output: `installer/dist/epy-reports_0.4.1_all.deb`
+Output: `dist/epy-reports_0.4.1_all.deb`
 
 The script is pure Python (stdlib + pypandoc), runs on Windows or Linux.
 
 #### Install on Ubuntu/Debian
 
 ```bash
-sudo dpkg -i installer/dist/epy-reports_0.4.1_all.deb
+sudo dpkg -i dist/epy-reports_0.4.1_all.deb
 ```
 
 `dpkg -i` is enough — the package's `postinst` pip-installs the Python

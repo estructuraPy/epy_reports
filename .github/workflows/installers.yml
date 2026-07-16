@@ -29,7 +29,7 @@ jobs:
           pip install .[dev] pyinstaller pypandoc-binary pillow
 
       - name: Generate icons
-        run: python installer/make_icon.py
+        run: python src/epy_reports/_core/_packaging/make_icon.py
 
       - name: Build PyInstaller onedir
         run: python build.py
@@ -42,13 +42,13 @@ jobs:
         run: |
           set ISCC="%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
           if not exist %ISCC% set ISCC="%ProgramFiles%\Inno Setup 6\ISCC.exe"
-          %ISCC% installer\windows\epy_reports.iss
+          %ISCC% src\epy_reports\_core\_packaging\windows\epy_reports.iss
 
       - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: epy_reports-windows-installer
-          path: installer/dist/epy_reports-setup-*.exe
+          path: dist/epy_reports-setup-*.exe
           retention-days: 30
 
   # ---------------------------------------------------------------------------
@@ -73,24 +73,24 @@ jobs:
           pip install .[dev] pypandoc-binary pillow
 
       - name: Generate icons
-        run: python installer/make_icon.py
+        run: python src/epy_reports/_core/_packaging/make_icon.py
 
       - name: Build .deb package
-        run: python installer/linux/build_deb.py
+        run: python src/epy_reports/_core/_packaging/linux/build_deb.py
 
       - name: Validate .deb structure (dpkg-deb)
-        run: dpkg-deb --info installer/dist/epy-reports_*.deb
+        run: dpkg-deb --info dist/epy-reports_*.deb
 
       - name: Lint .deb (lintian, non-blocking)
         run: |
           sudo apt-get install -y lintian 2>/dev/null || true
-          lintian installer/dist/epy-reports_*.deb || true
+          lintian dist/epy-reports_*.deb || true
 
       - name: Upload Ubuntu .deb artifact
         uses: actions/upload-artifact@v4
         with:
           name: epy_reports-ubuntu-deb
-          path: installer/dist/epy-reports_*.deb
+          path: dist/epy-reports_*.deb
           retention-days: 30
 
   # ---------------------------------------------------------------------------

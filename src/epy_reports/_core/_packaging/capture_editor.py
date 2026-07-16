@@ -4,7 +4,7 @@ Renders the real Fluent-styled main window with a representative document
 so the bundled manual shows the current UI. Run it on the native platform
 (the offscreen Qt plugin renders empty-font tofu on Windows)::
 
-    python tools/capture_editor.py
+    python src/epy_reports/_core/_packaging/capture_editor.py
 """
 
 from __future__ import annotations
@@ -18,7 +18,9 @@ os.environ.setdefault(
     "QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox --disable-gpu"
 )
 
-ROOT = Path(__file__).resolve().parent.parent
+# Repo root: four levels above this file (_packaging -> _core ->
+# epy_reports -> src -> root).
+ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "src"))
 
 from PySide6.QtCore import (  # noqa: E402
@@ -34,7 +36,7 @@ from epy_reports import themes  # noqa: E402
 from epy_reports._design import document_css  # noqa: E402
 from epy_reports.app import MarkdownWindow  # noqa: E402
 
-OUT = ROOT / "src" / "epy_reports" / "assets" / "screenshots"
+OUT = ROOT / "src" / "epy_reports" / "_config" / "_assets" / "screenshots"
 
 DEMO_DOC = """\
 ---

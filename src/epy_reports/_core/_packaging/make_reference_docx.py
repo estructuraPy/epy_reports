@@ -16,11 +16,11 @@ header/footer image and NO ``ANM-FG`` document code.
 
 Run from the project root::
 
-    python tools/make_reference_docx.py
+    python src/epy_reports/_core/_packaging/make_reference_docx.py
 
-It writes ``src/epy_reports/assets/reference_docx/<theme>.docx`` for every
-bundled theme (the build-time dependency ``python-docx`` is not required at
-runtime — Pandoc consumes the generated files).
+It writes ``src/epy_reports/_config/_assets/reference_docx/<theme>.docx``
+for every bundled theme (the build-time dependency ``python-docx`` is not
+required at runtime — Pandoc consumes the generated files).
 """
 
 from __future__ import annotations
@@ -28,7 +28,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# Repo root: four levels above this file (_packaging -> _core ->
+# epy_reports -> src -> root).
+ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "src"))
 
 from docx import Document  # noqa: E402
@@ -37,7 +39,9 @@ from docx.shared import Inches, Pt, RGBColor  # noqa: E402
 from epy_reports import themes  # noqa: E402
 from epy_reports.themes_base import Theme  # noqa: E402
 
-OUT_DIR = ROOT / "src" / "epy_reports" / "assets" / "reference_docx"
+OUT_DIR = (
+    ROOT / "src" / "epy_reports" / "_config" / "_assets" / "reference_docx"
+)
 
 # US Letter and conventional 1 inch margins for the reference page geometry.
 _LETTER_W = Inches(8.5)

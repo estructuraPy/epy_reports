@@ -2,9 +2,9 @@
 ; Version 0.1.4
 ;
 ; Build from the project root AFTER running `python build.py`:
-;   ISCC.exe installer\windows\epy_reports.iss
+;   ISCC.exe src\epy_reports\_core\_packaging\windows\epy_reports.iss
 ;
-; Output: installer\dist\epy_reports-setup-0.1.4.exe
+; Output: dist\epy_reports-setup-0.1.4.exe
 ;
 ; Design decisions:
 ;   - PrivilegesRequired=lowest  -> per-user install; no UAC prompt.
@@ -31,10 +31,11 @@
 #define AppURL "https://github.com/estructuraPy/epy_reports"
 #define AppId "{{D9B4E1C7-2A6F-4B83-9E5D-7C1A0F3B6E24}"
 #define AppExeName "epy_reports.exe"
-; Paths are relative to the location of this .iss file (installer\windows\).
-#define DistDir "..\..\dist\epy_reports"
-#define IconFile "..\..\assets_build\epy_reports.ico"
-#define OutputDir "..\..\installer\dist"
+; Paths are relative to the location of this .iss file
+; (src\epy_reports\_core\_packaging\windows\).
+#define DistDir "..\..\..\..\..\dist\epy_reports"
+#define IconFile "..\assets_build\epy_reports.ico"
+#define OutputDir "..\..\..\..\..\dist"
 
 [Setup]
 AppId={#AppId}
