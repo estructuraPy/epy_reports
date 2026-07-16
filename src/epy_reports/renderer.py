@@ -31,7 +31,7 @@ from epy_reports.template import build_html_document
 
 # Citation Style Language: short names users can type in YAML (``csl:
 # ieee``) or pick from the View > Citation style menu, mapped to the
-# bundled .csl file under ``epy_reports/assets/csl/``.
+# bundled .csl file under ``epy_reports/_config/_assets/csl/``.
 CSL_STYLES: dict[str, str] = {
     "ieee":      "ieee.csl",
     "apa":       "apa.csl",
@@ -143,7 +143,7 @@ def _resolve_csl(
     key = (csl_value or DEFAULT_CSL_STYLE).strip().lower()
     if key in CSL_STYLES:
         try:
-            anchor = resources.files("epy_reports.assets.csl")
+            anchor = resources.files("epy_reports._config._assets.csl")
             target = anchor.joinpath(CSL_STYLES[key])
             with resources.as_file(target) as path:
                 if Path(path).is_file():

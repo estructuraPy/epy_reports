@@ -102,11 +102,13 @@ def test_real_export_corporate_template(tmp_path: Path):
 
     # Resolve the bundled corporate template via importlib.resources.
     try:
-        pkg = importlib.resources.files("epy_reports.assets.reference_docx")
+        pkg = importlib.resources.files(
+            "epy_reports._config._assets.reference_docx"
+        )
         ref_resource = pkg / "corporate.docx"
         with importlib.resources.as_file(ref_resource) as ref_path:
             assert ref_path.is_file(), (
-                "corporate.docx not found in assets/reference_docx"
+                "corporate.docx not found in _config/_assets/reference_docx"
             )
             out = tmp_path / "out_corporate.docx"
             export_docx(SAMPLE_MD, out, reference_doc=ref_path)

@@ -590,7 +590,7 @@ bg = themes.get("academic").css_vars["bg"]   # color de fondo de página
 
 La exportación a PDF pagina con Paged.js dentro de Qt WebEngine, por lo que
 requiere una `QApplication`. La implementación de referencia es
-`examples/newmark/render_all_themes.py`: renderice con
+`tutorials/newmark/render_all_themes.py`: renderice con
 `render_markdown(..., for_export=True)`, cargue el HTML en un
 `QWebEngineView` fuera de pantalla (`WA_DontShowOnScreen`), espere a
 `window._paged_done` y luego llame a `page.printToPdf(...)` con márgenes de

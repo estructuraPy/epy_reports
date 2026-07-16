@@ -49,7 +49,7 @@ def _load_manual_text(filename: str = "welcome.md") -> str:
 
     The user manual is a full document that demonstrates every content type
     with its syntax and documents the Python API; it ships as Markdown under
-    ``assets/`` so it can be edited freely. It exists in English
+    ``_config/_assets/`` so it can be edited freely. It exists in English
     (``welcome.md``, the preloaded welcome tab) and Spanish
     (``welcome_es.md``); both are openable from the Help menu.
 
@@ -59,7 +59,7 @@ def _load_manual_text(filename: str = "welcome.md") -> str:
     (a relative reference would not resolve in the preview or the export).
     """
     text = (
-        importlib.resources.files("epy_reports.assets")
+        importlib.resources.files("epy_reports._config._assets")
         .joinpath(filename)
         .read_text(encoding="utf-8")
     )
@@ -83,7 +83,7 @@ def _load_manual_text(filename: str = "welcome.md") -> str:
     # resolves them to the localized screenshot variants (``*_es.png``) when
     # those exist, so it shows the UI in Spanish. The logo is shared.
     is_es = Path(filename).stem.endswith("_es")
-    root = importlib.resources.files("epy_reports.assets")
+    root = importlib.resources.files("epy_reports._config._assets")
     for placeholder, (subdir, name) in assets.items():
         if is_es and subdir == "screenshots":
             stem, _, ext = name.rpartition(".")
@@ -1378,7 +1378,7 @@ class MarkdownWindow(QMainWindow):
         """
         try:
             pkg = importlib.resources.files(
-                "epy_reports.assets.reference_docx"
+                "epy_reports._config._assets.reference_docx"
             )
             ref = pkg / f"{theme_id}.docx"
             # Materialise the resource as a real path (works for both

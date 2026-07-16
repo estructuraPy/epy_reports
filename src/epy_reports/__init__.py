@@ -79,7 +79,7 @@ class Report:
 
         try:
             anchor = resources.files(
-                "epy_reports.assets.reference_docx"
+                "epy_reports._config._assets.reference_docx"
             ).joinpath(f"{self.theme_id}.docx")
             with resources.as_file(anchor) as p:
                 return Path(p) if Path(p).is_file() else None

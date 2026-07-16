@@ -31,7 +31,7 @@ def _load_branding_pixmap(name: str) -> QPixmap:
     both from a source install and from a frozen (zip-backed) build.
 
     Args:
-        name: Filename inside ``epy_reports.assets.branding``,
+        name: Filename inside ``epy_reports._config._assets.branding``,
             e.g. ``"epy_reports.png"``.
 
     Returns:
@@ -39,7 +39,9 @@ def _load_branding_pixmap(name: str) -> QPixmap:
         or an empty ``QPixmap`` when the resource cannot be found.
     """
     try:
-        pkg = importlib.resources.files("epy_reports.assets.branding")
+        pkg = importlib.resources.files(
+            "epy_reports._config._assets.branding"
+        )
         data = (pkg / name).read_bytes()
     except (FileNotFoundError, TypeError, ModuleNotFoundError):
         return QPixmap()

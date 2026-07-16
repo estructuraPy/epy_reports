@@ -83,7 +83,7 @@ def _load_base_css() -> str:
     render, avoiding a filesystem round-trip per document update.
     """
     return (
-        resources.files("epy_reports.assets")
+        resources.files("epy_reports._config._assets")
         .joinpath("style.css")
         .read_text(encoding="utf-8")
     )
@@ -103,7 +103,7 @@ def _load_mathjax_script() -> str:
     on every render call.
     """
     js = (
-        resources.files("epy_reports.assets")
+        resources.files("epy_reports._config._assets")
         .joinpath("mathjax")
         .joinpath("tex-svg-full.js")
         .read_text(encoding="utf-8")
@@ -112,10 +112,10 @@ def _load_mathjax_script() -> str:
 
 
 _DIAGRAM_PKG = {
-    "mermaid": [("epy_reports.assets.mermaid", "mermaid.min.js")],
+    "mermaid": [("epy_reports._config._assets.mermaid", "mermaid.min.js")],
     "nomnoml": [
-        ("epy_reports.assets.nomnoml", "graphre.js"),
-        ("epy_reports.assets.nomnoml", "nomnoml.js"),
+        ("epy_reports._config._assets.nomnoml", "graphre.js"),
+        ("epy_reports._config._assets.nomnoml", "nomnoml.js"),
     ],
 }
 
@@ -282,7 +282,7 @@ def _pagedjs_head(page_size: str, margin: str = DEFAULT_PAGE_MARGIN) -> str:
         "</style>\n"
     )
     polyfill = (
-        resources.files("epy_reports.assets")
+        resources.files("epy_reports._config._assets")
         .joinpath("pagedjs")
         .joinpath("paged.polyfill.min.js")
         .read_text(encoding="utf-8")

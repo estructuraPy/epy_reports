@@ -98,7 +98,7 @@ HTML (`Ctrl+Shift+P`) and DOCX (`Ctrl+Shift+D`) exports preserve the active them
 
 - **DOCX** — Pandoc is invoked with a `--reference-doc` argument pointing to a bundled
   Word template for the active theme (one `.docx` file per theme, stored under
-  `assets/reference_docx/`).  The reference template carries the theme's fonts and
+  `_config/_assets/reference_docx/`).  The reference template carries the theme's fonts and
   paragraph styles, so headings and body text match the on-screen layout.  If a
   template file is missing the export falls back to Pandoc's default styles.
 
@@ -119,9 +119,10 @@ src/epy_reports/
 ├── snippets.py        ← editor snippets
 ├── xref_dialog.py     ← cross-reference picker
 ├── winreg_assoc.py    ← Windows shell association
-└── assets/
-    ├── style.css
-    └── themes/*.epyson
+└── _config/
+    └── _assets/
+        ├── style.css
+        └── themes/*.epyson
 ```
 
 ## License

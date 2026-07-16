@@ -1,6 +1,6 @@
 """Build :class:`Theme` objects from epy_docs ``.epyson`` layouts.
 
-Each layout file in ``assets/themes/*.epyson`` defines a font stack,
+Each layout file in ``_config/_assets/themes/*.epyson`` defines a font stack,
 typography scale, palette and per-callout palette mappings. This
 module loads them at import time and exposes a ``Theme`` per layout
 so the GUI can offer the *same* themes the document pipeline uses.
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import QApplication
 
 from epy_reports.themes_base import Theme
 
-ASSETS_PACKAGE = "epy_reports.assets.themes"
+ASSETS_PACKAGE = "epy_reports._config._assets.themes"
 
 # Files in the themes/ folder that are not themable layouts.
 _NON_LAYOUTS = {"colors.epyson", "translations.epyson"}
@@ -341,7 +341,7 @@ def user_themes_dir() -> Path:
 
     Lives under ``QStandardPaths.AppConfigLocation`` so custom themes
     persist across sessions and are writable even from the frozen build
-    (the bundled ``assets/themes`` are read-only).
+    (the bundled ``_config/_assets/themes`` are read-only).
     """
     from PySide6.QtCore import QStandardPaths  # noqa: PLC0415
 

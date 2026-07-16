@@ -577,7 +577,7 @@ bg = themes.get("academic").css_vars["bg"]   # page background color
 
 PDF export paginates with Paged.js inside Qt WebEngine, so it needs a
 `QApplication`. The reference implementation is
-`examples/newmark/render_all_themes.py`: render with
+`tutorials/newmark/render_all_themes.py`: render with
 `render_markdown(..., for_export=True)`, load the HTML into an offscreen
 `QWebEngineView` (`WA_DontShowOnScreen`), wait for `window._paged_done`,
 then call `page.printToPdf(...)` with **zero** page margins.

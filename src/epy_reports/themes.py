@@ -1,7 +1,7 @@
 """Theme catalogue assembled from the epy_docs layouts (``.epyson``).
 
 Every theme — for both the Qt chrome and the rendered preview — is
-derived from a layout file under ``assets/themes/*.epyson`` so that
+derived from a layout file under ``_config/_assets/themes/*.epyson`` so that
 ``epy_reports`` mirrors the visual identities defined by the document
 pipeline.
 
