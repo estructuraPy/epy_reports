@@ -38,7 +38,13 @@ def window(qapp):
         yield win
     finally:
         i18n.set_language("en")
+        # Flush the deferred delete NOW (see test_app.py): zombie windows
+        # with WebEngine previews crash Qt's native teardown at exit.
         win.deleteLater()
+        from PySide6.QtCore import QEvent
+
+        qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        qapp.processEvents()
 
 
 # ---------------------------------------------------------------------------

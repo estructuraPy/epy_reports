@@ -26,11 +26,11 @@ __all__ = ["Report", "__version__"]
 
 
 def _pin_system_icu() -> None:
-    """Bind Qt's ICU imports to the Windows system ICU before Qt loads.
+    r"""Bind Qt's ICU imports to the Windows system ICU before Qt loads.
 
     PySide6 >= 6.9 links ``Qt6Core.dll`` against the unversioned Windows ICU
-    (``System32\\icuuc.dll``, shipped since Windows 10 1703). Conda
-    environments register ``Library\\bin`` as a DLL directory, and the conda
+    (``System32\icuuc.dll``, shipped since Windows 10 1703). Conda
+    environments register ``Library\bin`` as a DLL directory, and the conda
     ``icu`` package exposes its own unversioned ``icuuc.dll`` there with
     version-suffixed exports — the loader binds that copy first and every
     ``PySide6.Qt*`` import dies with ``WinError 127`` (procedure not found).
@@ -42,7 +42,8 @@ def _pin_system_icu() -> None:
         return
     import ctypes  # noqa: PLC0415
 
-    system_icu = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "icuuc.dll"
+    system_root = os.environ.get("SYSTEMROOT", r"C:\Windows")
+    system_icu = Path(system_root) / "System32" / "icuuc.dll"
     if not system_icu.is_file():
         return
     try:

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] — 2026-07-17
 
 ### Fixed
+- **Language switch after widget destruction.** The i18n observer registry
+  never dropped callbacks of destroyed windows, so any later
+  ``set_language`` hit shiboken's "already deleted" error. The registry now
+  self-heals: observers whose Qt objects are gone are removed on first
+  failure; genuine relabel errors still propagate.
 - **Qt startup crash in conda environments (Windows).** PySide6 >= 6.9 links
   Qt against the unversioned Windows system ICU (`System32\icuuc.dll`), but
   conda registers `Library\bin` as a DLL directory and its `icu` package

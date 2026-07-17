@@ -1,6 +1,6 @@
 [project]
 name = "epy_reports"
-version = "0.2.0"
+dynamic = ["version"]
 description = "Markdown report editor with live preview and one-click PDF export."
 authors = [
     { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },
@@ -46,6 +46,9 @@ epy_reports = "epy_reports.app:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/epy_reports/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/epy_reports"]

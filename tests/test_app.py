@@ -39,7 +39,14 @@ def window(qapp):
     finally:
         # Reset language so other tests/modules see the English default.
         i18n.set_language("en")
+        # Flush the deferred delete NOW: without a running event loop the
+        # window (and its WebEngine preview) would linger until interpreter
+        # exit and crash Qt's native teardown (0xC0000005).
         win.deleteLater()
+        from PySide6.QtCore import QEvent
+
+        qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        qapp.processEvents()
 
 
 # ---------------------------------------------------------------------------

@@ -226,7 +226,7 @@ def test_render_document_docx():
 
 
 def test_render_document_keep_lists_together_opt_out():
-    """render_document forwards keep_lists_together=False to the constructor."""
+    """render_document forwards keep_lists_together=False to the writer."""
     mock_writer = MagicMock()
     mock_writer.generate.return_value = {}
     mock_writer_cls = MagicMock(return_value=mock_writer)

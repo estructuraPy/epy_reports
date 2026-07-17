@@ -317,13 +317,25 @@ def tr(text: str) -> str:
 
 
 def set_language(lang: str) -> None:
-    """Switch the active language and relabel every registered widget."""
+    """Switch the active language and relabel every registered widget.
+
+    Observers whose underlying Qt objects were destroyed (closed windows)
+    are dropped on first failure instead of poisoning every later language
+    switch — nothing unregisters them explicitly, so the registry heals
+    itself here.
+    """
     global _lang
     if lang not in LANGUAGES or lang == _lang:
         return
     _lang = lang
     for callback in list(_observers):
-        callback()
+        try:
+            callback()
+        except RuntimeError as exc:
+            if "already deleted" in str(exc):
+                _observers.remove(callback)
+            else:
+                raise
 
 
 def current_language() -> str:

@@ -45,6 +45,53 @@ def test_tr_identity_in_english():
     assert i18n.tr("Save") == "Save"
 
 
+def test_dead_widget_observer_dropped_on_language_switch():
+    """An observer whose Qt object died is removed instead of raising.
+
+    Windows register relabel callbacks but nothing unregisters them on
+    destruction; the registry must self-heal on the shiboken
+    'already deleted' failure and keep notifying the healthy observers.
+    """
+    calls = []
+
+    def dead_observer():
+        raise RuntimeError(
+            "libshiboken: Internal C++ object (QAction) already deleted."
+        )
+
+    def live_observer():
+        calls.append(i18n.current_language())
+
+    i18n._observers.append(dead_observer)
+    i18n._observers.append(live_observer)
+    try:
+        i18n.set_language("es")
+        assert dead_observer not in i18n._observers
+        assert calls == ["es"]
+        i18n.set_language("en")
+        assert calls == ["es", "en"]
+    finally:
+        for cb in (dead_observer, live_observer):
+            if cb in i18n._observers:
+                i18n._observers.remove(cb)
+
+
+def test_other_runtime_errors_still_propagate():
+    """Only the shiboken already-deleted failure is absorbed."""
+
+    def broken_observer():
+        raise RuntimeError("boom")
+
+    i18n._observers.append(broken_observer)
+    try:
+        with pytest.raises(RuntimeError, match="boom"):
+            i18n.set_language("es")
+        assert broken_observer in i18n._observers
+    finally:
+        i18n._observers.remove(broken_observer)
+        i18n.set_language("en")
+
+
 def test_tr_translates_in_spanish():
     """In Spanish, known keys are translated."""
     i18n.set_language("es")

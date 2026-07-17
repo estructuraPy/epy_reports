@@ -42,7 +42,13 @@ def tab(qapp):
         yield t
     finally:
         t.cleanup_preview_tmp()
+        # Flush the deferred delete NOW (see test_app.py): zombie tabs with
+        # WebEngine previews crash Qt's native teardown at exit.
         t.deleteLater()
+        from PySide6.QtCore import QEvent
+
+        qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        qapp.processEvents()
 
 
 # ---------------------------------------------------------------------------
