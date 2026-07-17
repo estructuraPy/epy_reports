@@ -22,6 +22,17 @@
     --quote-rule:    #d1d9e0;
     --table-header-bg:   #f6f8fa;
     --table-header-text: #1f2328;
+    --caption-color: var(--fg-muted);
+
+    /* Graduated heading ramp (h1 boldest -> h6 quietest). Real themes
+       compute a mixed ramp via epyson._heading_ramp; these are the
+       fallback values used when no theme CSS overrides them. */
+    --h1-color: var(--heading-color);
+    --h2-color: var(--heading-color);
+    --h3-color: var(--heading-color);
+    --h4-color: var(--heading-color);
+    --h5-color: var(--fg-muted);
+    --h6-color: var(--fg-muted);
 
     /* Links + accents */
     --link: #0969da;
@@ -122,12 +133,15 @@ h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-family-headings);
     line-height: 1.25;
     margin: 1.8em 0 0.6em;
-    color: var(--heading-color);
 }
 
+/* Each level picks up its own graduated ramp color (--h1-color..
+   --h6-color, computed per-theme by epyson._heading_ramp); falls back
+   to the flat heading/muted color when a theme leaves it unset. */
 h1 {
     font-size: var(--h1-size);
     font-weight: var(--h1-weight);
+    color: var(--h1-color, var(--heading-color));
     border-bottom: 2px solid var(--heading-rule);
     padding-bottom: 0.25em;
     margin-top: 0.5em;
@@ -135,15 +149,18 @@ h1 {
 h2 {
     font-size: var(--h2-size);
     font-weight: var(--h2-weight);
+    color: var(--h2-color, var(--heading-color));
     border-bottom: 1px solid var(--heading-rule);
     padding-bottom: 0.2em;
 }
-h3 { font-size: var(--h3-size); font-weight: var(--h3-weight); }
-h4 { font-size: var(--h4-size); font-weight: var(--h4-weight); }
+h3 { font-size: var(--h3-size); font-weight: var(--h3-weight);
+     color: var(--h3-color, var(--heading-color)); }
+h4 { font-size: var(--h4-size); font-weight: var(--h4-weight);
+     color: var(--h4-color, var(--heading-color)); }
 h5 { font-size: var(--h5-size); font-weight: var(--h5-weight);
-     color: var(--fg-muted); }
+     color: var(--h5-color, var(--fg-muted)); }
 h6 { font-size: var(--h6-size); font-weight: var(--h6-weight);
-     color: var(--fg-muted); }
+     color: var(--h6-color, var(--fg-muted)); }
 
 p, ul, ol, blockquote, table, pre, figure { margin: 0 0 1em; }
 
@@ -256,6 +273,7 @@ table {
     border-collapse: collapse;
     width: 100%;
     font-size: 0.95em;
+    font-variant-numeric: tabular-nums;
 }
 table th, table td {
     border: 1px solid var(--border);
@@ -267,6 +285,7 @@ table th {
     color: var(--table-header-text);
     text-align: left;
     font-weight: 700;
+    border-bottom: 2px solid var(--heading-rule);
 }
 table tr:nth-child(even) td { background: var(--bg-stripe); }
 table caption {
@@ -278,6 +297,15 @@ table caption {
     text-align: left;
     font-weight: 700;
 }
+
+/* A wide table (e.g. many columns of numeric results) scrolls inside its
+   own box instead of overflowing the page or shrinking unreadably. Applied
+   by renderer._wrap_wide_tables around every top-level <table>. */
+.table-wrap {
+    overflow-x: auto;
+    margin: 0 0 1em;
+}
+.table-wrap table { margin-bottom: 0; }
 
 /* ---------- Figures ---------- */
 
@@ -298,8 +326,9 @@ figure img {
 }
 figure figcaption {
     display: block;
-    color: var(--fg-muted);
+    color: var(--caption-color);
     font-size: var(--caption-size);
+    font-style: italic;
     margin-top: 0.5em;
     text-align: center;
     font-weight: 700;
@@ -343,7 +372,7 @@ ul[class~="task-list"] li {
 .callout {
     border: 1px solid var(--border);
     border-left-width: 6px;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 0.9em 1.1em;
     margin: 0 0 1em;
     background: var(--bg);
@@ -565,6 +594,17 @@ section.cover-page .cover-title {
     font-weight: var(--h1-weight);
     color: var(--heading-color);
 }
+/* A short accent bar under the cover title ties it to the theme's link
+   color, echoing the same accent used for headings and the TOC rule. */
+section.cover-page .cover-title::after {
+    content: "";
+    display: block;
+    width: 4.5em;
+    height: 0.2em;
+    margin: 0.5em auto 0;
+    border-radius: 2px;
+    background: var(--link);
+}
 section.cover-page .cover-subtitle {
     margin: 0.3em 0 1.2em;
     font-size: var(--h3-size);
@@ -621,6 +661,58 @@ body.paged .doc-content {
 body.paged.size-letter .doc-content { width: 215.9mm; min-height: 279.4mm; }
 body.paged.size-a4 .doc-content     { width: 210mm;   min-height: 297mm; }
 body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
+
+/* ---------- Sticky TOC sidebar (wide screens only) ---------- */
+
+/* On a wide viewport the table-of-contents block becomes a fixed left
+   rail instead of an inline block, so long documents stay navigable.
+   Scoped to `@media screen` (never applies to print or the Paged.js PDF
+   export, which run under `@media print`) and excludes the paged preview
+   (`body.paged`), whose sheet layout has its own centered width and would
+   collide with a fixed-position rail. */
+@media screen and (min-width: 1200px) {
+    body:not(.paged) nav.toc:first-of-type {
+        position: fixed;
+        top: 2.5rem;
+        left: max(1rem, calc((100vw - 860px) / 2 - 264px));
+        width: 240px;
+        max-height: calc(100vh - 5rem);
+        overflow-y: auto;
+        margin: 0;
+        padding: 0.8em 1em 1em;
+    }
+    /* Dotted leaders and page numbers only make sense in the inline TOC
+       (or the printed index); the fixed rail is a pure navigation aid. */
+    body:not(.paged) nav.toc:first-of-type .toc-dots,
+    body:not(.paged) nav.toc:first-of-type .page-num {
+        display: none;
+    }
+}
+
+/* ---------- Small-screen responsive tuning ---------- */
+
+@media (max-width: 640px) {
+    body { margin: 1.2rem auto; padding: 0 1rem 3rem; }
+    h1 { font-size: calc(var(--h1-size) * 0.82); }
+    h2 { font-size: calc(var(--h2-size) * 0.85); }
+    h3 { font-size: calc(var(--h3-size) * 0.9); }
+    table th, table td { padding: 0.4em 0.5em; font-size: 0.85em; }
+    nav.toc, nav.list-of-figures, nav.list-of-tables, nav.list-of-equations {
+        padding: 0.5em 0.7em 0.7em;
+    }
+    section.cover-page .cover-title { font-size: calc(var(--h1-size) * 1.1); }
+}
+
+/* ---------- Plotly figures ---------- */
+
+/* A WebGL/canvas figure cannot be split across a page break, so keep it
+   whole. In the Paged.js PDF export WebGL does not print reliably at
+   all — authors are expected to supply `fallback=` on the fence, which
+   `_plotly.expand_plotly(static=True)` substitutes for the export. */
+.epy-plotly {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
 
 /* ---------- Print / PDF tuning ---------- */
 

@@ -66,6 +66,25 @@ def _mix(c1: str, c2: str, t: float) -> str:
     return f"#{r:02X}{g:02X}{b:02X}"
 
 
+# Heading-ramp blend weights for h1..h6, applied by :func:`_heading_ramp`.
+_HEADING_RAMP_STEPS: tuple[float, ...] = (0.0, 0.12, 0.24, 0.34, 0.44, 0.5)
+
+
+def _heading_ramp(header_color: str, muted_color: str) -> dict[str, str]:
+    """Return graduated ``h1-color``..``h6-color`` CSS variables.
+
+    Each level mixes ``header_color`` further toward ``muted_color`` (via
+    :func:`_mix`), so the heading hierarchy reads as one coordinated ramp
+    — h1 the boldest, h6 the quietest — instead of six flat, identically
+    colored levels. Any theme can still override individual ``h*-color``
+    entries by placing them directly in its computed ``css_vars``.
+    """
+    return {
+        f"h{i + 1}-color": _mix(header_color, muted_color, t)
+        for i, t in enumerate(_HEADING_RAMP_STEPS)
+    }
+
+
 def _lighten(c: str, t: float) -> str:
     """Mix ``c`` toward white by factor ``t`` in [0, 1]."""
     return _mix(c, "#FFFFFF", t)
@@ -253,6 +272,7 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
     css_vars: dict[str, str] = {
         "fg": fg,
         "fg-muted": caption_color,
+        "caption-color": caption_color,
         "bg": bg,
         "bg-soft": code_bg,
         "bg-stripe": table_stripe_bg,
@@ -303,6 +323,7 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
         "tok-ot":  accent_link,
         "tok-at":  accent_yellow,
     }
+    css_vars.update(_heading_ramp(header_color, caption_color))
     css_vars.update(_callout_vars(raw.get("callouts", {}), palettes))
 
     # ---- Qt palette -------------------------------------------------
