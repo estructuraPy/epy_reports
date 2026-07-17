@@ -4,6 +4,16 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-07-17
+
+### Added
+- **Unbreakable lists forwarding.** `docs_bridge.render_document()` accepts
+  `keep_lists_together=True` (default) and forwards it to
+  `epy_docs.DocumentWriter`: PDF exports keep bullet/numbered lists on one
+  page — the whole list, with its intro line, moves to the next page instead
+  of splitting. Requires epy_docs >= 1.1.0; affects PDF only (epy_docs DOCX
+  templates keep lists together unconditionally).
+
 ## [0.2.0] — 2026-07-16
 
 ### Added

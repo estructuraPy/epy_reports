@@ -138,6 +138,7 @@ def test_render_document_calls_writer_correctly():
         "report",
         layout_style="corporate",
         output_dir=str(out_dir),
+        keep_lists_together=True,
     )
     # add_quarto_file
     mock_writer.add_quarto_file.assert_called_once_with(
@@ -221,6 +222,41 @@ def test_render_document_docx():
         pdf=False,
         html=False,
         docx=True,
+    )
+
+
+def test_render_document_keep_lists_together_opt_out():
+    """render_document forwards keep_lists_together=False to the constructor."""
+    mock_writer = MagicMock()
+    mock_writer.generate.return_value = {}
+    mock_writer_cls = MagicMock(return_value=mock_writer)
+
+    with patch(
+        "epy_reports.docs_bridge.epy_docs_available", return_value=True
+    ):
+        import sys
+
+        fake_epy_docs = MagicMock()
+        fake_epy_docs.DocumentWriter = mock_writer_cls
+
+        with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
+            from epy_reports.docs_bridge import render_document
+
+            render_document(
+                source_path=Path("/tmp/doc.md"),
+                layout="classic",
+                document_type="report",
+                output_dir=Path("/tmp/out"),
+                pdf=True,
+                html=False,
+                keep_lists_together=False,
+            )
+
+    mock_writer_cls.assert_called_once_with(
+        "report",
+        layout_style="classic",
+        output_dir=str(Path("/tmp/out")),
+        keep_lists_together=False,
     )
 
 

@@ -91,6 +91,7 @@ def render_document(
     pdf: bool,
     html: bool,
     docx: bool = False,
+    keep_lists_together: bool = True,
 ) -> dict:
     """Render ``source_path`` through epy_docs and return the result.
 
@@ -107,6 +108,11 @@ def render_document(
         pdf: When ``True``, request PDF output.
         html: When ``True``, request HTML output.
         docx: When ``True``, request Word (.docx) output.
+        keep_lists_together: When ``True`` (default), PDF output keeps
+            bullet/numbered lists on one page (the whole list moves to
+            the next page instead of splitting). Forwarded to
+            ``DocumentWriter``; affects PDF only. DOCX output keeps
+            lists together unconditionally via the reference templates.
 
     Returns:
         The ``dict`` returned by ``DocumentWriter.generate()``.
@@ -125,6 +131,7 @@ def render_document(
         document_type,
         layout_style=layout,
         output_dir=str(output_dir),
+        keep_lists_together=keep_lists_together,
     )
     writer.add_quarto_file(
         str(source_path),
