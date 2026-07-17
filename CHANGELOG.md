@@ -4,6 +4,71 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-07-16
+
+### Added
+- **Plotly figures.** A ```` ```{.plotly ...} ```` fenced block renders as
+  an interactive Plotly.js figure in the live preview and the continuous
+  HTML export, themed automatically from the active document palette
+  (author layout settings inside the fence always win over the derived
+  theme defaults). `fallback=path/to/image.png` supplies a static image
+  used for the paginated PDF export — WebGL canvases do not print
+  reliably — and for the Word/DOCX export, which has no interactive
+  renderer at all; `height=` sets the figure's CSS height (defaults to
+  `420px`). Ships `plotly.js` v2.32.0 (MIT) as a bundled, offline asset,
+  injected only into documents that actually use it.
+- **Verdict banner, checklist and status pills.** `::: {.verdict
+  .pass|.fail|.warn}` renders a headline PASS/FAIL/WARN banner; `:::
+  {.checklist}` styles a task list as a review punch-list; `[text]{.badge
+  .pass|.fail|.warn}` colors an inline status pill from the same
+  pass/fail/warn palette (aliased to the callout tip/caution/warning
+  colors via `--epy-pass`/`--epy-fail`/`--epy-warn`). Both new blocks
+  join the *Insert ▸ Design block* picker alongside cards and big stats.
+- **Graduated heading colors.** Every theme now computes `--h1-color`
+  through `--h6-color` by mixing the theme's header color toward its
+  muted text color (h1 boldest, h6 quietest), so the heading hierarchy
+  reads as one coordinated ramp instead of six flat, identically
+  colored levels.
+- **Table and typography polish.** Table headers carry an accented
+  underline (`--heading-rule`), numeric columns use `tabular-nums`, and
+  a wide table is wrapped in a horizontally-scrolling `.table-wrap` box
+  instead of overflowing the page or shrinking unreadably. Figure
+  captions are now italicized and use a dedicated `--caption-color`
+  variable. Callouts use an 8px border radius. The cover page carries a
+  short accent bar under the title.
+- **Sticky table of contents.** On a screen at least 1200px wide, the
+  first `[[toc]]` block becomes a fixed left navigation rail (its dotted
+  leaders and page-number column are hidden there); the paginated PDF
+  export and the paged preview are unaffected.
+- **Small-screen responsive tuning.** A `max-width: 640px` breakpoint
+  tightens spacing and scales headings and table cells down for narrow
+  viewports.
+
+### Changed
+- `build_html_document` gained a `plotly: bool` parameter (injected
+  after the diagram block); the Plotly.js bundle and its
+  `window._plotly_done` load gate — joined into the same wait condition
+  as `window._mathjax_done` / `window._diagrams_done` — are only
+  injected when the document actually contains an interactive figure.
+- New runtime dependencies **plotly** (`>=5.15`) and **matplotlib**
+  (`>=3.5`), used by the bundled tutorial example to generate a static
+  figure fallback.
+
+## [0.1.6] — 2026-06-27
+
+### Fixed
+- Live preview no longer crashes on a Pandoc conversion error; a stale
+  deprecated CLI flag was also dropped.
+- `export_docx` now strips YAML front matter before invoking Pandoc and
+  passes document metadata (title/author/date) through explicitly.
+- The academic layout's palette description no longer carries leftover
+  third-party branding text.
+
+### Changed
+- Repository housekeeping: bundled assets moved under `_config/_assets`,
+  build/release tooling consolidated under `_core/_packaging`, and a
+  `housekeeper` tests-layout audit script was added.
+
 ## [0.1.5] — 2026-06-24
 
 ### Changed

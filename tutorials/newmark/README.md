@@ -15,6 +15,9 @@ available in English (`newmark.md`) and Spanish (`newmark_es.md`). It uses:
 - Figures with captions and width (`{#fig-portrait width=40%}`), including SVG
 - Tables with captions
 - Display equations (the Newmark-β time-integration method) typeset by MathJax
+- An interactive Plotly figure (`{.plotly fallback=figs/drift.png}`), a
+  `::: {.verdict .pass}` banner, a `::: {.checklist}` block and inline
+  `[PASS]{.badge .pass}` / `[FAIL]{.badge .fail}` status pills
 
 ## Files
 
@@ -24,7 +27,27 @@ available in English (`newmark.md`) and Spanish (`newmark_es.md`). It uses:
 | `newmark_es.md` | The same document in Spanish |
 | `newmark.bib` | BibTeX bibliography |
 | `newmark_portrait.jpg`, `sdof.svg`, `beta_assumptions.svg` | Figures |
+| `figs/drift.png` | Static fallback for the interactive Plotly figure (PDF/DOCX export) |
 | `render_all_themes.py` | Renders the document once per theme to HTML + PDF, in both languages |
+
+## A note on the interactive figure (WebGL / PDF)
+
+The verification section near the end of the report embeds a live Plotly.js
+chart via a ```` ```{.plotly fallback=figs/drift.png} ```` fence. Plotly
+renders bar/scatter charts like this one through WebGL canvases, which:
+
+- **render correctly** in the live preview and in the HTML export (`Ctrl+Shift+P`)
+  — the chart is fully interactive, including the `updatemenus` dropdown;
+- **do not print** through Chromium's `printToPdf` (used for the paginated
+  PDF export) or through Pandoc's DOCX writer — neither has a WebGL
+  renderer. For those two exports, epy_reports substitutes the fence's
+  declared `fallback=` image (`figs/drift.png`, generated once with
+  matplotlib) instead of the live chart.
+
+This is why every `{.plotly ...}` fence used for anything that might be
+printed should declare a `fallback=` image; a fence without one stays
+interactive in the PDF export "best effort" (the WebGL canvas is simply
+absent from the printed page).
 
 ## Render it across every theme
 

@@ -54,6 +54,7 @@ ROOT = Path(__file__).resolve().parent
 # example runs straight from a clone without `pip install -e .`.
 try:
     from epy_reports import themes
+    from epy_reports._design import document_css
     from epy_reports._pdf_footer import (
         add_footer,
         add_header,
@@ -70,6 +71,7 @@ try:
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
     from epy_reports import themes
+    from epy_reports._design import document_css
     from epy_reports._pdf_footer import (
         add_footer,
         add_header,
@@ -191,10 +193,14 @@ class ThemeExporter:
         theme = themes.get(self.theme_id)
         self._page_bg = theme.css_vars.get("bg", "")
         page_size = normalize_page_size(self.meta.get("page-size"))
+        # document_css() (not the bare theme.to_css()) also carries the
+        # design-component CSS (disclosure, verdict, checklist, badges,
+        # ...) this example exercises — a plain theme stylesheet leaves
+        # them unstyled.
         html = render_markdown(
             self.source,
             base_dir=ROOT,
-            theme_css=theme.to_css(),
+            theme_css=document_css(theme),
             paged=False,
             page_size=page_size,
             for_export=True,

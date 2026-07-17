@@ -1,6 +1,6 @@
 [project]
 name = "epy_reports"
-version = "0.1.6"
+version = "0.2.0"
 description = "Markdown report editor with live preview and one-click PDF export."
 authors = [
     { name = "Ing. Angel Navarro-Mora M.Sc.", email = "ahnavarro@anmingenieria.com" },
@@ -22,6 +22,8 @@ dependencies = [
     "pypdf>=4.0",
     "reportlab>=4.0",
     "Pillow>=10.0",
+    "plotly>=5.15",
+    "matplotlib>=3.5",
 ]
 
 [project.urls]
