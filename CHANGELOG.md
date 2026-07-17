@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] — 2026-07-17
 
+### Fixed
+- **Qt startup crash in conda environments (Windows).** PySide6 >= 6.9 links
+  Qt against the unversioned Windows system ICU (`System32\icuuc.dll`), but
+  conda registers `Library\bin` as a DLL directory and its `icu` package
+  exposes an unversioned `icuuc.dll` copy there with version-suffixed
+  exports — the loader bound that copy and every `PySide6.Qt*` import died
+  with `ImportError: DLL load failed ... (WinError 127)`. The package now
+  preloads the System32 ICU by full path at import time (`_pin_system_icu`),
+  pinning the module name before Qt loads. No-op off Windows.
+
 ### Added
 - **Unbreakable lists forwarding.** `docs_bridge.render_document()` accepts
   `keep_lists_together=True` (default) and forwards it to

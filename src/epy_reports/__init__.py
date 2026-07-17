@@ -16,11 +16,42 @@ importable, scriptable entry point and pulls in Qt only for ``to_pdf``.
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 __version__ = "0.3.0"
 
 __all__ = ["Report", "__version__"]
+
+
+def _pin_system_icu() -> None:
+    """Bind Qt's ICU imports to the Windows system ICU before Qt loads.
+
+    PySide6 >= 6.9 links ``Qt6Core.dll`` against the unversioned Windows ICU
+    (``System32\\icuuc.dll``, shipped since Windows 10 1703). Conda
+    environments register ``Library\\bin`` as a DLL directory, and the conda
+    ``icu`` package exposes its own unversioned ``icuuc.dll`` there with
+    version-suffixed exports — the loader binds that copy first and every
+    ``PySide6.Qt*`` import dies with ``WinError 127`` (procedure not found).
+    Preloading the System32 copy by full path pins the module name so Qt
+    resolves against the right ICU. No-op off Windows, when the system DLL
+    is absent, or when ICU is already loaded.
+    """
+    if sys.platform != "win32":
+        return
+    import ctypes  # noqa: PLC0415
+
+    system_icu = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "icuuc.dll"
+    if not system_icu.is_file():
+        return
+    try:
+        ctypes.WinDLL(str(system_icu))
+    except OSError:
+        return
+
+
+_pin_system_icu()
 
 
 class Report:
