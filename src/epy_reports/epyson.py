@@ -9,15 +9,20 @@ so the GUI can offer the *same* themes the document pipeline uses.
 from __future__ import annotations
 
 import json
+import os
 import re
+import sys
 from importlib import resources
 from pathlib import Path
-from typing import Any
-
-from PySide6.QtGui import QColor, QFont, QPalette
-from PySide6.QtWidgets import QApplication
+from typing import TYPE_CHECKING, Any
 
 from epy_reports.themes_base import Theme
+
+if TYPE_CHECKING:
+    # Import-time only: keeps this module Qt-free at runtime (Regla —
+    # headless render_markdown must never pull PySide6) while still typing
+    # apply_palette()'s parameter for static checkers.
+    from PySide6.QtWidgets import QApplication
 
 ASSETS_PACKAGE = "epy_reports._config._assets.themes"
 
@@ -362,14 +367,32 @@ def user_themes_dir() -> Path:
 
     Lives under ``QStandardPaths.AppConfigLocation`` so custom themes
     persist across sessions and are writable even from the frozen build
-    (the bundled ``_config/_assets/themes`` are read-only).
+    (the bundled ``_config/_assets/themes`` are read-only). ``load_all_themes``
+    calls this at MODULE IMPORT time (``themes.py``'s ``THEMES = load_all_themes()``),
+    so it must survive a broken/absent Qt runtime — falls back to a
+    Qt-free XDG/APPDATA-style path when PySide6 cannot be imported (headless
+    ``render_markdown``, or Qt broken on this machine), so theme lookup keeps
+    working without a Qt runtime; user themes saved under a real Qt session
+    are still found there once Qt is available again.
     """
-    from PySide6.QtCore import QStandardPaths  # noqa: PLC0415
+    try:
+        from PySide6.QtCore import QStandardPaths  # noqa: PLC0415
 
-    root = QStandardPaths.writableLocation(
-        QStandardPaths.StandardLocation.AppConfigLocation
-    )
+        root = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.AppConfigLocation
+        )
+    except ImportError:
+        root = _fallback_config_root()
     return Path(root) / "epy_reports" / "themes"
+
+
+def _fallback_config_root() -> str:
+    """Qt-free approximation of ``QStandardPaths.AppConfigLocation``."""
+    if sys.platform == "win32":
+        return os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+    if sys.platform == "darwin":
+        return str(Path.home() / "Library" / "Application Support")
+    return os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
 
 
 def _safe_stem(name: str) -> str:
@@ -502,6 +525,8 @@ def load_all_themes() -> dict[str, Theme]:
 
 def apply_palette(app: QApplication, theme: Theme) -> None:
     """Apply ``theme.qt_palette`` to the running Qt application."""
+    from PySide6.QtGui import QColor, QFont, QPalette  # noqa: PLC0415 - deferred: keeps this module Qt-free for headless render_markdown
+
     app.setStyle("Fusion")
     # Fluent-style typography: a clean system sans for the chrome. The
     # editor keeps its own monospace font (set explicitly per widget).
