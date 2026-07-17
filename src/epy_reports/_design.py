@@ -19,6 +19,9 @@ Markup vocabulary (Pandoc fenced divs / bracketed spans):
 * ``[text]{.badge}`` — a pill badge.
 * ``::: {.timeline}`` over a bullet list — a vertical timeline.
 * ``::: {.agenda}`` over a list — a numbered agenda.
+* ``::: {.verdict .pass|.fail|.warn}`` — a headline PASS/FAIL/WARN banner.
+* ``::: {.checklist}`` over a task list — a review punch-list.
+* ``[text]{.badge .pass|.fail|.warn}`` — a status pill.
 * ``[text]{.lead}`` / ``[text]{.muted}`` — emphasised / dimmed text.
 """
 
@@ -58,6 +61,9 @@ def document_css(theme: Theme) -> str:
         " --epy-bg: var(--bg);"
         " --epy-soft: var(--bg-soft);"
         " --epy-border: var(--border);"
+        " --epy-pass: var(--callout-tip-border);"
+        " --epy-fail: var(--callout-caution-border);"
+        " --epy-warn: var(--callout-warning-border);"
         " }\n"
         + design_css(theme, scope="")
     )
@@ -79,6 +85,12 @@ def design_css(theme: Theme, *, scope: str = "") -> str:
     border = _v(theme, "border", "#d0d0d0")
     soft = _v(theme, "bg-soft", _v(theme, "code-bg", "#f3f3f3"))
     font_head = _v(theme, "font-family-headings", "inherit")
+    pass_color = _v(theme, "callout-tip-border", "#1a7f37")
+    pass_bg = _v(theme, "callout-tip-bg", "#dafbe1")
+    fail_color = _v(theme, "callout-caution-border", "#d1242f")
+    fail_bg = _v(theme, "callout-caution-bg", "#ffebe9")
+    warn_color = _v(theme, "callout-warning-border", "#bf8700")
+    warn_bg = _v(theme, "callout-warning-bg", "#fff8c5")
     s = scope
     return f"""
 /* lead / accents */
@@ -153,6 +165,45 @@ def design_css(theme: Theme, *, scope: str = "") -> str:
   font-size: 0.7em; font-weight: 700; font-family: {font_head};
 }}
 
+/* status pills — override the base badge's accent background */
+{s}.badge.pass {{ background: {pass_color}; }}
+{s}.badge.fail {{ background: {fail_color}; }}
+{s}.badge.warn {{ background: {warn_color}; }}
+
+/* verdict — a headline banner stating a PASS/FAIL/WARN outcome */
+{s}.verdict {{
+  display: flex; align-items: center; gap: 0.6em;
+  padding: 0.7em 1em; margin: 1em 0; border-radius: 8px;
+  border-left: 4px solid {border}; background: {soft};
+  font-weight: 700; font-family: {font_head};
+}}
+{s}.verdict > :first-child {{ margin-top: 0; }}
+{s}.verdict > :last-child {{ margin-bottom: 0; }}
+{s}.verdict.pass {{
+  border-left-color: {pass_color}; background: {pass_bg}; color: {pass_color};
+}}
+{s}.verdict.fail {{
+  border-left-color: {fail_color}; background: {fail_bg}; color: {fail_color};
+}}
+{s}.verdict.warn {{
+  border-left-color: {warn_color}; background: {warn_bg}; color: {warn_color};
+}}
+
+/* checklist — a task list styled as a review punch list */
+{s}.checklist ul.task-list,
+{s}.checklist ul[class~="task-list"] {{
+  list-style: none; padding-left: 0; margin: 0.5em 0;
+}}
+{s}.checklist li {{
+  padding: 0.35em 0.2em 0.35em 1.9em; position: relative;
+  border-bottom: 1px solid {border};
+}}
+{s}.checklist li:last-child {{ border-bottom: none; }}
+{s}.checklist input[type="checkbox"] {{
+  position: absolute; left: 0.1em; top: 0.62em; transform: scale(1.15);
+  accent-color: {primary};
+}}
+
 /* disclosure — a quiet, insertable note (e.g. an AI-use disclosure) */
 {s}.disclosure {{
   margin: 0.8em 0; padding: 0.5em 0.85em;
@@ -177,6 +228,8 @@ DESIGN_BLOCKS: tuple[str, ...] = (
     "stats",
     "timeline",
     "agenda",
+    "verdict",
+    "checklist",
 )
 
 DESIGN_BLOCK_LABELS: dict[str, str] = {
@@ -188,6 +241,8 @@ DESIGN_BLOCK_LABELS: dict[str, str] = {
     "stats": "Big stats (row)",
     "timeline": "Timeline",
     "agenda": "Agenda",
+    "verdict": "Verdict banner",
+    "checklist": "Checklist",
 }
 
 _BLOCK_SKELETONS: dict[str, str] = {
@@ -251,6 +306,18 @@ _BLOCK_SKELETONS: dict[str, str] = {
         "- Third item\n"
         ":::\n"
     ),
+    "verdict": (
+        "\n::: {.verdict .pass}\n"
+        "**PASS** — All checks within tolerance.\n"
+        ":::\n"
+    ),
+    "checklist": (
+        "\n::: {.checklist}\n"
+        "- [x] First item verified\n"
+        "- [x] Second item verified\n"
+        "- [ ] Third item pending\n"
+        ":::\n"
+    ),
 }
 
 _BLOCK_TOKENS: dict[str, str] = {
@@ -262,6 +329,8 @@ _BLOCK_TOKENS: dict[str, str] = {
     "stats": "42",
     "timeline": "First milestone.",
     "agenda": "First item",
+    "verdict": "All checks within tolerance.",
+    "checklist": "First item verified",
 }
 
 

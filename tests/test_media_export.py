@@ -48,6 +48,26 @@ def test_callouts_are_preserved():
     assert ".callout-note" in out
 
 
+def test_verdict_banner_is_unwrapped():
+    src = "::: {.verdict .pass}\n**PASS** — All checks passed.\n:::\n"
+    out = simplify_components_for_export(src)
+    assert "{.verdict" not in out
+    assert "**PASS** — All checks passed." in out
+
+
+def test_checklist_is_unwrapped():
+    src = (
+        "::: {.checklist}\n"
+        "- [x] Item one\n"
+        "- [ ] Item two\n"
+        ":::\n"
+    )
+    out = simplify_components_for_export(src)
+    assert "{.checklist}" not in out
+    assert "- [x] Item one" in out
+    assert "- [ ] Item two" in out
+
+
 def test_collect_diagrams_in_order():
     src = (
         "```mermaid\nflowchart LR\nA-->B\n```\n\n"

@@ -27,7 +27,8 @@ _DIV_OPEN_RE = re.compile(r"^[ \t]*:::+[ \t]*\{")
 _DIV_CLOSE_RE = re.compile(r"^[ \t]*:::+[ \t]*$")
 _COMPONENT_OPEN_RE = re.compile(
     r"^[ \t]*:::+[ \t]*\{[^}]*\.(?P<cls>"
-    r"stats|stat|cards|card|timeline|agenda|lead|muted|accent)\b[^}]*\}"
+    r"stats|stat|cards|card|timeline|agenda|lead|muted|accent"
+    r"|verdict|checklist)\b[^}]*\}"
     r"[ \t]*$"
 )
 _BOLD_RE = re.compile(r"\*\*(?P<text>.+?)\*\*")
