@@ -92,6 +92,47 @@ def test_wrap_preserve_always_present():
 
 
 # ---------------------------------------------------------------------------
+# Plotly fences — stripped to a fallback image or a note before Pandoc runs.
+# ---------------------------------------------------------------------------
+
+
+def _capture_source(md: str) -> str:
+    """Run export_docx with a mocked pypandoc and return the source text."""
+    captured: list[str] = []
+
+    def fake_convert(source, to, format, outputfile, extra_args=None):
+        captured.append(source)
+
+    with patch("epy_reports.renderer.pypandoc.convert_text", fake_convert):
+        export_docx(md, Path("/fake/out.docx"))
+
+    assert len(captured) == 1
+    return captured[0]
+
+
+def test_export_docx_strips_plotly_fence_to_fallback_image():
+    """A plotly fence with fallback= becomes a plain image before Pandoc."""
+    md = (
+        "# Report\n\n"
+        "```{.plotly fallback=figs/drift.png}\n"
+        '{"data": [], "layout": {}}\n'
+        "```\n"
+    )
+    source = _capture_source(md)
+    assert "![](figs/drift.png)" in source
+    assert "epy-plotly" not in source
+    assert "```{.plotly" not in source
+
+
+def test_export_docx_strips_plotly_fence_without_fallback_to_note():
+    """A fallback-less plotly fence becomes a note paragraph before Pandoc."""
+    md = "# Report\n\n```plotly\n" '{"data": [], "layout": {}}\n' "```\n"
+    source = _capture_source(md)
+    assert "Interactive figure" in source
+    assert "epy-plotly" not in source
+
+
+# ---------------------------------------------------------------------------
 # Integration test — real Pandoc conversion with corporate template
 # ---------------------------------------------------------------------------
 

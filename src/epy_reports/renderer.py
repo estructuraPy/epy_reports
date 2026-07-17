@@ -26,6 +26,11 @@ from epy_reports._media_export import (
     simplify_components_for_export,
     substitute_diagram_images,
 )
+from epy_reports._plotly import (
+    expand_plotly,
+    has_plotly,
+    strip_plotly_for_export,
+)
 from epy_reports.snippets import parse_front_matter, strip_front_matter
 from epy_reports.template import build_html_document
 
@@ -1021,6 +1026,31 @@ def _collapse_page_breaks(html: str) -> str:
     )
 
 
+_TABLE_RE = re.compile(r"<table\b[^>]*>.*?</table>", re.DOTALL)
+_TABLE_WRAP_OPEN = '<div class="table-wrap">'
+
+
+def _wrap_wide_tables(body: str) -> str:
+    """Wrap every top-level ``<table>`` in a horizontally-scrolling div.
+
+    A table with many columns (numeric results, comparison matrices) would
+    otherwise overflow the page or shrink unreadably; ``.table-wrap``
+    (see ``style.css``) lets it scroll inside its own box instead.
+
+    Idempotent: a table immediately preceded by an existing
+    ``.table-wrap`` opening tag is left untouched, so calling this twice
+    on the same body does not nest a second wrapper.
+    """
+
+    def repl(match: re.Match[str]) -> str:
+        preceding = body[max(0, match.start() - 32) : match.start()]
+        if preceding.rstrip().endswith(_TABLE_WRAP_OPEN):
+            return match.group(0)
+        return f"{_TABLE_WRAP_OPEN}{match.group(0)}</div>"
+
+    return _TABLE_RE.sub(repl, body)
+
+
 def _expand_index_markers(body: str, source: str, lang: str) -> str:
     """Replace TOC / list marker paragraphs in *body* with HTML blocks.
 
@@ -1168,6 +1198,9 @@ def export_docx(
         pngs = render_diagram_pngs(diagrams, diag_tmp, theme_css=theme_css)
         prepared = substitute_diagram_images(prepared, pngs)
     prepared = simplify_components_for_export(prepared)
+    # Word has no WebGL/Plotly renderer — degrade each figure to its
+    # fallback image, or a short note when none was declared.
+    prepared = strip_plotly_for_export(prepared)
 
     prepared = _expand_quarto_callouts(prepared)
     prepared = _resolve_crossrefs(prepared, lang=lang)
@@ -1272,6 +1305,13 @@ def render_markdown(
     prepared = inject_heading_ids(prepared)
     prepared = _expand_page_breaks(prepared)
     prepared = expand_diagrams(prepared)
+    # Static (PDF) export: WebGL canvases do not print reliably, so a
+    # fence with a fallback= image degrades to that image; without one it
+    # stays interactive (best effort). has_plotly() is checked below,
+    # after this substitution, so a fully-degraded document never pays
+    # for the Plotly.js bundle.
+    prepared = expand_plotly(prepared, static=for_export)
+    plotly_flag = has_plotly(prepared)
 
     extra_args = list(PANDOC_ARGS) + _bibliography_args(
         metadata, base_dir
@@ -1285,6 +1325,7 @@ def render_markdown(
     )
     body = _expand_index_markers(body, source, lang)
     body = _collapse_page_breaks(body)
+    body = _wrap_wide_tables(body)
 
     return build_html_document(
         body=body,
@@ -1297,4 +1338,5 @@ def render_markdown(
         for_export=for_export,
         continuous=continuous,
         diagrams=frozenset(diagram_engines(source)),
+        plotly=plotly_flag,
     )

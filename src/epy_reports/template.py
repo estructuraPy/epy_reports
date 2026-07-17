@@ -40,7 +40,8 @@ _PAGEDJS_RUNNER = """
     }).catch(function () { window._paged_done = true; });
   }
   function waitMathThenRun() {
-    if (window._mathjax_done && window._diagrams_done !== false) { run(); }
+    if (window._mathjax_done && window._diagrams_done !== false
+        && window._plotly_done !== false) { run(); }
     else { setTimeout(waitMathThenRun, 100); }
   }
   if (document.readyState === 'loading') {
@@ -109,6 +110,109 @@ def _load_mathjax_script() -> str:
         .read_text(encoding="utf-8")
     )
     return f"<script>{js}</script>"
+
+
+@lru_cache(maxsize=1)
+def _load_plotly_script() -> str:
+    """Return the bundled Plotly.js engine wrapped in ``<script>`` (cached).
+
+    Embedded inline (like MathJax and the diagram engines) so the preview,
+    PDF and HTML export all work offline.
+    """
+    js = (
+        resources.files("epy_reports._config._assets.plotly")
+        .joinpath("plotly.min.js")
+        .read_text(encoding="utf-8")
+    )
+    return f"<script>{js}</script>"
+
+
+_PLOTLY_INIT_SCRIPT = """
+<script>
+window._epy_init_plotly = function () {
+  if (!window.Plotly) return Promise.resolve();
+  var cs = getComputedStyle(document.documentElement);
+  function v(n, d) { return (cs.getPropertyValue(n) || d).trim(); }
+  var themeLayout = {
+    paper_bgcolor: v('--epy-bg', '#ffffff'),
+    plot_bgcolor: v('--epy-bg', '#ffffff'),
+    font: {
+      color: v('--epy-fg', '#222222'),
+      family: v('--font-family-text', 'sans-serif')
+    },
+    colorway: [
+      v('--epy-primary', '#2a76dd'),
+      v('--epy-soft', '#eeeeee')
+    ]
+  };
+  function isPlainObject(x) {
+    return x !== null && typeof x === 'object' && !Array.isArray(x);
+  }
+  // Deep-merge with the AUTHOR's spec winning on every conflicting key;
+  // the theme only fills in what the author left unset.
+  function deepMerge(base, override) {
+    if (!isPlainObject(base)) { return override; }
+    if (!isPlainObject(override)) {
+      return override === undefined ? base : override;
+    }
+    var out = {};
+    Object.keys(base).forEach(function (k) { out[k] = base[k]; });
+    Object.keys(override).forEach(function (k) {
+      out[k] = deepMerge(base[k], override[k]);
+    });
+    return out;
+  }
+  var els = Array.prototype.slice.call(
+    document.querySelectorAll('.epy-plotly')
+  );
+  var tasks = els.map(function (el) {
+    var script = document.querySelector(
+      'script[data-plotly-for="' + el.id + '"]'
+    );
+    if (!script) { return Promise.resolve(); }
+    var spec;
+    try {
+      spec = JSON.parse(script.textContent);
+    } catch (e) {
+      el.textContent = 'plotly: invalid JSON (' + e.message + ')';
+      return Promise.resolve();
+    }
+    var layout = deepMerge(themeLayout, spec.layout || {});
+    var config = Object.assign(
+      { responsive: true, displaylogo: false }, spec.config || {}
+    );
+    return Plotly.newPlot(el, spec.data || [], layout, config);
+  });
+  return Promise.all(tasks);
+};
+</script>
+"""
+
+
+def _plotly_block(has_plotly_flag: bool) -> str:
+    """Return the Plotly.js bundle + a load-time runner, or an empty string.
+
+    Injected only when the document actually contains an interactive
+    plotly figure (``has_plotly_flag``) so a document with none — or a
+    static PDF export where every fence degraded to its fallback image —
+    never pays for the ~4 MB bundle. Sets ``window._plotly_done`` so the
+    Paged.js runner and the live-preview scroll restore both wait for
+    every figure to finish drawing before proceeding.
+    """
+    if not has_plotly_flag:
+        return ""
+    return (
+        _load_plotly_script()
+        + _PLOTLY_INIT_SCRIPT
+        + "<script>\n"
+        "window._plotly_done = false;\n"
+        "document.addEventListener('DOMContentLoaded', function () {\n"
+        "  window._epy_init_plotly()"
+        ".then(function () { window._plotly_done = true; })\n"
+        "    .catch(function () { window._plotly_done = true; });\n"
+        "});\n"
+        "</script>\n"
+    )
 
 
 _DIAGRAM_PKG = {
@@ -410,7 +514,8 @@ _PREVIEW_RESTORE = """
     } catch (e) {}
   };
   function ready() {
-    return window._mathjax_done && window._diagrams_done !== false;
+    return window._mathjax_done && window._diagrams_done !== false
+        && window._plotly_done !== false;
   }
   function tryRestore() {
     if (ready()) { window._epyRestore(); }
@@ -466,6 +571,7 @@ def build_html_document(
     for_export: bool = False,
     continuous: bool = False,
     diagrams: frozenset[str] = frozenset(),
+    plotly: bool = False,
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -495,6 +601,9 @@ def build_html_document(
             continuous web page. Used by the HTML export.
         diagrams: Diagram engines used (``mermaid`` / ``nomnoml``); their
             bundles and a load-time runner are injected when present.
+        plotly: When ``True``, the document contains at least one
+            interactive plotly figure; the bundled Plotly.js engine and
+            its load-time runner are injected after the diagram block.
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -538,6 +647,7 @@ def build_html_document(
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
         f"{_diagram_block(diagrams)}"
+        f"{_plotly_block(plotly)}"
         f"{pagedjs}"
         "</head>\n"
         f"<body{body_class}>\n"

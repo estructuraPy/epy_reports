@@ -8,6 +8,8 @@ from epy_reports.template import (
     _front_matter_block,
     _load_base_css,
     _load_mathjax_script,
+    _load_plotly_script,
+    build_html_document,
     is_truthy,
 )
 
@@ -149,3 +151,51 @@ def test_load_mathjax_script_is_cached():
     second = _load_mathjax_script()
     assert first is second
     assert "<script>" in first
+
+
+def test_load_plotly_script_is_cached():
+    """_load_plotly_script returns the same str object on repeated calls."""
+    first = _load_plotly_script()
+    second = _load_plotly_script()
+    assert first is second
+    assert "<script>" in first
+
+
+# ---------------------------------------------------------------------------
+# build_html_document — plotly gate injection (only when plotly=True).
+# ---------------------------------------------------------------------------
+
+
+def test_build_html_document_omits_plotly_bundle_by_default():
+    """No plotly figure in the document -> no bundle is injected.
+
+    The gate *check* (``window._plotly_done !== false``) is always
+    present in the wait conditions — like the pre-existing
+    ``_diagrams_done`` gate — so a document with no figures at all is
+    still treated as ready; only the bundle and the ``= false``
+    assignment are conditional on ``plotly=True``.
+    """
+    html = build_html_document("<p>Body</p>", None, "Test")
+    assert "_epy_init_plotly" not in html
+    assert "window._plotly_done = false;" not in html
+
+
+def test_build_html_document_injects_plotly_bundle_when_flagged():
+    """plotly=True injects the bundle after the diagram block."""
+    html = build_html_document("<p>Body</p>", None, "Test", plotly=True)
+    assert "_epy_init_plotly" in html
+    assert "window._plotly_done = false;" in html
+    diagram_idx = html.find("_epy_init_mermaid")
+    plotly_idx = html.find("_epy_init_plotly")
+    # Order doesn't matter when no diagrams are present (index is -1);
+    # when both are present, plotly comes after the diagram block.
+    if diagram_idx != -1:
+        assert diagram_idx < plotly_idx
+
+
+def test_pagedjs_runner_gates_on_plotly_done():
+    """The Paged.js runner and preview-restore hook wait for plotly too."""
+    html = build_html_document(
+        "<p>Body</p>", None, "Test", for_export=True, plotly=True
+    )
+    assert "window._plotly_done !== false" in html
