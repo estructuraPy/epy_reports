@@ -550,8 +550,8 @@ complete, self-contained HTML document:
 
 ```python
 from pathlib import Path
-from epy_reports.renderer import render_markdown
-from epy_reports import themes
+from epy_reports._core.renderer import render_markdown
+from epy_reports._ui import themes
 
 source = Path("report.md").read_text(encoding="utf-8")
 html = render_markdown(
@@ -566,7 +566,7 @@ Path("report.html").write_text(html, encoding="utf-8")
 ## Themes
 
 ```python
-from epy_reports import themes
+from epy_reports._ui import themes
 
 print(list(themes.THEMES))          # the 9 theme ids
 css = themes.get("academic").to_css()   # ":root { … }" override block
@@ -589,7 +589,11 @@ The footer, header and page-background helpers are pure `pypdf` +
 
 ```python
 from pathlib import Path
-from epy_reports._pdf_footer import add_page_background, add_footer, add_header
+from epy_reports._core._pdf_footer import (
+    add_page_background,
+    add_footer,
+    add_header,
+)
 
 pdf = Path("report.pdf")
 add_page_background(pdf, "#F0F5FA")                 # full-sheet tint
@@ -601,7 +605,10 @@ add_footer(pdf, "Confidential", page_numbers=True, lang="en")
 
 ```python
 from pathlib import Path
-from epy_reports.docs_bridge import epy_docs_available, render_document
+from epy_reports.epy_suite_connect.docs_bridge import (
+    epy_docs_available,
+    render_document,
+)
 
 if epy_docs_available():
     render_document(

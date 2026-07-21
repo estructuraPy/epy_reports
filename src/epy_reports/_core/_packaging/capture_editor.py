@@ -31,9 +31,9 @@ from PySide6.QtCore import (  # noqa: E402
 )
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from epy_reports import _i18n as i18n  # noqa: E402
-from epy_reports import themes  # noqa: E402
-from epy_reports._design import document_css  # noqa: E402
+from epy_reports._core import _i18n as i18n  # noqa: E402
+from epy_reports._core._design import document_css  # noqa: E402
+from epy_reports._ui import themes  # noqa: E402
 from epy_reports.app import MarkdownWindow  # noqa: E402
 
 OUT = ROOT / "src" / "epy_reports" / "_config" / "_assets" / "screenshots"

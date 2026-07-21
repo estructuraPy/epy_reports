@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports import epyson, themes
-from epy_reports.themes_base import Theme
+from epy_reports._core import epyson
+from epy_reports._ui import themes
+from epy_reports._ui.themes_base import Theme
 
 _app: QApplication | None = None
 

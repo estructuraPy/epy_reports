@@ -14,8 +14,8 @@ import pytest
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
-from epy_reports import _i18n as i18n
 from epy_reports import app as app_mod
+from epy_reports._core import _i18n as i18n
 from epy_reports.app import MarkdownWindow
 
 _app: QApplication | None = None
@@ -54,7 +54,7 @@ def window(qapp):
 
 def test_open_theme_editor_saves_and_selects(window, monkeypatch):
     """Accepting the editor saves the payload and selects the new theme."""
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     payload = {"display_name": "Brand New"}
 
@@ -83,7 +83,7 @@ def test_open_theme_editor_saves_and_selects(window, monkeypatch):
     monkeypatch.setattr(themes, "save_user_theme", _save)
     monkeypatch.setattr(window, "_refresh_themes", _refresh)
     with patch(
-        "epy_reports.theme_editor_dialog.ThemeEditorDialog", _FakeEditor
+        "epy_reports._ui.theme_editor_dialog.ThemeEditorDialog", _FakeEditor
     ):
         window._open_theme_editor(edit_id=None)
     assert captured["payload"] is payload
@@ -100,8 +100,8 @@ def test_open_theme_editor_cancel_does_nothing(window):
             return QDialog.DialogCode.Rejected
 
     with patch(
-        "epy_reports.theme_editor_dialog.ThemeEditorDialog", _FakeEditor
-    ), patch("epy_reports.themes.save_user_theme") as save:
+        "epy_reports._ui.theme_editor_dialog.ThemeEditorDialog", _FakeEditor
+    ), patch("epy_reports._ui.themes.save_user_theme") as save:
         window._open_theme_editor()
     save.assert_not_called()
 
@@ -119,7 +119,7 @@ def test_edit_current_theme_routes_to_editor(window, monkeypatch):
 
 def test_delete_custom_theme_none_available(window, monkeypatch):
     """With no custom themes, the user is informed and nothing is deleted."""
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     monkeypatch.setattr(themes, "user_theme_ids", set)
     with patch.object(QMessageBox, "information") as info:
@@ -129,7 +129,7 @@ def test_delete_custom_theme_none_available(window, monkeypatch):
 
 def test_delete_custom_theme_confirmed(window, monkeypatch):
     """A confirmed delete removes the chosen custom theme."""
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     monkeypatch.setattr(themes, "user_theme_ids", lambda: {"mine"})
     monkeypatch.setitem(
@@ -156,7 +156,7 @@ def test_delete_custom_theme_confirmed(window, monkeypatch):
 def test_refresh_themes_rebuilds_actions(window):
     """Refreshing themes rebuilds the radio actions without raising."""
     window._refresh_themes()
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     assert set(window.theme_actions) == set(themes.THEMES)
 
@@ -187,7 +187,7 @@ def test_open_manual_missing_warns(window):
 def test_show_about_execs_dialog(window):
     """The About action opens and execs the dialog."""
     fake = MagicMock()
-    with patch("epy_reports.about_dialog.AboutDialog", return_value=fake):
+    with patch("epy_reports._ui.about_dialog.AboutDialog", return_value=fake):
         window._show_about()
     fake.exec.assert_called_once()
 
@@ -199,7 +199,7 @@ def test_show_about_execs_dialog(window):
 
 def test_new_bib_entry_appends_to_linked_file(window, tmp_path):
     """Accepting the bib dialog appends the draft to the linked file."""
-    from epy_reports.bib import BibEntryDraft
+    from epy_reports._core.bib import BibEntryDraft
 
     doc = tmp_path / "doc.md"
     doc.write_text("# Doc\n", encoding="utf-8")
@@ -224,7 +224,7 @@ def test_new_bib_entry_appends_to_linked_file(window, tmp_path):
         def build_draft(self):
             return draft
 
-    with patch("epy_reports.bib_dialog.BibEntryDialog", _FakeBibDialog):
+    with patch("epy_reports._ui.bib_dialog.BibEntryDialog", _FakeBibDialog):
         window._new_bib_entry()
     assert "newkey" in bib_file.read_text(encoding="utf-8")
 
@@ -303,10 +303,10 @@ def test_export_via_docs_starts_worker(window, tmp_path, monkeypatch):
             started["started"] = True
 
     monkeypatch.setattr(
-        "epy_reports.docs_export_dialog.DocsExportDialog", _FakeDialog
+        "epy_reports._ui.docs_export_dialog.DocsExportDialog", _FakeDialog
     )
     monkeypatch.setattr(
-        "epy_reports.docs_export_dialog._RenderWorker", _FakeWorker
+        "epy_reports._ui.docs_export_dialog._RenderWorker", _FakeWorker
     )
     window._export_via_docs()
     assert started.get("started") is True

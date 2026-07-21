@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports._media_export import (
+from epy_reports._core._media_export import (
     collect_diagrams,
     simplify_components_for_export,
     substitute_diagram_images,

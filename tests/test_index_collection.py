@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports.renderer import (
+from epy_reports._core.renderer import (
     collect_headings,
     collect_index_entries,
     render_markdown,

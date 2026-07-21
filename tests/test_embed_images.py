@@ -12,8 +12,8 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 
-from epy_reports.renderer import render_markdown
-from epy_reports.template import _embed_local_images
+from epy_reports._core.renderer import render_markdown
+from epy_reports._core.template import _embed_local_images
 
 # Smallest valid PNG (1x1 transparent pixel).
 _PNG_BYTES = base64.b64decode(

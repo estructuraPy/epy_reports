@@ -13,10 +13,10 @@ from unittest.mock import patch
 import pytest
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
-from epy_reports import _i18n as i18n
 from epy_reports import app as app_mod
+from epy_reports._core import _i18n as i18n
 from epy_reports.app import MarkdownWindow
-from epy_reports.tab import MarkdownTab
+from epy_reports._ui.tab import MarkdownTab
 
 _app: QApplication | None = None
 
@@ -73,7 +73,7 @@ def test_welcome_text_is_loaded():
 
 def test_theme_actions_cover_every_theme(window):
     """One radio action exists per registered theme."""
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     assert set(window.theme_actions) == set(themes.THEMES)
 
@@ -229,7 +229,7 @@ def test_current_page_size_reads_front_matter(window):
 
 def test_current_csl_key_defaults_to_ieee(window):
     """A document without a csl field reports the IEEE default."""
-    from epy_reports.renderer import DEFAULT_CSL_STYLE
+    from epy_reports._core.renderer import DEFAULT_CSL_STYLE
 
     tab = window._new_tab()
     tab.editor.setPlainText("# No csl here\n")
@@ -280,7 +280,7 @@ def test_references_menu_placeholder_when_no_labels(window):
 
 def test_apply_theme_switches_current(window):
     """Applying a theme updates the active theme reference."""
-    from epy_reports import themes
+    from epy_reports._ui import themes
 
     target = next(iter(themes.THEMES))
     window._apply_theme(target, persist=False)
@@ -323,7 +323,7 @@ def test_sync_language_menu_checks_active(window):
 
 def test_save_and_apply_template(window, tmp_path, monkeypatch):
     """A saved template round-trips through apply (theme + front matter)."""
-    from epy_reports import templates
+    from epy_reports._core import templates
 
     base = tmp_path / "templates"
     monkeypatch.setattr(templates, "_config_base_dir", lambda: base)
@@ -349,7 +349,7 @@ def test_save_and_apply_template(window, tmp_path, monkeypatch):
 
 def test_delete_template_confirmed(window, tmp_path, monkeypatch):
     """A confirmed delete removes the template file."""
-    from epy_reports import templates
+    from epy_reports._core import templates
 
     base = tmp_path / "templates"
     monkeypatch.setattr(templates, "_config_base_dir", lambda: base)
@@ -385,7 +385,8 @@ def test_edit_document_properties_writes_updates(window):
                     ("page-size", "a4", False)]
 
     with patch(
-        "epy_reports.document_properties_dialog.DocumentPropertiesDialog",
+        "epy_reports._ui.document_properties_dialog"
+        ".DocumentPropertiesDialog",
         _FakeDialog,
     ):
         window._edit_document_properties()
@@ -547,7 +548,7 @@ def test_ensure_utf8_streams_is_safe():
 
 def test_run_register_uses_winreg(monkeypatch):
     """``_run_register`` prints the changes returned by winreg_assoc."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     monkeypatch.setattr(
         winreg_assoc, "register", lambda make_default=False: ["did a thing"]
@@ -560,7 +561,7 @@ def test_run_register_uses_winreg(monkeypatch):
 
 def test_run_unregister_reports_nothing(monkeypatch):
     """``_run_unregister`` reports when there was nothing to remove."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     monkeypatch.setattr(winreg_assoc, "unregister", lambda: [])
     assert app_mod._run_unregister() == 0
@@ -568,7 +569,7 @@ def test_run_unregister_reports_nothing(monkeypatch):
 
 def test_run_set_default_failure_returns_2(monkeypatch):
     """A failed Settings launch returns exit code 2."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     monkeypatch.setattr(
         winreg_assoc, "open_default_apps_settings", lambda: False

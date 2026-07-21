@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from epy_reports._plotly import (
+from epy_reports._core._plotly import (
     expand_plotly,
     has_plotly,
     strip_plotly_for_export,
 )
-from epy_reports.renderer import _wrap_wide_tables
+from epy_reports._core.renderer import _wrap_wide_tables
 
 _SPEC = '{"data": [{"type": "bar", "y": [1, 2, 3]}], "layout": {}}'
 _FENCE = (

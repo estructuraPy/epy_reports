@@ -1,6 +1,6 @@
 """Plotly fenced-block handling shared by the preview and exports.
 
-Mirrors :mod:`epy_reports._diagrams`: a ```` ```{.plotly ...} ```` (or
+Mirrors :mod:`epy_reports._core._diagrams`: a ```` ```{.plotly ...} ```` (or
 ```` ```plotly ````) fenced code block holding a hand-written Plotly figure
 spec (``{"data": [...], "layout": {...}}``) is converted into an
 ``<div class="epy-plotly">`` placeholder plus a sibling

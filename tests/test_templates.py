@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from epy_reports import templates
+from epy_reports._core import templates
 
 
 @pytest.fixture

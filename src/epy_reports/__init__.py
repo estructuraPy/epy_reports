@@ -81,19 +81,19 @@ class Report:
 
     def _theme(self):
         """Return the active Theme object."""
-        from epy_reports import themes  # noqa: PLC0415
+        from epy_reports._ui import themes  # noqa: PLC0415
 
         return themes.get(self.theme_id)
 
     def _theme_css(self) -> str:
         """Return the document CSS for the active theme."""
-        from epy_reports._design import document_css  # noqa: PLC0415
+        from epy_reports._core._design import document_css  # noqa: PLC0415
 
         return document_css(self._theme())
 
     def to_html(self, path: str | Path, *, continuous: bool = True) -> Path:
         """Write a self-contained HTML page (continuous web document)."""
-        from epy_reports.renderer import render_markdown  # noqa: PLC0415
+        from epy_reports._core.renderer import render_markdown  # noqa: PLC0415
 
         html = render_markdown(
             self.source,
@@ -121,7 +121,7 @@ class Report:
 
     def to_docx(self, path: str | Path) -> Path:
         """Write a Word document (Pandoc + the theme reference doc)."""
-        from epy_reports.renderer import export_docx  # noqa: PLC0415
+        from epy_reports._core.renderer import export_docx  # noqa: PLC0415
 
         out = Path(path)
         export_docx(
@@ -132,7 +132,7 @@ class Report:
 
     def to_pdf(self, path: str | Path, *, timeout_ms: int = 60000) -> Path:
         """Write a paginated PDF via Paged.js (needs PySide6)."""
-        from epy_reports._export_pdf import render_report_pdf  # noqa: PLC0415
+        from epy_reports._core._export_pdf import render_report_pdf  # noqa: PLC0415
 
         out = Path(path)
         render_report_pdf(

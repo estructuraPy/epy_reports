@@ -81,10 +81,10 @@ convention = "google"
 "epy_reports.spec" = ["D", "F821", "E501"]
 # Data catalog: one symbol entry per line (label + Spanish tooltip);
 # wrapping the rows to 79 chars would hurt, not help, readability.
-"src/epy_reports/latex_catalog.py" = ["E501"]
+"src/epy_reports/_core/latex_catalog.py" = ["E501"]
 # Embedded JavaScript reflow script lives in a triple-quoted string;
 # its lines are JS, not Python, and must stay verbatim.
-"src/epy_reports/template.py" = ["E501"]
+"src/epy_reports/_core/template.py" = ["E501"]
 # Example scripts favor readability over library docstring/line rules.
 "tutorials/**/*.py" = ["D", "SIM105", "E501"]
 # Build/release tooling (installer + dev scripts) embeds shell heredocs,

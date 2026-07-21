@@ -13,7 +13,7 @@ import sys
 
 import pytest
 
-from epy_reports import winreg_assoc as wa
+from epy_reports._core import winreg_assoc as wa
 
 windows_only = pytest.mark.skipif(
     sys.platform != "win32",

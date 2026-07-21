@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports.template import _load_base_css
+from epy_reports._core.template import _load_base_css
 
 
 def test_heading_ramp_variables_defined_with_defaults():

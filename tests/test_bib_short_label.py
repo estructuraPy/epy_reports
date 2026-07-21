@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports.bib import BibEntry
+from epy_reports._core.bib import BibEntry
 
 
 def test_short_label_key_only():

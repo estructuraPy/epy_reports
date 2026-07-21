@@ -29,20 +29,20 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import snippets
-from epy_reports.checklist_dialog import ChecklistDialog
-from epy_reports.columns_dialog import ThreeColumnDialog, TwoColumnDialog
-from epy_reports.equation_dialog import EquationDialog
-from epy_reports.figure_dialog import FigureDialog
-from epy_reports.footnote_dialog import FootnoteDialog
-from epy_reports.renderer import (
+from epy_reports._core import snippets
+from epy_reports._core.renderer import (
     inject_page_numbers,
     normalize_page_size,
     render_markdown,
 )
-from epy_reports.table_dialog import TableDialog
-from epy_reports.template import is_truthy
-from epy_reports.xref_dialog import CrossRefDialog
+from epy_reports._core.template import is_truthy
+from epy_reports._ui.checklist_dialog import ChecklistDialog
+from epy_reports._ui.columns_dialog import ThreeColumnDialog, TwoColumnDialog
+from epy_reports._ui.equation_dialog import EquationDialog
+from epy_reports._ui.figure_dialog import FigureDialog
+from epy_reports._ui.footnote_dialog import FootnoteDialog
+from epy_reports._ui.table_dialog import TableDialog
+from epy_reports._ui.xref_dialog import CrossRefDialog
 
 RENDER_DEBOUNCE_MS = 250
 POS_POLL_MS = 400
@@ -310,7 +310,8 @@ class MarkdownTab(QWidget):
         from the document's ``page-size`` front matter, default Letter)
         with ~15 mm margins, and (d) when the document front matter
         declares a ``footer`` text or a truthy ``page-numbers`` value,
-        stamps every page via :func:`epy_reports._pdf_footer.add_footer`
+        stamps every page via
+        :func:`epy_reports._core._pdf_footer.add_footer`
         before delivering the final file.
 
         Args:
@@ -381,7 +382,8 @@ class MarkdownTab(QWidget):
 
             ``start_page`` is the first content page: cover and index
             front matter before it stay clean, and the footer renumbers
-            content from 1 (see :func:`epy_reports._pdf_footer.add_footer`).
+            content from 1 (see
+            :func:`epy_reports._core._pdf_footer.add_footer`).
             ``segments`` carries any ``[[section-roman]]`` /
             ``[[section-arabic]]`` boundaries so numbering restarts per
             section in the chosen style.
@@ -389,7 +391,7 @@ class MarkdownTab(QWidget):
             result_ok = ok
             try:
                 if ok:
-                    from epy_reports import _pdf_footer  # noqa: PLC0415
+                    from epy_reports._core import _pdf_footer  # noqa: PLC0415
 
                     if self._page_bg:
                         _pdf_footer.add_page_background(
@@ -485,7 +487,7 @@ class MarkdownTab(QWidget):
             if not ok:
                 finalize(False, 1)
                 return
-            from epy_reports._pdf_footer import (  # noqa: PLC0415
+            from epy_reports._core._pdf_footer import (  # noqa: PLC0415
                 extract_anchor_pages,
             )
 
@@ -527,7 +529,7 @@ class MarkdownTab(QWidget):
         margin, so the printer margin MUST be zero — otherwise the two
         stack (30 mm + 30 mm) and the PDF prints with a 60 mm margin. The
         theme background is painted edge to edge after export by
-        :func:`epy_reports._pdf_footer.add_page_background`.
+        :func:`epy_reports._core._pdf_footer.add_page_background`.
 
         Args:
             page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
@@ -870,14 +872,14 @@ class MarkdownTab(QWidget):
 
     def insert_design_block(self, kind: str = "stat") -> None:
         """Insert a shared design block (card, big stat, timeline, ...)."""
-        from epy_reports._design import design_block  # noqa: PLC0415
+        from epy_reports._core._design import design_block  # noqa: PLC0415
 
         skeleton, token = design_block(kind)
         self._insert_template(skeleton, token)
 
     def insert_disclosure(self, kind: str = "ai") -> None:
         """Insert a disclosure note (AI use, document integrity, ...)."""
-        from epy_reports._design import disclosure_block  # noqa: PLC0415
+        from epy_reports._core._design import disclosure_block  # noqa: PLC0415
 
         skeleton, token = disclosure_block(kind)
         self._insert_template(skeleton, token)
@@ -978,7 +980,7 @@ class MarkdownTab(QWidget):
 
     def _bib_entries_for_buffer(self, text: str) -> list:
         """Resolve the ``bibliography:`` field and parse the .bib."""
-        from epy_reports import bib
+        from epy_reports._core import bib
 
         meta = snippets.parse_front_matter(text)
         value = meta.get("bibliography")

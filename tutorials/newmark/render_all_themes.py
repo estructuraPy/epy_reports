@@ -19,8 +19,8 @@ index blocks (TOC, LOF, LOT, LOE):
 
 After the final PDF is written, the ``footer`` and ``page-numbers`` front-matter
 values are applied as a :mod:`reportlab` overlay via
-:func:`epy_reports._pdf_footer.add_footer`, and the ``header`` cells (if present)
-via :func:`epy_reports._pdf_footer.add_header`.
+:func:`epy_reports._core._pdf_footer.add_footer`, and the ``header`` cells
+(if present) via :func:`epy_reports._core._pdf_footer.add_header`.
 
 Run it from this directory::
 
@@ -53,38 +53,44 @@ ROOT = Path(__file__).resolve().parent
 # Prefer an installed epy_reports; fall back to the in-repo source tree so the
 # example runs straight from a clone without `pip install -e .`.
 try:
-    from epy_reports import themes
-    from epy_reports._design import document_css
-    from epy_reports._pdf_footer import (
+    from epy_reports._core._design import document_css
+    from epy_reports._core._pdf_footer import (
         add_footer,
         add_header,
         add_page_background,
         add_watermark,
         extract_anchor_pages,
     )
-    from epy_reports.renderer import (
+    from epy_reports._core.renderer import (
         inject_page_numbers,
         normalize_page_size,
         render_markdown,
     )
-    from epy_reports.snippets import parse_front_matter, parse_header_cells
+    from epy_reports._core.snippets import (
+        parse_front_matter,
+        parse_header_cells,
+    )
+    from epy_reports._ui import themes
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
-    from epy_reports import themes
-    from epy_reports._design import document_css
-    from epy_reports._pdf_footer import (
+    from epy_reports._core._design import document_css
+    from epy_reports._core._pdf_footer import (
         add_footer,
         add_header,
         add_page_background,
         add_watermark,
         extract_anchor_pages,
     )
-    from epy_reports.renderer import (
+    from epy_reports._core.renderer import (
         inject_page_numbers,
         normalize_page_size,
         render_markdown,
     )
-    from epy_reports.snippets import parse_front_matter, parse_header_cells
+    from epy_reports._core.snippets import (
+        parse_front_matter,
+        parse_header_cells,
+    )
+    from epy_reports._ui import themes
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"

@@ -20,9 +20,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import _i18n as i18n
-from epy_reports._design import DESIGN_BLOCK_LABELS, DESIGN_BLOCKS
-from epy_reports._previews import LAYOUT_THUMB, layout_preview
+from epy_reports._core import _i18n as i18n
+from epy_reports._core._design import DESIGN_BLOCK_LABELS, DESIGN_BLOCKS
+from epy_reports._core._previews import LAYOUT_THUMB, layout_preview
 
 _KIND_ROLE = 0x0100  # Qt.UserRole
 

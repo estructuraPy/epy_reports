@@ -7,7 +7,7 @@ pypandoc (Pandoc must be on PATH).
 
 from __future__ import annotations
 
-from epy_reports.renderer import _resolve_crossrefs, render_markdown
+from epy_reports._core.renderer import _resolve_crossrefs, render_markdown
 
 # ---------------------------------------------------------------------------
 # Helpers

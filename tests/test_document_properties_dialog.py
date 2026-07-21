@@ -7,7 +7,7 @@ import json
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports.document_properties_dialog import (
+from epy_reports._ui.document_properties_dialog import (
     DocumentPropertiesDialog,
     _is_truthy,
 )

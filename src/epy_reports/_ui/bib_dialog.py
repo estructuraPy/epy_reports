@@ -5,7 +5,8 @@ preview the resulting BibTeX snippet live. The auto-suggested
 citation key (``familyYYYY``) is filled in from author and year unless
 the user has already typed something different.
 
-The dialog only produces a :class:`~epy_reports.bib.BibEntryDraft`; the
+The dialog only produces a
+:class:`~epy_reports._core.bib.BibEntryDraft`; the
 caller decides where to write it (typically by appending to the
 ``bibliography:`` file linked from the document's YAML).
 """
@@ -30,8 +31,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import _i18n as i18n
-from epy_reports.bib import (
+from epy_reports._core import _i18n as i18n
+from epy_reports._core.bib import (
     ENTRY_TYPES,
     REQUIRED_FIELDS,
     BibEntryDraft,

@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import _i18n as i18n
-from epy_reports.bib import BibEntry
-from epy_reports.snippets import KIND_DESCRIPTIONS, Label
+from epy_reports._core import _i18n as i18n
+from epy_reports._core.bib import BibEntry
+from epy_reports._core.snippets import KIND_DESCRIPTIONS, Label
 
 CITE_DESCRIPTION = "Citation"
 

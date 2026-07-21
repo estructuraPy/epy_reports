@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports._diagrams import diagram_engines, expand_diagrams
+from epy_reports._core._diagrams import diagram_engines, expand_diagrams
 
 _MERMAID = "```mermaid\nflowchart LR\nA-->B\n```\n"
 _NOMNOML = "```nomnoml\n[A] -> [B]\n```\n"

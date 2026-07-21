@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from epy_reports.renderer import (
+from epy_reports._core.renderer import (
     CSL_STYLES,
     DEFAULT_CSL_STYLE,
     _bibliography_args,

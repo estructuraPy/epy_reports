@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports import epyson, themes
-from epy_reports.theme_editor_dialog import (
+from epy_reports._core import epyson
+from epy_reports._ui import themes
+from epy_reports._ui.theme_editor_dialog import (
     ThemeEditorDialog,
     _contrast,
     _font_primary,

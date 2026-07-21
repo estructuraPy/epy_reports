@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports import templates
+from epy_reports._core import templates
 
 _app: QApplication | None = None
 

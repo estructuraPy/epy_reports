@@ -15,8 +15,8 @@ from pathlib import Path
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from epy_reports import _pdf_footer
-from epy_reports._pdf_footer import (
+from epy_reports._core import _pdf_footer
+from epy_reports._core._pdf_footer import (
     _page_label,
     _page_stamp,
     _roman,

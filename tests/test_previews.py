@@ -13,8 +13,8 @@ def qapp():
 
 
 def test_theme_preview_for_every_theme(qapp):
-    from epy_reports import themes
-    from epy_reports._previews import THEME_THUMB, theme_preview
+    from epy_reports._core._previews import THEME_THUMB, theme_preview
+    from epy_reports._ui import themes
 
     assert themes.THEMES, "the theme catalogue must not be empty"
     for theme in themes.THEMES.values():
@@ -24,8 +24,8 @@ def test_theme_preview_for_every_theme(qapp):
 
 
 def test_layout_preview_for_every_design_block(qapp):
-    from epy_reports._design import DESIGN_BLOCKS
-    from epy_reports._previews import LAYOUT_THUMB, layout_preview
+    from epy_reports._core._design import DESIGN_BLOCKS
+    from epy_reports._core._previews import LAYOUT_THUMB, layout_preview
 
     for kind in DESIGN_BLOCKS:
         pix = layout_preview(kind)
@@ -34,8 +34,8 @@ def test_layout_preview_for_every_design_block(qapp):
 
 
 def test_design_block_dialog_lists_all_blocks(qapp):
-    from epy_reports._design import DESIGN_BLOCKS
-    from epy_reports.design_block_dialog import DesignBlockDialog
+    from epy_reports._core._design import DESIGN_BLOCKS
+    from epy_reports._ui.design_block_dialog import DesignBlockDialog
 
     dlg = DesignBlockDialog()
     assert dlg._list.count() == len(DESIGN_BLOCKS)
@@ -43,8 +43,8 @@ def test_design_block_dialog_lists_all_blocks(qapp):
 
 
 def test_theme_gallery_lists_all_themes(qapp):
-    from epy_reports import themes
-    from epy_reports.theme_gallery_dialog import ThemeGalleryDialog
+    from epy_reports._ui import themes
+    from epy_reports._ui.theme_gallery_dialog import ThemeGalleryDialog
 
     dlg = ThemeGalleryDialog(current_id=themes.DEFAULT_THEME_ID)
     assert dlg._list.count() == len(themes.THEMES)

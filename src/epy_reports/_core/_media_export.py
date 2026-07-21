@@ -173,7 +173,7 @@ def _diagram_page_html(
     diagrams: list[tuple[str, str]], theme_css: str
 ) -> str:
     """Build a minimal offscreen page that renders every diagram, themed."""
-    from epy_reports.template import (  # noqa: PLC0415
+    from epy_reports._core.template import (  # noqa: PLC0415
         _MERMAID_CONFIG,
         _NOMNOML_CONFIG,
         _load_diagram_script,

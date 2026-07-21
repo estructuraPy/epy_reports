@@ -16,8 +16,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import _i18n as i18n
-from epy_reports.latex_catalog import CATALOG, LatexEntry
+from epy_reports._core import _i18n as i18n
+from epy_reports._core.latex_catalog import CATALOG, LatexEntry
 
 
 class EquationDialog(QDialog):

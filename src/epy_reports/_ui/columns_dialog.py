@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from epy_reports import _i18n as i18n
+from epy_reports._core import _i18n as i18n
 
 
 class TwoColumnDialog(QDialog):

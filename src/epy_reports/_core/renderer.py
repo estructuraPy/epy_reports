@@ -19,20 +19,20 @@ from pathlib import Path
 
 import pypandoc
 
-from epy_reports._diagrams import diagram_engines, expand_diagrams
-from epy_reports._media_export import (
+from epy_reports._core._diagrams import diagram_engines, expand_diagrams
+from epy_reports._core._media_export import (
     collect_diagrams,
     render_diagram_pngs,
     simplify_components_for_export,
     substitute_diagram_images,
 )
-from epy_reports._plotly import (
+from epy_reports._core._plotly import (
     expand_plotly,
     has_plotly,
     strip_plotly_for_export,
 )
-from epy_reports.snippets import parse_front_matter, strip_front_matter
-from epy_reports.template import build_html_document
+from epy_reports._core.snippets import parse_front_matter, strip_front_matter
+from epy_reports._core.template import build_html_document
 
 # Citation Style Language: short names users can type in YAML (``csl:
 # ieee``) or pick from the View > Citation style menu, mapped to the

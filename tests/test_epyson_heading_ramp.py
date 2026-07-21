@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports.epyson import _heading_ramp, _mix, load_layout_theme
+from epy_reports._core.epyson import _heading_ramp, _mix, load_layout_theme
 
 
 def test_heading_ramp_h1_equals_header_color():

@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from epy_reports import _i18n as i18n
+from epy_reports._core import _i18n as i18n
 
 _app: QApplication | None = None
 

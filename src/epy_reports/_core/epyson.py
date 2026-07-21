@@ -16,7 +16,7 @@ from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from epy_reports.themes_base import Theme
+from epy_reports._ui.themes_base import Theme
 
 if TYPE_CHECKING:
     # Import-time only: keeps this module Qt-free at runtime (Regla —

@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports.footnote_dialog import FootnoteDialog
-from epy_reports.tab import next_footnote_suffix
+from epy_reports._ui.footnote_dialog import FootnoteDialog
+from epy_reports._ui.tab import next_footnote_suffix
 
 _app: QApplication | None = None
 

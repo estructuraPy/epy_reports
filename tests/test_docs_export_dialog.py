@@ -8,8 +8,8 @@ from unittest.mock import patch
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from epy_reports import docs_export_dialog as ded
-from epy_reports.docs_export_dialog import DocsExportDialog, _RenderWorker
+from epy_reports._ui import docs_export_dialog as ded
+from epy_reports._ui.docs_export_dialog import DocsExportDialog, _RenderWorker
 
 _app: QApplication | None = None
 
@@ -26,7 +26,7 @@ def qapp():
 @pytest.fixture
 def stub_bridge(monkeypatch):
     """Stub the docs_bridge layout/doctype listings."""
-    import epy_reports.docs_bridge as bridge
+    import epy_reports.epy_suite_connect.docs_bridge as bridge
 
     monkeypatch.setattr(
         bridge, "list_layouts", lambda: ["corporate", "ieee"]
@@ -86,7 +86,7 @@ def test_properties_reflect_widget_state(qapp, stub_bridge):
 
 def test_worker_emits_ok_on_success(qapp, monkeypatch):
     """A successful render emits finished_ok with the output dir."""
-    import epy_reports.docs_bridge as bridge
+    import epy_reports.epy_suite_connect.docs_bridge as bridge
 
     monkeypatch.setattr(
         bridge, "render_document", lambda **kw: None
@@ -103,7 +103,7 @@ def test_worker_emits_ok_on_success(qapp, monkeypatch):
 
 def test_worker_emits_err_on_failure(qapp, monkeypatch):
     """A failing render emits finished_err with the message."""
-    import epy_reports.docs_bridge as bridge
+    import epy_reports.epy_suite_connect.docs_bridge as bridge
 
     def _boom(**kw):
         raise RuntimeError("render exploded")

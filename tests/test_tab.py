@@ -15,8 +15,8 @@ import pytest
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication, QDialog
 
-from epy_reports import tab as tab_mod
-from epy_reports.tab import (
+from epy_reports._ui import tab as tab_mod
+from epy_reports._ui.tab import (
     MarkdownTab,
     next_footnote_suffix,
     next_label_suffix,
@@ -389,7 +389,7 @@ def test_bib_entries_empty_without_link(tab):
 def test_insert_cross_reference_informs_when_empty(tab):
     tab.set_initial_text("plain, nothing to cite\n", path=None)
     with patch(
-        "epy_reports.tab.QMessageBox.information"
+        "epy_reports._ui.tab.QMessageBox.information"
     ) as info:
         tab.insert_cross_reference()
     info.assert_called_once()
@@ -410,7 +410,7 @@ def test_insert_cross_reference_inserts_label(tab):
             return QDialog.DialogCode.Accepted
 
         def selected_label(self):
-            from epy_reports.snippets import Label
+            from epy_reports._core.snippets import Label
 
             return Label(kind="fig", name="fig-1")
 

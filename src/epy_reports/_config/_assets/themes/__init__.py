@@ -1,1 +1,1 @@
-"""Layout theme catalogue (.epyson files) consumed by epy_reports.epyson."""
+"""Layout theme catalogue (.epyson files) consumed by ``_core.epyson``."""

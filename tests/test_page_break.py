@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports.renderer import render_markdown
+from epy_reports._core.renderer import render_markdown
 
 
 def test_pagebreak_marker_renders_div():

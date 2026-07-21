@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from epy_reports.renderer import render_markdown
-from epy_reports.template import DEFAULT_PAGE_MARGIN, read_page_margin
+from epy_reports._core.renderer import render_markdown
+from epy_reports._core.template import DEFAULT_PAGE_MARGIN, read_page_margin
 
 _SRC = "# Title\n\nBody paragraph.\n"
 

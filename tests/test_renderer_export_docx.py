@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
-from epy_reports.renderer import export_docx
+from epy_reports._core.renderer import export_docx
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -43,7 +43,9 @@ def _capture_extra_args(md: str, ref: Path | None) -> list[str]:
     ):
         captured.append(list(extra_args or []))
 
-    with patch("epy_reports.renderer.pypandoc.convert_text", fake_convert):
+    with patch(
+        "epy_reports._core.renderer.pypandoc.convert_text", fake_convert
+    ):
         export_docx(
             md,
             Path("/fake/out.docx"),
@@ -103,7 +105,9 @@ def _capture_source(md: str) -> str:
     def fake_convert(source, to, format, outputfile, extra_args=None):
         captured.append(source)
 
-    with patch("epy_reports.renderer.pypandoc.convert_text", fake_convert):
+    with patch(
+        "epy_reports._core.renderer.pypandoc.convert_text", fake_convert
+    ):
         export_docx(md, Path("/fake/out.docx"))
 
     assert len(captured) == 1

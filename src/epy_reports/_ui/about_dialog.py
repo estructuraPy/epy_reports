@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 import epy_reports
-from epy_reports import _i18n as i18n
+from epy_reports._core import _i18n as i18n
 
 
 def _load_branding_pixmap(name: str) -> QPixmap:

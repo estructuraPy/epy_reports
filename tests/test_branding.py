@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QApplication, QLabel
 
-from epy_reports.about_dialog import AboutDialog
+from epy_reports._ui.about_dialog import AboutDialog
 
 # ---------------------------------------------------------------------------
 # Module-scoped QApplication (required for any QWidget instantiation)

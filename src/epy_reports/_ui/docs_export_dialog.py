@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from epy_reports import _i18n as i18n
+from epy_reports._core import _i18n as i18n
 
 
 class _RenderWorker(QThread):
@@ -65,7 +65,9 @@ class _RenderWorker(QThread):
 
     def run(self) -> None:
         """Execute the render; emit the appropriate signal when done."""
-        from epy_reports.docs_bridge import render_document  # noqa: PLC0415
+        from epy_reports.epy_suite_connect.docs_bridge import (  # noqa: PLC0415
+            render_document,
+        )
 
         try:
             render_document(
@@ -113,7 +115,7 @@ class DocsExportDialog(QDialog):
         self._source_path = source_path
         self._settings = QSettings("ANM Ingeniería", "epy_reports")
 
-        from epy_reports.docs_bridge import (  # noqa: PLC0415
+        from epy_reports.epy_suite_connect.docs_bridge import (  # noqa: PLC0415
             list_document_types,
             list_layouts,
         )

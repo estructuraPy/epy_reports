@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports import themes
-from epy_reports._design import (
+from epy_reports._core._design import (
     DESIGN_BLOCK_LABELS,
     DESIGN_BLOCKS,
     DISCLOSURE_KINDS,
@@ -13,6 +12,7 @@ from epy_reports._design import (
     disclosure_block,
     document_css,
 )
+from epy_reports._ui import themes
 
 _SELECTORS = (
     ".lead",

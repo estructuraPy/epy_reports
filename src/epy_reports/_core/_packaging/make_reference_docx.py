@@ -36,8 +36,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from docx import Document  # noqa: E402
 from docx.shared import Inches, Pt, RGBColor  # noqa: E402
 
-from epy_reports import themes  # noqa: E402
-from epy_reports.themes_base import Theme  # noqa: E402
+from epy_reports._ui import themes  # noqa: E402
+from epy_reports._ui.themes_base import Theme  # noqa: E402
 
 OUT_DIR = (
     ROOT / "src" / "epy_reports" / "_config" / "_assets" / "reference_docx"

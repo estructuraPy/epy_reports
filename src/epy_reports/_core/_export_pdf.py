@@ -51,17 +51,17 @@ def render_report_pdf(
     from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: PLC0415
     from PySide6.QtWidgets import QApplication  # noqa: PLC0415
 
-    from epy_reports import _pdf_footer  # noqa: PLC0415
-    from epy_reports.renderer import (  # noqa: PLC0415, E501
+    from epy_reports._core import _pdf_footer  # noqa: PLC0415
+    from epy_reports._core.renderer import (  # noqa: PLC0415, E501
         inject_page_numbers,
         normalize_page_size,
         render_markdown,
     )
-    from epy_reports.snippets import (  # noqa: PLC0415
+    from epy_reports._core.snippets import (  # noqa: PLC0415
         parse_front_matter,
         parse_header_cells,
     )
-    from epy_reports.template import is_truthy  # noqa: PLC0415
+    from epy_reports._core.template import is_truthy  # noqa: PLC0415
 
     meta = parse_front_matter(source)
     page_size = normalize_page_size(meta.get("page-size"))

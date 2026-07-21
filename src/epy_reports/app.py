@@ -30,13 +30,14 @@ from PySide6.QtWidgets import (
     QToolButton,
 )
 
-from epy_reports import _i18n as i18n
-from epy_reports import bib, snippets, themes
-from epy_reports._design import document_css
-from epy_reports.about_dialog import _load_branding_pixmap
-from epy_reports.docs_bridge import epy_docs_available
-from epy_reports.renderer import export_docx, render_markdown
-from epy_reports.tab import MarkdownTab
+from epy_reports._core import _i18n as i18n
+from epy_reports._core import bib, snippets
+from epy_reports._core._design import document_css
+from epy_reports._core.renderer import export_docx, render_markdown
+from epy_reports._ui import themes
+from epy_reports._ui.about_dialog import _load_branding_pixmap
+from epy_reports._ui.tab import MarkdownTab
+from epy_reports.epy_suite_connect.docs_bridge import epy_docs_available
 
 APP_NAME = "epy_reports"
 
@@ -264,7 +265,7 @@ class MarkdownWindow(QMainWindow):
         # Page-size actions (Letter default, exclusive group). The key
         # is stored as action data and written into the document's
         # ``page-size`` front matter when chosen.
-        from epy_reports.renderer import PAGE_SIZES  # noqa: PLC0415
+        from epy_reports._core.renderer import PAGE_SIZES  # noqa: PLC0415
 
         self.page_size_group = QActionGroup(self)
         self.page_size_group.setExclusive(True)
@@ -471,7 +472,9 @@ class MarkdownWindow(QMainWindow):
         # Convenience: Ctrl+Shift+C inserts a basic note callout.
         self.callout_actions[0].setShortcut(QKeySequence("Ctrl+Shift+C"))
 
-        from epy_reports._design import DISCLOSURE_PRESETS  # noqa: PLC0415
+        from epy_reports._core._design import (  # noqa: PLC0415
+            DISCLOSURE_PRESETS,
+        )
         self.disclosure_actions: list[QAction] = []
         for d_kind, (d_label, _d_text) in DISCLOSURE_PRESETS.items():
             d_act = QAction(f"Disclosure: {d_label}", self)
@@ -501,7 +504,7 @@ class MarkdownWindow(QMainWindow):
         self.act_new_bib_entry.triggered.connect(self._new_bib_entry)
 
         # Citation style — IEEE by default, APA / Chicago selectable.
-        from epy_reports.renderer import CSL_STYLES  # noqa: PLC0415
+        from epy_reports._core.renderer import CSL_STYLES  # noqa: PLC0415
 
         self.csl_group = QActionGroup(self)
         self.csl_group.setExclusive(True)
@@ -872,7 +875,7 @@ class MarkdownWindow(QMainWindow):
 
     def _open_theme_gallery(self) -> None:
         """Open the theme gallery; apply the chosen theme on accept."""
-        from epy_reports.theme_gallery_dialog import (  # noqa: PLC0415
+        from epy_reports._ui.theme_gallery_dialog import (  # noqa: PLC0415
             ThemeGalleryDialog,
         )
 
@@ -885,7 +888,7 @@ class MarkdownWindow(QMainWindow):
 
     def _open_design_block_picker(self) -> None:
         """Open the design-block picker; insert the chosen block on accept."""
-        from epy_reports.design_block_dialog import (  # noqa: PLC0415
+        from epy_reports._ui.design_block_dialog import (  # noqa: PLC0415
             DesignBlockDialog,
         )
 
@@ -898,7 +901,7 @@ class MarkdownWindow(QMainWindow):
 
     def _open_theme_editor(self, edit_id: str | None = None) -> None:
         """Open the theme editor; on save, persist and select the theme."""
-        from epy_reports.theme_editor_dialog import (  # noqa: PLC0415
+        from epy_reports._ui.theme_editor_dialog import (  # noqa: PLC0415
             ThemeEditorDialog,
         )
 
@@ -974,7 +977,7 @@ class MarkdownWindow(QMainWindow):
 
     def _current_page_size_from_tab(self) -> str:
         """Return the active document's page-size key (default Letter)."""
-        from epy_reports.renderer import (  # noqa: PLC0415
+        from epy_reports._core.renderer import (  # noqa: PLC0415
             DEFAULT_PAGE_SIZE,
             normalize_page_size,
         )
@@ -1012,7 +1015,7 @@ class MarkdownWindow(QMainWindow):
 
     def _show_about(self) -> None:
         """Open the About epy_reports dialog modally."""
-        from epy_reports.about_dialog import AboutDialog  # noqa: PLC0415
+        from epy_reports._ui.about_dialog import AboutDialog  # noqa: PLC0415
 
         dlg = AboutDialog(self)
         dlg.exec()
@@ -1047,7 +1050,7 @@ class MarkdownWindow(QMainWindow):
 
     def _populate_apply_template_menu(self) -> None:
         """Rebuild the Apply-template submenu from disk."""
-        from epy_reports import templates  # noqa: PLC0415
+        from epy_reports._core import templates  # noqa: PLC0415
 
         menu = self.apply_template_menu
         menu.clear()
@@ -1064,7 +1067,7 @@ class MarkdownWindow(QMainWindow):
 
     def _populate_delete_template_menu(self) -> None:
         """Rebuild the Delete-template submenu from disk."""
-        from epy_reports import templates  # noqa: PLC0415
+        from epy_reports._core import templates  # noqa: PLC0415
 
         menu = self.delete_template_menu
         menu.clear()
@@ -1083,7 +1086,7 @@ class MarkdownWindow(QMainWindow):
         """Capture current config and save it under a chosen name."""
         from PySide6.QtWidgets import QInputDialog  # noqa: PLC0415
 
-        from epy_reports import templates  # noqa: PLC0415
+        from epy_reports._core import templates  # noqa: PLC0415
 
         name, ok = QInputDialog.getText(
             self, "Save template", "Template name:"
@@ -1117,7 +1120,7 @@ class MarkdownWindow(QMainWindow):
 
     def _apply_template(self, name: str) -> None:
         """Apply a saved template: theme + front-matter keys."""
-        from epy_reports import templates  # noqa: PLC0415
+        from epy_reports._core import templates  # noqa: PLC0415
 
         try:
             tpl = templates.load_template(name)
@@ -1169,7 +1172,7 @@ class MarkdownWindow(QMainWindow):
 
     def _delete_template(self, name: str) -> None:
         """Delete a saved template after confirmation."""
-        from epy_reports import templates  # noqa: PLC0415
+        from epy_reports._core import templates  # noqa: PLC0415
 
         choice = QMessageBox.question(
             self,
@@ -1207,7 +1210,7 @@ class MarkdownWindow(QMainWindow):
 
     def _edit_document_properties(self) -> None:
         """Open the Document properties form and write the front matter."""
-        from epy_reports.document_properties_dialog import (  # noqa: PLC0415
+        from epy_reports._ui.document_properties_dialog import (  # noqa: PLC0415
             DocumentPropertiesDialog,
         )
 
@@ -1277,7 +1280,7 @@ class MarkdownWindow(QMainWindow):
         absent) maps to the IEEE default so the menu always reflects
         an effective state.
         """
-        from epy_reports.renderer import (  # noqa: PLC0415
+        from epy_reports._core.renderer import (  # noqa: PLC0415
             CSL_STYLES,
             DEFAULT_CSL_STYLE,
         )
@@ -1324,7 +1327,7 @@ class MarkdownWindow(QMainWindow):
         4. Linked .bib path is set but the file does not exist yet →
            the dialog accepts and the file is created on save.
         """
-        from epy_reports.bib_dialog import BibEntryDialog  # noqa: PLC0415
+        from epy_reports._ui.bib_dialog import BibEntryDialog  # noqa: PLC0415
 
         tab = self._current_tab()
         if tab is None:
@@ -1700,7 +1703,7 @@ class MarkdownWindow(QMainWindow):
 
     def _export_via_docs(self) -> None:
         """Launch the epy_docs export dialog and render in a worker."""
-        from epy_reports.docs_export_dialog import (  # noqa: PLC0415
+        from epy_reports._ui.docs_export_dialog import (  # noqa: PLC0415
             DocsExportDialog,
             _RenderWorker,
         )
@@ -1863,7 +1866,7 @@ def _run_gui(files: list[str]) -> int:
 
 def _run_register(make_default: bool) -> int:
     """Register the app for ``.md`` / ``.qmd`` on Windows."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     try:
         changes = winreg_assoc.register(make_default=make_default)
@@ -1892,7 +1895,7 @@ def _run_register(make_default: bool) -> int:
 
 def _run_set_default() -> int:
     """Open Settings → Default apps so the user can pick this app."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     if not winreg_assoc.open_default_apps_settings():
         print(
@@ -1911,7 +1914,7 @@ def _run_set_default() -> int:
 
 def _run_unregister() -> int:
     """Remove the file-association keys created by ``--register``."""
-    from epy_reports import winreg_assoc
+    from epy_reports._core import winreg_assoc
 
     try:
         changes = winreg_assoc.unregister()

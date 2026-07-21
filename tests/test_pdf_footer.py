@@ -7,7 +7,7 @@ import pytest
 pypdf = pytest.importorskip("pypdf")
 reportlab = pytest.importorskip("reportlab")
 
-from epy_reports._pdf_footer import add_footer  # noqa: E402
+from epy_reports._core._pdf_footer import add_footer  # noqa: E402
 
 
 def _make_pdf(path, pages: int = 1) -> None:
