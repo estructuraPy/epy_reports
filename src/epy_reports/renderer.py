@@ -308,6 +308,26 @@ _TBL_CAP_RE = re.compile(
     r"(\s+\{#(?P<label>tbl-[A-Za-z0-9_-]+)[^}]*\}\s*)$"
 )
 
+# Standalone figure caption: `: CAP {#fig-x ...}` on its own line — the
+# figure analogue of the Pandoc table-caption line, for figures that are
+# NOT markdown images (interactive plotly fences, raw-HTML blocks). The
+# resolver rewrites it to a numbered caption paragraph + anchor span, so
+# it participates in numbering, @fig- references and the [[lof]] index.
+_FIGLINE_CAP_RE = re.compile(
+    r"^:\s+((?!(?:[A-Z][a-záéíóúüñA-Z]+ )+\d+:).+?)"
+    r"\s+\{#(?P<label>fig-[A-Za-z0-9_-]+)[^}]*\}\s*$"
+)
+
+# A figure label attribute in prose that no caption construct consumed —
+# not attached to an image (`](path){#fig-x}` puts `)` before `{`). Pandoc
+# would print it verbatim (the "{#fig-x} leaked into the caption" defect);
+# the resolver rewrites it to an invisible anchor span instead so @fig-
+# references keep a live target. fig-only on purpose: tbl/eq/sec attrs are
+# consumed by Pandoc (table captions, headings) or handled by _tag_eq.
+_ORPHAN_FIG_ATTR_RE = re.compile(
+    r"(?<![\)\]])\{#(?P<label>fig-[A-Za-z0-9_-]+)[^}]*\}"
+)
+
 # Equation block closing: optional whitespace before `$$` then `{#eq-x}`
 # Handles both  `$$ {#eq-x}`  and  `$$  {#eq-x}`  on the same line.
 _EQ_CLOSE_RE = re.compile(
@@ -460,8 +480,43 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
 
         return _FIG_CAP_RE.sub(repl, line)
 
+    def _prefix_figline(line: str) -> str:
+        """Rewrite a standalone `: CAP {#fig-x}` caption line.
+
+        Becomes an italic numbered caption paragraph plus an anchor span
+        (``+bracketed_spans`` renders it as ``<span id="fig-x"></span>``,
+        same mechanism as equation anchors).
+        """
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            n = numbers.get(label)
+            if n is None:
+                return m.group(0)
+            word = words["fig"]
+            return f"*{word} {n}: {m.group(1)}* []{{#{label}}}\n"
+
+        return _FIGLINE_CAP_RE.sub(repl, line)
+
+    def _scrub_orphan_fig(line: str) -> str:
+        """Convert leftover bare figure attrs to invisible anchor spans."""
+
+        def repl(m: re.Match[str]) -> str:
+            label = m.group("label")
+            if label not in numbers:
+                return m.group(0)
+            return f"[]{{#{label}}}"
+
+        return _ORPHAN_FIG_ATTR_RE.sub(repl, line)
+
     def _prefix_tbl(line: str) -> str:
-        """Prefix table captions at their definition site."""
+        """Prefix table captions at their definition site.
+
+        The raw ``{#tbl-x}`` attr is swapped for a bracketed anchor span:
+        plain Pandoc (unlike Quarto) does NOT consume attrs on caption
+        lines — left in place it prints verbatim inside every rendered
+        table caption.
+        """
 
         def repl(m: re.Match[str]) -> str:
             label = m.group("label")
@@ -470,7 +525,7 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
                 return m.group(0)
             word = words["tbl"]
             return (
-                f"{m.group(1)}{word} {n}: {m.group(2)}{m.group(3)}"
+                f"{m.group(1)}{word} {n}: {m.group(2)} []{{#{label}}}\n"
             )
 
         return _TBL_CAP_RE.sub(repl, line)
@@ -551,8 +606,10 @@ def _resolve_crossrefs(source: str, lang: str = "en") -> str:
         # not inside inline-code spans in practice, and the regexes are
         # specific enough not to mis-fire on code-looking prose).
         line = _prefix_fig(line)
+        line = _prefix_figline(line)
         line = _prefix_tbl(line)
         line = _tag_eq(line)
+        line = _scrub_orphan_fig(line)
         # Replace prose references, protecting inline code spans.
         line = _transform_prose(line)
         out_lines.append(line)
@@ -676,6 +733,13 @@ def collect_index_entries(
             seen.add(label)
             caption = _strip_caption_prefix(m.group("caption"))
             figs.append((numbers[label], caption, label))
+        figline_m = _FIGLINE_CAP_RE.match(line)
+        if figline_m is not None:
+            label = figline_m.group("label")
+            if label not in seen and label in numbers:
+                seen.add(label)
+                caption = _strip_caption_prefix(figline_m.group(1))
+                figs.append((numbers[label], caption, label))
         tbl_m = _TBL_EXTRACT_RE.match(line)
         if tbl_m is not None:
             label = tbl_m.group("label")

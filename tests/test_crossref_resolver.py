@@ -272,3 +272,62 @@ def test_render_markdown_integration():
     html = render_markdown(src)
     assert "Figure 1" in html
     assert "@fig-test" not in html
+
+
+# ---------------------------------------------------------------------------
+# Standalone colon figure caption (`: CAP {#fig-x}`) — the non-image figure
+# form used by interactive plotly fences and raw-HTML figures.
+# ---------------------------------------------------------------------------
+
+
+def test_colon_figure_caption_numbered_with_anchor():
+    src = (
+        "```{.plotly fallback=figs/a.png}\n{}\n```\n\n"
+        ": Wind force per floor. {#fig-wind}\n\n"
+        "See @fig-wind.\n"
+    )
+    out = resolve(src)
+    assert "*Figure 1: Wind force per floor.* []{#fig-wind}" in out
+    assert "[Figure 1](#fig-wind)" in out
+
+
+def test_colon_figure_and_image_share_numbering():
+    src = (
+        "![First](a.png){#fig-a}\n\n"
+        ": Second, interactive. {#fig-b}\n\n"
+        "@fig-a and @fig-b.\n"
+    )
+    out = resolve(src)
+    assert "Figure 1: First" in out
+    assert "*Figure 2: Second, interactive.*" in out
+    assert "[Figure 2](#fig-b)" in out
+
+
+# ---------------------------------------------------------------------------
+# Orphan figure attrs in prose scrub to invisible anchors (the
+# "{#fig-x} leaked into the caption" defect).
+# ---------------------------------------------------------------------------
+
+
+def test_orphan_fig_attr_becomes_anchor():
+    src = (
+        "**Figure.** Hand-written caption paragraph. {#fig-orphan}\n\n"
+        "See @fig-orphan.\n"
+    )
+    out = resolve(src)
+    assert "[]{#fig-orphan}" in out
+    assert "caption paragraph. {#fig-orphan}" not in out
+    assert "[Figure 1](#fig-orphan)" in out
+
+
+def test_image_attached_fig_attr_not_scrubbed():
+    src = "![Cap](p.png){#fig-keep}\n"
+    out = resolve(src)
+    assert "){#fig-keep}" in out
+
+
+def test_table_caption_attr_becomes_anchor():
+    src = ": A table caption {#tbl-t}\n"
+    out = resolve(src)
+    assert "Table 1: A table caption []{#tbl-t}" in out
+    assert "caption {#tbl-t}" not in out
