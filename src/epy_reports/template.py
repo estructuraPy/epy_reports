@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import html
 import re
 from functools import lru_cache
 from importlib import resources
 from pathlib import Path
+from urllib.parse import unquote
 
 _PAGEDJS_RUNNER = """
 <script>
@@ -409,6 +411,45 @@ def _base_href(base_dir: Path | None) -> str:
     return f'<base href="{uri}">'
 
 
+_IMG_SRC_RE = re.compile(r'(<img\b[^>]*?\bsrc=")([^"]+)(")', re.IGNORECASE)
+
+_IMG_MIME = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".svg": "image/svg+xml", ".webp": "image/webp",
+    ".bmp": "image/bmp",
+}
+
+
+def _embed_local_images(fragment: str, base_dir: Path | None) -> str:
+    """Rewrite local ``<img src>`` references in ``fragment`` as ``data:`` URIs.
+
+    Remote (``http(s)://``, protocol-relative) and already-embedded
+    (``data:``) sources pass through untouched. Relative paths resolve
+    against ``base_dir``; a source that cannot be resolved, read, or
+    MIME-typed is left as-is rather than failing the render — a broken
+    reference in the output is diagnosable, a crashed export is not.
+    """
+    def _sub(match: re.Match[str]) -> str:
+        src = match.group(2)
+        if src.startswith(("data:", "http://", "https://", "//")):
+            return match.group(0)
+        raw = unquote(src)
+        if raw.startswith("file:///"):
+            raw = raw[len("file:///"):]
+        path = Path(raw)
+        if not path.is_absolute():
+            if base_dir is None:
+                return match.group(0)
+            path = base_dir / path
+        mime = _IMG_MIME.get(path.suffix.lower())
+        if mime is None or not path.is_file():
+            return match.group(0)
+        data = base64.b64encode(path.read_bytes()).decode("ascii")
+        return f"{match.group(1)}data:{mime};base64,{data}{match.group(3)}"
+
+    return _IMG_SRC_RE.sub(_sub, fragment)
+
+
 # Valid paged-preview size keys. Kept local to avoid importing from
 # ``renderer`` (which imports this module) — the canonical source of
 # truth for dimensions lives in ``renderer.PAGE_SIZES``.
@@ -572,6 +613,7 @@ def build_html_document(
     continuous: bool = False,
     diagrams: frozenset[str] = frozenset(),
     plotly: bool = False,
+    embed_images: bool = False,
 ) -> str:
     """Assemble the final HTML document around a rendered body.
 
@@ -604,6 +646,11 @@ def build_html_document(
         plotly: When ``True``, the document contains at least one
             interactive plotly figure; the bundled Plotly.js engine and
             its load-time runner are injected after the diagram block.
+        embed_images: When ``True``, local ``<img>`` sources in the
+            header and body are inlined as base64 ``data:`` URIs and NO
+            ``<base>`` tag is emitted — a relocatable document must not
+            anchor relative URLs (images OR ``#fragment`` index links,
+            which ``<base>`` also captures) to a machine-specific path.
 
     Returns:
         A complete, self-contained HTML5 document.
@@ -630,12 +677,16 @@ def build_html_document(
     # export paths (Paged.js PDF, standalone continuous HTML) carry no
     # restore hash, so the hook is preview-only.
     preview_restore = "" if (for_export or continuous) else _PREVIEW_RESTORE
+    if embed_images:
+        header = _embed_local_images(header, base_dir)
+        body = _embed_local_images(body, base_dir)
+    base_tag = "" if embed_images else _base_href(base_dir)
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'
         "<head>\n"
         '<meta charset="utf-8">\n'
-        f"{_base_href(base_dir)}\n"
+        f"{base_tag}\n"
         f"<title>{html.escape(title)}</title>\n"
         "<style>\n"
         f"{base_css}\n"

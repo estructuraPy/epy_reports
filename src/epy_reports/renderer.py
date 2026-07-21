@@ -1256,6 +1256,7 @@ def render_markdown(
     page_size: str = "letter",
     for_export: bool = False,
     continuous: bool = False,
+    embed_images: bool = False,
 ) -> str:
     """Render Quarto/Pandoc Markdown ``source`` to a full HTML page.
 
@@ -1289,6 +1290,11 @@ def render_markdown(
         continuous: When ``True``, hide the print/page structure (page
             breaks and index page numbers) so the HTML reads as one
             continuous web page. Used by the HTML export.
+        embed_images: When ``True``, local ``<img>`` references are
+            inlined as base64 ``data:`` URIs and no ``<base>`` tag is
+            emitted, so the document stays intact when moved or shared
+            on its own. Export-only — the live preview keeps ``<base>``
+            resolution instead of re-encoding images on every render.
 
     Returns:
         A standalone HTML5 document ready for the preview pane or to
@@ -1339,4 +1345,5 @@ def render_markdown(
         continuous=continuous,
         diagrams=frozenset(diagram_engines(source)),
         plotly=plotly_flag,
+        embed_images=embed_images,
     )

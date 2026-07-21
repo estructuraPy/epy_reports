@@ -100,6 +100,7 @@ class Report:
             base_dir=self.base_dir,
             theme_css=self._theme_css(),
             continuous=continuous,
+            embed_images=True,
         )
         out = Path(path)
         out.write_text(html, encoding="utf-8")
