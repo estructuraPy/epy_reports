@@ -10,7 +10,7 @@ anywhere else in the package.
 
 Usage example::
 
-    from epy_reports.epy_suite_connect.docs_bridge import (
+    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
         epy_docs_available,
         render_document,
     )

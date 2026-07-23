@@ -37,7 +37,7 @@ from epy_reports._core.renderer import export_docx, render_markdown
 from epy_reports._ui import themes
 from epy_reports._ui.about_dialog import _load_branding_pixmap
 from epy_reports._ui.tab import MarkdownTab
-from epy_reports.epy_suite_connect.docs_bridge import epy_docs_available
+from epy_reports.epy_suite_connect.adapters.docs_bridge import epy_docs_available
 
 APP_NAME = "epy_reports"
 
