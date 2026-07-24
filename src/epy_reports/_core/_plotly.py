@@ -124,3 +124,31 @@ def strip_plotly_for_export(source: str) -> str:
         return f"\n*{_MISSING_FALLBACK_NOTE}*\n"
 
     return _PLOTLY_FENCE_RE.sub(repl, source)
+
+
+def figure_to_markdown(
+    fig, *, fallback: str | None = None, height: str = DEFAULT_HEIGHT
+) -> str:
+    """Serialize a Plotly figure to a ```{.plotly ...}``` fenced block.
+
+    ``fig`` is any Plotly figure (duck-typed on ``.to_json()`` — no plotly
+    import is needed here; the figure serializes itself, handling numpy and
+    datetime). The returned Markdown, spliced into a report source, is
+    expanded by :func:`expand_plotly` into a live interactive figure in the
+    HTML edition and degrades to ``fallback`` (a raster path) in the static
+    (PDF/DOCX) editions via :func:`strip_plotly_for_export`.
+
+    Args:
+        fig: A Plotly figure exposing ``.to_json()``.
+        fallback: Optional pre-rendered raster path used by the static
+            (PDF/DOCX) exports; when omitted, those exports show the
+            "interactive figure" note instead.
+        height: CSS height of the figure container (defaults to
+            :data:`DEFAULT_HEIGHT`).
+    """
+    body = fig.to_json()
+    attrs: list[str] = []
+    if fallback:
+        attrs.append(f"fallback={fallback}")
+    attrs.append(f"height={height}")
+    return "```{.plotly " + " ".join(attrs) + "}\n" + body + "\n```\n"

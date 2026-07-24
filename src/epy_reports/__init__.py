@@ -20,9 +20,11 @@ import os
 import sys
 from pathlib import Path
 
+from epy_reports._core._plotly import figure_to_markdown
+
 __version__ = "0.3.0"
 
-__all__ = ["Report", "__version__"]
+__all__ = ["Report", "__version__", "figure_to_markdown"]
 
 
 def _pin_system_icu() -> None:
@@ -132,7 +134,9 @@ class Report:
 
     def to_pdf(self, path: str | Path, *, timeout_ms: int = 60000) -> Path:
         """Write a paginated PDF via Paged.js (needs PySide6)."""
-        from epy_reports._core._export_pdf import render_report_pdf  # noqa: PLC0415
+        from epy_reports._core._export_pdf import (
+            render_report_pdf,  # noqa: PLC0415
+        )
 
         out = Path(path)
         render_report_pdf(

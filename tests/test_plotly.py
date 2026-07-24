@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
+
 from epy_reports._core._plotly import (
     expand_plotly,
+    figure_to_markdown,
     has_plotly,
     strip_plotly_for_export,
 )
@@ -135,3 +138,60 @@ def test_wrap_wide_tables_wraps_each_of_several_tables():
     body = _TABLE_HTML + "\n" + _TABLE_HTML
     out = _wrap_wide_tables(body)
     assert out.count('<div class="table-wrap">') == 2
+
+
+# ---------------------------------------------------------------------------
+# figure_to_markdown — convert a Plotly figure into a fenced block
+# ---------------------------------------------------------------------------
+
+class _FakeFig:
+    """A minimal duck-typed figure that never needs plotly installed."""
+
+    def to_json(self):
+        return '{"data": [{"type": "scatter", "y": [1, 2, 3]}], "layout": {}}'
+
+
+def test_figure_to_markdown_fake_fig_default_height():
+    """Default height (420px) is emitted when no height= is given."""
+    fake = _FakeFig()
+    md = figure_to_markdown(fake)
+    out = expand_plotly(md)
+    assert 'style="height: 420px;"' in out
+    assert 'class="epy-plotly"' in out
+
+
+def test_figure_to_markdown_fake_fig_with_fallback_and_height():
+    """With fallback and height, the expanded result carries both."""
+    fake = _FakeFig()
+    md = figure_to_markdown(fake, fallback="figs/twin.png", height="360px")
+    out = expand_plotly(md)
+    assert 'class="epy-plotly"' in out
+    assert 'data-plotly-for="epy-plotly-0"' in out
+    assert 'style="height: 360px;"' in out
+    assert '"type": "scatter"' in out
+
+
+def test_figure_to_markdown_fake_fig_static_degrade():
+    """Under static=True the fallback image appears in expanded output."""
+    fake = _FakeFig()
+    md = figure_to_markdown(fake, fallback="figs/twin.png", height="360px")
+    out = expand_plotly(md, static=True)
+    assert "![](figs/twin.png)" in out
+
+
+def test_figure_to_markdown_fake_fig_strip_plotly_for_export():
+    """strip_plotly_for_export also uses the fallback image."""
+    fake = _FakeFig()
+    md = figure_to_markdown(fake, fallback="figs/twin.png", height="360px")
+    stripped = strip_plotly_for_export(md)
+    assert "![](figs/twin.png)" in stripped
+
+
+def test_figure_to_markdown_real_fig_roundtrip():
+    """A real Plotly figure round-trips through expand_plotly."""
+    go = pytest.importorskip("plotly.graph_objects")
+    fig = go.Figure(go.Scatter(y=[1, 2, 3]))
+    out = expand_plotly(figure_to_markdown(fig))
+    assert 'class="epy-plotly"' in out
+    # The serialized trace type appears in the JSON payload
+    assert '"scatter"' in out.lower() or 'scatter' in out.lower()
