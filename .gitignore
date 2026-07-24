@@ -47,3 +47,4 @@ tutorials/**/_render_log.txt
 
 .benchmarks/
 
+.deepseek_delegate/
