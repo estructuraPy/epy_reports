@@ -12,10 +12,10 @@ import json
 import os
 import re
 import sys
-from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from epy_reports._config import _loader
 from epy_reports._ui.themes_base import Theme
 
 if TYPE_CHECKING:
@@ -23,11 +23,6 @@ if TYPE_CHECKING:
     # headless render_markdown must never pull PySide6) while still typing
     # apply_palette()'s parameter for static checkers.
     from PySide6.QtWidgets import QApplication
-
-ASSETS_PACKAGE = "epy_reports._config._assets.themes"
-
-# Files in the themes/ folder that are not themable layouts.
-_NON_LAYOUTS = {"colors.epyson", "translations.epyson"}
 
 
 # ---------------------------------------------------------------- utils
@@ -111,26 +106,23 @@ def _contrast_text(bg_hex: str) -> str:
     return "#000000" if not _is_dark(bg_hex) else "#FFFFFF"
 
 
-def _read_json(filename: str) -> dict[str, Any]:
-    """Load ``filename`` from the bundled themes asset folder."""
-    text = (
-        resources.files(ASSETS_PACKAGE)
-        .joinpath(filename)
-        .read_text(encoding="utf-8")
-    )
-    return json.loads(text)
-
-
 # ---------------------------------------------------------------- load
+#
+# All raw ``.epyson`` I/O (bundled assets and user-saved themes) is
+# delegated to ``epy_reports._config._loader`` -- this module only builds
+# ``Theme``/CSS/Qt objects from the data it returns.
 
 
 def _load_palettes() -> dict[str, dict[str, Any]]:
-    """Parse ``colors.epyson`` once and cache its palettes by name."""
-    try:
-        data = _read_json("colors.epyson")
-    except FileNotFoundError:
-        return {}
-    return data.get("color_palettes", {})
+    """Parse ``colors.epyson`` once and cache its palettes by name.
+
+    Raises:
+        FileNotFoundError: If ``colors.epyson`` is missing from the
+            bundled asset package -- callout colors are visual/normative
+            data with no safe empty substitute (see
+            ``epy_reports._config._loader.load_color_palettes``).
+    """
+    return _loader.load_color_palettes()
 
 
 _PALETTES_CACHE: dict[str, dict[str, Any]] | None = None
@@ -199,7 +191,7 @@ def _callout_vars(
 
 def load_layout_theme(filename: str) -> Theme:
     """Build a :class:`Theme` from one bundled layout ``.epyson`` file."""
-    raw = _read_json(filename)
+    raw = _loader.read_asset_json(filename)
     return _theme_from_raw(raw, filename.rsplit(".", 1)[0])
 
 
@@ -403,20 +395,20 @@ def _safe_stem(name: str) -> str:
 
 def load_user_theme(path: Path) -> Theme:
     """Build a :class:`Theme` from a user ``.epyson`` file on disk."""
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw = _loader.read_user_theme_json(path)
     return _theme_from_raw(raw, path.stem)
 
 
 def user_theme_ids() -> set[str]:
     """Return the ids of themes that live in the user directory."""
-    directory = user_themes_dir()
-    if not directory.is_dir():
-        return set()
     ids: set[str] = set()
-    for path in directory.glob("*.epyson"):
+    for path in _loader.list_user_theme_files(user_themes_dir()):
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw = _loader.read_user_theme_json(path)
         except (json.JSONDecodeError, OSError):
+            # One corrupt user theme file among many must not hide the
+            # rest -- the same best-effort catalog-assembly pattern as
+            # load_all_themes() below.
             continue
         ids.add(raw.get("layout_name") or path.stem)
     return ids
@@ -435,9 +427,7 @@ def save_user_theme(payload: dict[str, Any]) -> str:
     payload = {**payload, "layout_name": layout_id}
     directory = user_themes_dir()
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / f"{layout_id}.epyson").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    _loader.write_user_theme_json(directory / f"{layout_id}.epyson", payload)
     return layout_id
 
 
@@ -497,27 +487,20 @@ def build_epyson(values: dict[str, Any]) -> dict[str, Any]:
 def load_all_themes() -> dict[str, Theme]:
     """Return every theme, keyed by id (bundled layouts + user themes)."""
     discovered: dict[str, Theme] = {}
-    pkg = resources.files(ASSETS_PACKAGE)
-    for entry in sorted(pkg.iterdir(), key=lambda p: p.name):
-        if not entry.name.endswith(".epyson"):
-            continue
-        if entry.name in _NON_LAYOUTS:
-            continue
+    for filename in _loader.list_bundled_layout_files():
         try:
-            theme = load_layout_theme(entry.name)
+            theme = load_layout_theme(filename)
         except (json.JSONDecodeError, OSError, KeyError):
             continue
         discovered[theme.id] = theme
 
     # User-generated themes (override bundled ids of the same name).
-    directory = user_themes_dir()
-    if directory.is_dir():
-        for path in sorted(directory.glob("*.epyson")):
-            try:
-                theme = load_user_theme(path)
-            except (json.JSONDecodeError, OSError, KeyError):
-                continue
-            discovered[theme.id] = theme
+    for path in _loader.list_user_theme_files(user_themes_dir()):
+        try:
+            theme = load_user_theme(path)
+        except (json.JSONDecodeError, OSError, KeyError):
+            continue
+        discovered[theme.id] = theme
     return discovered
 
 
