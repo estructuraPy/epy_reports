@@ -569,6 +569,62 @@ _PREVIEW_RESTORE = """
 </script>
 """
 
+# In-page anchor navigation for documents that carry a <base href>. A plain
+# href="#id" resolves AGAINST THE BASE (the document's directory), so clicking
+# a TOC entry or a "Figura 3" cross-reference would navigate the preview away
+# instead of jumping. This hook intercepts anchor-only links, scrolls to the
+# target, and records each jump in the session history together with the
+# scroll offset it left from — so Back returns to the exact previous position
+# and Forward replays the jump.
+_ANCHOR_NAV = """
+<script>
+(function () {
+  function scrollingEl() {
+    return document.scrollingElement || document.documentElement;
+  }
+  function targetFor(id) {
+    var el = document.getElementById(id);
+    if (el) return el;
+    var byName = document.getElementsByName(id);
+    return byName.length ? byName[0] : null;
+  }
+  function selfUrl(hash) {
+    return location.href.split('#')[0] + (hash ? '#' + hash : '');
+  }
+  document.addEventListener('click', function (ev) {
+    var node = ev.target;
+    while (node && node.nodeType === 1 && node.tagName !== 'A') {
+      node = node.parentNode;
+    }
+    if (!node || node.nodeType !== 1) return;
+    var href = node.getAttribute('href') || '';
+    if (href.charAt(0) !== '#') return;
+    ev.preventDefault();
+    var id = decodeURIComponent(href.slice(1));
+    var el = targetFor(id);
+    if (!el) return;
+    try {
+      history.replaceState({ epyScroll: scrollingEl().scrollTop }, '',
+                           selfUrl(location.hash.slice(1)));
+      history.pushState({ epyAnchor: id }, '', selfUrl(id));
+    } catch (e) { /* degraded: jump without history */ }
+    el.scrollIntoView({ block: 'start' });
+  }, true);
+  window.addEventListener('popstate', function (ev) {
+    var st = ev.state || {};
+    if (typeof st.epyScroll === 'number') {
+      scrollingEl().scrollTop = st.epyScroll;
+      return;
+    }
+    if (st.epyAnchor) {
+      var el = targetFor(st.epyAnchor);
+      if (el) el.scrollIntoView({ block: 'start' });
+    }
+  });
+})();
+</script>
+"""
+
 _CONTINUOUS_CSS = """
 /* Continuous HTML export: hide the print/page structure so the document
    reads as one continuous web page — no page breaks and no page-number
@@ -681,6 +737,9 @@ def build_html_document(
         header = _embed_local_images(header, base_dir)
         body = _embed_local_images(body, base_dir)
     base_tag = "" if embed_images else _base_href(base_dir)
+    # Anchor links break exactly when a <base> is present (it captures
+    # #fragment hrefs); the interceptor ships if and only if the base does.
+    anchor_nav = _ANCHOR_NAV if base_tag else ""
     return (
         "<!doctype html>\n"
         '<html lang="en">\n'
@@ -706,6 +765,7 @@ def build_html_document(
         f"{header}\n"
         f"{body}\n"
         "</main>\n"
+        f"{anchor_nav}"
         f"{preview_restore}"
         "</body>\n"
         "</html>\n"

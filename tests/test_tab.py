@@ -52,6 +52,58 @@ def tab(qapp):
 
 
 # ---------------------------------------------------------------------------
+# Preview navigation: popup links, back/forward, render history hygiene
+# ---------------------------------------------------------------------------
+
+
+def test_popup_links_open_in_system_browser(qapp, monkeypatch):
+    """target=_blank navigation is handed to the OS browser."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QDesktopServices
+
+    opened: list[str] = []
+    monkeypatch.setattr(
+        QDesktopServices, "openUrl", lambda url: opened.append(url.toString())
+    )
+    page = tab_mod._ExternalOpenPage(None)
+    accepted = page.acceptNavigationRequest(
+        QUrl("https://example.test/doc"), None, True
+    )
+    assert accepted is False
+    assert opened == ["https://example.test/doc"]
+
+
+def test_preview_view_creates_external_page(qapp):
+    """createWindow returns the throwaway external-open page."""
+    view = tab_mod._PreviewView()
+    page = view.createWindow(None)
+    assert isinstance(page, tab_mod._ExternalOpenPage)
+    view.deleteLater()
+
+
+def test_render_load_clears_history_flagged(tab):
+    """A flagged (render) load clears history; unflagged keeps it."""
+    calls: list[str] = []
+
+    class _FakeHistory:
+        def clear(self):
+            calls.append("clear")
+
+    class _FakeView:
+        def history(self):
+            return _FakeHistory()
+
+    tab.view = _FakeView()  # type: ignore[assignment] — behavioral stub
+    tab._expect_render_load = True
+    tab._on_preview_load_finished(True)
+    assert calls == ["clear"]
+    assert tab._expect_render_load is False
+
+    tab._on_preview_load_finished(True)
+    assert calls == ["clear"]
+
+
+# ---------------------------------------------------------------------------
 # Module-level suffix helpers
 # ---------------------------------------------------------------------------
 

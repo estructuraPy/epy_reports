@@ -4,6 +4,27 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-08-05
+
+### Fixed
+- **Preview links.** In-page links — TOC entries, `[[lof]]`/`[[lot]]`/
+  `[[loe]]` indexes and every `@fig-` / `@tbl-` / `@eq-` / `@sec-`
+  cross-reference — now jump inside the preview. The live preview carries a
+  `<base href>` (so relative images resolve), and a plain `href="#id"`
+  resolved against that base, navigating the preview away instead of
+  jumping; an injected interceptor scrolls to the target instead. Exports
+  without a `<base>` were never affected.
+- **Popup links.** `target="_blank"` links were silently swallowed by the
+  preview; they now open in the system browser.
+
+### Added
+- **Back/Forward in the preview.** After following a link (an in-page jump
+  or an external page), Back returns the preview to the exact position it
+  left — each jump records the scroll offset in the session history.
+  `Alt+Left` / `Alt+Right` (and the preview context menu) navigate; the
+  debounced re-renders no longer pollute the history, so Back always means
+  "return from the link", never "step through old renders".
+
 ## [0.3.1] — 2026-08-05
 
 ### Fixed

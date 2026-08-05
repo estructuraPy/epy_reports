@@ -11,12 +11,16 @@ from pathlib import Path
 
 from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import (
+    QDesktopServices,
     QFont,
     QFontDatabase,
+    QKeySequence,
     QPageLayout,
     QPageSize,
+    QShortcut,
     QTextCursor,
 )
+from PySide6.QtWebEngineCore import QWebEnginePage
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
@@ -118,6 +122,30 @@ def next_footnote_suffix(text: str) -> str:
     return str(max(ints) + 1) if ints else "1"
 
 
+class _ExternalOpenPage(QWebEnginePage):
+    """Throwaway page that redirects any load to the system browser.
+
+    ``QWebEngineView`` swallows ``target="_blank"`` links unless
+    ``createWindow`` returns a page; this stand-in receives the popup
+    navigation and hands the URL to the OS instead, so "open in new
+    window" links actually work from the preview.
+    """
+
+    def acceptNavigationRequest(  # noqa: N802 (Qt override)
+        self, url: QUrl, _type, _is_main_frame: bool
+    ) -> bool:
+        QDesktopServices.openUrl(url)
+        self.deleteLater()
+        return False
+
+
+class _PreviewView(QWebEngineView):
+    """Preview view: popup links go to the system browser."""
+
+    def createWindow(self, _window_type):  # noqa: N802 (Qt override)
+        return _ExternalOpenPage(self)
+
+
 class MarkdownTab(QWidget):
     """Editor + live preview for one Markdown buffer.
 
@@ -143,7 +171,21 @@ class MarkdownTab(QWidget):
         self.editor = QPlainTextEdit(self)
         self._setup_editor()
 
-        self.view = QWebEngineView(self)
+        self.view = _PreviewView(self)
+        # A fresh render must not leave stale history entries behind:
+        # otherwise Back steps through every previous debounce render of
+        # the same page instead of returning from a link jump. The flag
+        # marks loads issued by _render_into_view; loads that arrive via
+        # history navigation (Back from a web page) keep their history.
+        self._expect_render_load = False
+        self.view.loadFinished.connect(self._on_preview_load_finished)
+        # Browser-style history navigation on the preview pane.
+        back = QShortcut(QKeySequence("Alt+Left"), self.view)
+        back.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        back.activated.connect(self.view.back)
+        forward = QShortcut(QKeySequence("Alt+Right"), self.view)
+        forward.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        forward.activated.connect(self.view.forward)
 
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         splitter.addWidget(self.editor)
@@ -1174,7 +1216,21 @@ class MarkdownTab(QWidget):
         url.setQuery(f"r={self._render_seq}")
         if preserve and self._last_pos:
             url.setFragment(self._last_pos)
+        self._expect_render_load = True
         self.view.load(url)
+
+    def _on_preview_load_finished(self, _ok: bool) -> None:
+        """Drop stale history after render loads (keep it for navigation).
+
+        Every debounced re-render loads a new ``?r=`` URL; without this,
+        the session history fills with one entry per keystroke and Back
+        walks through them. History that the USER built by navigating
+        (an anchor jump, a web link) is preserved: those loads do not
+        carry the render flag.
+        """
+        if self._expect_render_load:
+            self._expect_render_load = False
+            self.view.history().clear()
 
     def _poll_position(self) -> None:
         """Cache the preview scroll position for the next render."""
