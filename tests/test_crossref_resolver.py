@@ -7,7 +7,12 @@ pypandoc (Pandoc must be on PATH).
 
 from __future__ import annotations
 
-from epy_reports._core.renderer import _resolve_crossrefs, render_markdown
+from epy_reports._core import _i18n
+from epy_reports._core.renderer import (
+    _effective_lang,
+    _resolve_crossrefs,
+    render_markdown,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -86,6 +91,57 @@ def test_spanish_lang():
     assert "Tabla 1" in out
     assert "Ecuación 1" in out
     assert "[Sección 1](#sec-intro)" in out
+
+
+# ---------------------------------------------------------------------------
+# Language resolution: front matter wins; the app language is the fallback
+# (regression: numbering stayed English in preview/exports when the document
+# declared no lang: even though the whole UI ran in Spanish).
+# ---------------------------------------------------------------------------
+
+
+def test_effective_lang_front_matter_wins():
+    _i18n.set_language("es")
+    try:
+        assert _effective_lang({"lang": "en"}) == "en"
+    finally:
+        _i18n.set_language("en")
+
+
+def test_effective_lang_falls_back_to_app_language():
+    _i18n.set_language("es")
+    try:
+        assert _effective_lang({}) == "es"
+    finally:
+        _i18n.set_language("en")
+
+
+def test_effective_lang_defaults_to_english():
+    assert _effective_lang({}) == "en"
+
+
+def test_render_markdown_numbering_follows_app_language():
+    src = "![Grafica](g.png){#fig-g}\n\nVer @fig-g.\n"
+    _i18n.set_language("es")
+    try:
+        html = render_markdown(src)
+    finally:
+        _i18n.set_language("en")
+    assert "Figura 1" in html
+    assert "Figure 1" not in html
+
+
+def test_render_markdown_front_matter_lang_overrides_app():
+    src = (
+        "---\nlang: en\n---\n\n"
+        "![Cap](g.png){#fig-g}\n\nSee @fig-g.\n"
+    )
+    _i18n.set_language("es")
+    try:
+        html = render_markdown(src)
+    finally:
+        _i18n.set_language("en")
+    assert "Figure 1" in html
 
 
 # ---------------------------------------------------------------------------

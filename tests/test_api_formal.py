@@ -52,7 +52,9 @@ class TestVersion:
 
 
 class TestAllContract:
-    _EXPECTED = ["Report", "__version__"]
+    # figure_to_markdown joined the public API in cb1e48f (interactive
+    # Plotly figure embedding for report sources).
+    _EXPECTED = ["Report", "__version__", "figure_to_markdown"]
 
     def test_all_exists(self):
         assert hasattr(er, "__all__")

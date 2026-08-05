@@ -281,6 +281,16 @@ class MarkdownTab(QWidget):
         # Same document, only the theme changed — keep the scroll position.
         self._render_now(preserve=True)
 
+    def refresh_preview(self) -> None:
+        """Re-render the preview in place, keeping the scroll position.
+
+        Used on a live UI-language switch: numbered captions
+        ("Figura 1" / "Figure 1"), cross-references and index titles
+        follow the application language when the document declares no
+        ``lang:`` of its own, so the preview must re-render to show it.
+        """
+        self._render_now(preserve=True)
+
     def set_paged(self, value: bool) -> None:
         """Toggle the A4 page-view preview and re-render immediately.
 

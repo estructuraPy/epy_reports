@@ -4,6 +4,21 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-08-05
+
+### Fixed
+- **Bilingual numbering.** Numbered captions ("Figura 1" / "Figure 1"),
+  cross-references and the `[[toc]]`/`[[lof]]`/`[[lot]]`/`[[loe]]` index
+  titles now follow the application UI language in the live preview and in
+  every export (HTML / PDF / DOCX) when the document declares no `lang:` of
+  its own — they were silently defaulting to English. An explicit front-matter
+  `lang:` still wins. Switching the UI language re-renders every open preview
+  immediately.
+
+### Changed
+- `figure_to_markdown` is part of the declared public API contract
+  (exported since 0.3.0's Plotly figure support).
+
 ## [0.3.0] — 2026-07-17
 
 ### Fixed

@@ -428,6 +428,30 @@ def _number_labels(source: str) -> dict[str, int]:
     return numbers
 
 
+def _effective_lang(metadata: dict) -> str:
+    """Resolve the language used for localized labels and index titles.
+
+    An explicit front-matter ``lang:`` always wins. Without one, fall
+    back to the application UI language so the preview and every export
+    (HTML/PDF/DOCX) follow the active language — numbered captions
+    ("Figura 1" / "Figure 1"), cross-references and the [[toc]]/[[lof]]
+    /[[lot]]/[[loe]] titles included — instead of silently defaulting
+    to English.
+
+    Args:
+        metadata: Parsed front-matter mapping.
+
+    Returns:
+        Two-letter-style language tag (e.g. ``"en"``, ``"es"``).
+    """
+    lang = metadata.get("lang")
+    if lang:
+        return str(lang)
+    from epy_reports._core import _i18n  # noqa: PLC0415  — avoid cycle at import time
+
+    return _i18n.current_language()
+
+
 def _resolve_crossrefs(source: str, lang: str = "en") -> str:
     """Resolve Quarto cross-references in *source* before Pandoc sees it.
 
@@ -1248,7 +1272,7 @@ def export_docx(
             the document; empty renders them in the default palette.
     """
     metadata = parse_front_matter(source)
-    lang = metadata.get("lang", "en")
+    lang = _effective_lang(metadata)
 
     # Word has no diagram engine and ignores the component CSS, so render
     # each Mermaid/nomnoml diagram to a themed PNG (best-effort) and rewrite
@@ -1368,7 +1392,7 @@ def render_markdown(
     if metadata.get("title"):
         title = metadata["title"]
 
-    lang = metadata.get("lang", "en")
+    lang = _effective_lang(metadata)
     source_body = strip_front_matter(source)
     prepared = _expand_quarto_callouts(source_body)
     prepared = _resolve_crossrefs(prepared, lang=lang)

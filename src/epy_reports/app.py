@@ -698,6 +698,12 @@ class MarkdownWindow(QMainWindow):
         for btn, english in getattr(self, "_toolbar_buttons", []):
             btn.setText(i18n.tr(english))
         self._sync_language_menu()
+        # Re-render every open preview: numbered captions and index
+        # titles follow the app language when the document has no lang:.
+        for i in range(self.tabs.count()):
+            widget = self.tabs.widget(i)
+            if isinstance(widget, MarkdownTab):
+                widget.refresh_preview()
 
     def _set_language(self, code: str) -> None:
         """Persist the chosen UI language and relabel the UI live."""
