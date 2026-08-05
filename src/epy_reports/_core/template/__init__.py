@@ -129,6 +129,205 @@ def _load_plotly_script() -> str:
     return f"<script>{js}</script>"
 
 
+#: Lazy WebGL renderer for interactive plotly figures (preview + HTML export
+#: only -- never the PDF export, which prints without scrolling and needs
+#: every figure drawn eagerly).
+#:
+#: Browsers cap the number of LIVE WebGL contexts per page (~16) and silently
+#: BLANK the oldest canvas beyond that; every 3D plotly figure (mesh3d,
+#: scatter3d, surface, ...) holds one context. A report with dozens of 3D
+#: twins therefore loses its earlier scenes as later ones draw -- the reader
+#: scrolls back up to empty boxes. The shim traps the ``window.Plotly``
+#: assignment (the bundle may arrive AFTER this script, inlined inside a
+#: figure fragment in the body), wraps ``newPlot`` so every figure is queued
+#: instead of drawn at parse time, draws a figure when it nears the viewport
+#: (IntersectionObserver), and purges far-away WebGL figures back to the
+#: queue so the live-context count stays bounded. SVG figures also draw
+#: lazily (a large report pays its draw cost per scroll, not at load) but
+#: are never purged -- they hold no GL context. ``addFrames`` on a not-yet
+#: -drawn figure is stashed and replayed after the real draw, because
+#: plotly.py chains it on the newPlot promise, which the queue resolves
+#: immediately.
+_PLOTLY_LAZY_SHIM = """
+<script>
+(function () {
+  'use strict';
+  // Budgeted in CONTEXTS, not figures: a subplot grid of gl3d scenes opens
+  // one WebGL context PER SCENE in a single draw (measured: an estruLab
+  // virtual-test twin created 12 at once), so counting figures lets one
+  // figure blow straight past the browser's ~16-context cap.
+  var GL_BUDGET = 10;
+  var GL_TYPE = /^(scatter3d|mesh3d|surface|cone|streamtube|volume|isosurface|scattergl|heatmapgl|splom|parcoords|pointcloud)$/;
+  var queued = new Map(), frames = new Map(), anims = new Map();
+  var liveGl = [], animatedLive = [], visible = new Set();
+  var real = null, realNewPlot = null, realAddFrames = null,
+      realAnimate = null, io = null;
+  // Draws run STRICTLY one at a time. A fast scroll fires a burst of
+  // intersections; concurrent newPlot calls each open their GL context
+  // DURING the draw, so a burst blows past the cap before any accounting
+  // runs. Serialized, the live count can exceed the budget by at most one.
+  var chain = Promise.resolve();
+
+  function elOf(x) { return typeof x === 'string' ? document.getElementById(x) : x; }
+  function hasGl(data) {
+    if (!data) { return false; }
+    for (var i = 0; i < data.length; i++) {
+      if (data[i] && GL_TYPE.test(data[i].type || '')) { return true; }
+    }
+    return false;
+  }
+  function glCount(args) {
+    if (!hasGl(args[1])) { return 0; }
+    var layout = args[2] || {}, n = 0;
+    for (var k in layout) { if (/^scene\d*$/.test(k)) { n += 1; } }
+    return n || 1;  // gl2d traces hold one context with no scene key
+  }
+  function totalGl() {
+    var n = 0, i;
+    for (i = 0; i < liveGl.length; i++) { n += liveGl[i]._epyGlN || 1; }
+    for (i = 0; i < animatedLive.length; i++) { n += animatedLive[i]._epyGlN || 1; }
+    return n;
+  }
+  function purgeSafe(el) {
+    // An auto-playing animation still owns a render loop; purging under it
+    // dereferences the destroyed scene ('gl' of null). Cancel first.
+    try {
+      if (el._transitionData) { realAnimate.call(real, el, null, { mode: 'immediate' }); }
+    } catch (e) { /* already settled */ }
+    // purge alone leaves the GL context to garbage collection; the browser
+    // counts it as ACTIVE until then and force-loses the oldest context
+    // past its cap -- possibly one still on screen. Release explicitly,
+    // but only AFTER purge: the webglcontextlost event dispatches
+    // asynchronously, and fired before purge it lands on a scene purge
+    // already destroyed ('gl' of null). Purge detaches plotly's handlers;
+    // the canvases stay reachable through this snapshot even once purge
+    // removes them from the DOM.
+    var canvases = Array.prototype.slice.call(el.getElementsByTagName('canvas'));
+    try { real.purge(el); } catch (e) { /* never poison the draw chain */ }
+    for (var i = 0; i < canvases.length; i++) {
+      try {
+        var gl = canvases[i].getContext('webgl2') || canvases[i].getContext('webgl');
+        var ext = gl && gl.getExtension('WEBGL_lose_context');
+        if (ext) { ext.loseContext(); }
+      } catch (e) { /* 2d canvas or context already lost */ }
+    }
+  }
+  function evictFor(incoming) {
+    for (var i = 0; totalGl() + incoming > GL_BUDGET && i < liveGl.length;) {
+      var cand = liveGl[i];
+      // A 3D scene keeps scheduling deferred init passes (camera fit,
+      // redraw) for a moment after newPlot resolves; purging under them
+      // dereferences the destroyed scene. Let a scene settle before it is
+      // eligible -- the budget overshoots transiently during a fast sweep,
+      // still under the browser cap since contexts release explicitly.
+      var settled = (performance.now() - (cand._epyDrawnAt || 0)) > 2000;
+      if (visible.has(cand) || !settled) { i += 1; continue; }
+      liveGl.splice(i, 1);
+      queued.set(cand, cand._epyLazyArgs);
+      purgeSafe(cand);
+    }
+    if (totalGl() > GL_BUDGET && !evictFor._epyTimer) {
+      // Everything over budget was too young or on screen: try again once
+      // the youngest has settled, so the last figures of a sweep still
+      // evict with no further scroll events to trigger it.
+      evictFor._epyTimer = setTimeout(function () {
+        evictFor._epyTimer = null;
+        evictFor(0);
+      }, 2200);
+    }
+  }
+  function drawOne(el) {
+    var args = queued.get(el);
+    // Skipped when already drawn, or when the reader scrolled past before
+    // this figure's turn came -- it stays queued and re-pumps on re-entry.
+    if (!args || !visible.has(el)) { return undefined; }
+    queued.delete(el);
+    evictFor(glCount(args));
+    return realNewPlot.apply(real, args).then(function () {
+      var fr = frames.get(el);
+      var next = fr ? realAddFrames.call(real, el, fr) : undefined;
+      frames.delete(el);
+      var an = anims.get(el);
+      if (an) {
+        anims.delete(el);
+        (next || Promise.resolve()).then(function () {
+          if (el._fullData) { realAnimate.apply(real, an); }
+        });
+      }
+      // Animated figures (those that ever received addFrames) are EXEMPT
+      // from eviction: their auto-play render loop races a purge (the frame
+      // sub-chain outlives this draw's turn) and dereferences the destroyed
+      // scene. They still COUNT against the context budget, so their
+      // standing contexts squeeze everything else out instead of silently
+      // overflowing the browser cap.
+      if (hasGl(args[1])) {
+        el._epyGlN = glCount(args);
+        el._epyDrawnAt = performance.now();
+        if (el._epyAnimated) {
+          if (animatedLive.indexOf(el) === -1) { animatedLive.push(el); }
+        } else {
+          el._epyLazyArgs = args;
+          liveGl.push(el);
+        }
+        evictFor(0);
+      }
+    });
+  }
+  function pump(el) {
+    chain = chain
+      .then(function () { return drawOne(el); })
+      .catch(function () {});
+  }
+  function observer() {
+    if (io) { return io; }
+    io = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var en = entries[i];
+        if (en.isIntersecting) { visible.add(en.target); pump(en.target); }
+        else { visible.delete(en.target); evictFor(0); }
+      }
+    }, { rootMargin: '500px 0px' });
+    return io;
+  }
+  Object.defineProperty(window, 'Plotly', {
+    configurable: true,
+    get: function () { return real; },
+    set: function (v) {
+      real = v;
+      if (!v || typeof v.newPlot !== 'function' || v.newPlot._epyLazy) { return; }
+      realNewPlot = v.newPlot;
+      realAddFrames = v.addFrames;
+      realAnimate = v.animate;
+      var lazyNewPlot = function (div, data, layout, config) {
+        var el = elOf(div);
+        if (!el) { return realNewPlot.apply(real, arguments); }
+        queued.set(el, [el, data, layout, config]);
+        observer().observe(el);
+        return Promise.resolve(el);
+      };
+      lazyNewPlot._epyLazy = true;
+      v.newPlot = lazyNewPlot;
+      v.addFrames = function (div, fr) {
+        var el = elOf(div);
+        if (el) { el._epyAnimated = true; }
+        if (el && queued.has(el)) { frames.set(el, fr); return Promise.resolve(el); }
+        return realAddFrames.apply(real, arguments);
+      };
+      v.animate = function (div) {
+        var el = elOf(div);
+        if (el && queued.has(el)) {
+          anims.set(el, Array.prototype.slice.call(arguments));
+          return Promise.resolve(el);
+        }
+        return realAnimate.apply(real, arguments);
+      };
+    }
+  });
+})();
+</script>
+"""
+
+
 _PLOTLY_INIT_SCRIPT = """
 <script>
 window._epy_init_plotly = function () {
@@ -757,6 +956,13 @@ def build_html_document(
         f"{_MATHJAX_CONFIG}\n"
         f"{_load_mathjax_script()}\n"
         f"{_diagram_block(diagrams)}"
+        # The lazy-WebGL shim precedes ANY Plotly assignment (head bundle or
+        # a fragment-inlined bundle in the body) and is deliberately NOT
+        # gated on ``plotly`` -- a pandoc body can carry raw plotly.py
+        # fragments with their own inlined bundle that the fence detector
+        # never sees. The PDF export prints without scrolling, so it keeps
+        # the eager path.
+        f"{'' if for_export else _PLOTLY_LAZY_SHIM}"
         f"{_plotly_block(plotly)}"
         f"{pagedjs}"
         "</head>\n"
