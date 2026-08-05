@@ -83,6 +83,32 @@ a = Analysis(
     noarchive=False,
 )
 
+# Strip any ICU DLL picked up from the build environment. PySide6 >= 6.9
+# links Qt6Core against the Windows system ICU (System32); a conda ICU
+# copy bundled into _internal would shadow it on end-user machines and
+# kill every Qt import with WinError 127. WebEngine's icudtl.dat is a
+# data file, not a DLL — unaffected.
+a.binaries = [
+    entry
+    for entry in a.binaries
+    if not (
+        (_n := _Path(entry[0]).name.lower()).startswith("icu")
+        and _n.endswith(".dll")
+    )
+]
+
+
+# The app is QtWidgets-only: the QML runtime is never loaded. The PySide6
+# wheel's qml/ tree is large and carries build debris
+# (objects-Debug/*.obj) whose deep paths break the installer compile
+# (MAX_PATH). Qt6Qml*.dll stay: they are link-time deps of WebEngine.
+def _not_qml(entry) -> bool:
+    return not entry[0].replace("\\", "/").lower().startswith("pyside6/qml/")
+
+
+a.binaries = [entry for entry in a.binaries if _not_qml(entry)]
+a.datas = [entry for entry in a.datas if _not_qml(entry)]
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
