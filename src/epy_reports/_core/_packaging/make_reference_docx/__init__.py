@@ -16,7 +16,7 @@ header/footer image and NO ``ANM-FG`` document code.
 
 Run from the project root::
 
-    python src/epy_reports/_core/_packaging/make_reference_docx.py
+    python src/epy_reports/_core/_packaging/make_reference_docx/__init__.py
 
 It writes ``src/epy_reports/_config/_assets/reference_docx/<theme>.docx``
 for every bundled theme (the build-time dependency ``python-docx`` is not

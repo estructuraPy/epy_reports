@@ -4,7 +4,7 @@ Renders the real Fluent-styled main window with a representative document
 so the bundled manual shows the current UI. Run it on the native platform
 (the offscreen Qt plugin renders empty-font tofu on Windows)::
 
-    python src/epy_reports/_core/_packaging/capture_editor.py
+    python src/epy_reports/_core/_packaging/capture_screenshots/__init__.py
 """
 
 from __future__ import annotations

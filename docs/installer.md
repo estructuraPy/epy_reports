@@ -18,7 +18,7 @@ Both install the application and register it for `.md`, `.markdown`, and `.qmd` 
 ### Common
 ```
 pip install pillow          # required for icon generation
-python src/epy_reports/_core/_packaging/make_icon.py   # generates assets_build/epy_reports.ico + .png
+python src/epy_reports/_core/_packaging/make_icon/__init__.py   # generates assets_build/epy_reports.ico + .png
 ```
 
 ### Windows
@@ -38,7 +38,7 @@ python src/epy_reports/_core/_packaging/make_icon.py   # generates assets_build/
 ### 1. Generate icons (required before any build)
 
 ```bash
-python src/epy_reports/_core/_packaging/make_icon.py
+python src/epy_reports/_core/_packaging/make_icon/__init__.py
 ```
 
 Produces `src/epy_reports/_core/_packaging/assets_build/epy_reports.ico` (16/32/48/256 px)

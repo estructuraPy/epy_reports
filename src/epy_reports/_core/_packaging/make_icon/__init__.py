@@ -8,7 +8,7 @@ Each ICO frame letterboxes the logo onto a square transparent canvas,
 preserving aspect ratio (centered).  epy_reports.png is NOT overwritten.
 
 Run from the project root:
-    python src/epy_reports/_core/_packaging/make_icon.py
+    python src/epy_reports/_core/_packaging/make_icon/__init__.py
 """
 
 from __future__ import annotations

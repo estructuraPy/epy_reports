@@ -33,16 +33,31 @@ from pathlib import Path
 # Configuration
 # ---------------------------------------------------------------------------
 def _read_pyproject_version() -> str:
-    """Single source of truth: read ``version`` from pyproject.toml."""
+    """Single source of truth: the version declared for this package.
+
+    Reads the literal ``version`` from ``pyproject.toml``. When the
+    project declares ``dynamic = ["version"]`` — hatch then reads the
+    real value from the package ``__init__`` — fall back to that
+    ``__version__`` instead of silently packaging the .deb as "0.0.0".
+    """
     # This file lives at src/epy_reports/_core/_packaging/linux/, five
     # levels below the repo root (linux -> _packaging -> _core ->
     # epy_reports -> src -> root).
-    pyproject = Path(__file__).resolve().parents[5] / "pyproject.toml"
+    root = Path(__file__).resolve().parents[5]
     try:
-        text = pyproject.read_text(encoding="utf-8")
+        text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    except OSError:
+        text = ""
+    m = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', text)
+    if m:
+        return m.group(1)
+    try:
+        init = (root / "src" / "epy_reports" / "__init__.py").read_text(
+            encoding="utf-8"
+        )
     except OSError:
         return "0.0.0"
-    m = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', text)
+    m = re.search(r'(?m)^__version__\s*=\s*"([^"]+)"', init)
     return m.group(1) if m else "0.0.0"
 
 
