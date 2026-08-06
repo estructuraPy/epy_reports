@@ -6,6 +6,13 @@ Both libraries are permissively licensed (BSD), so they are compatible
 with epy_reports's MIT license. PyMuPDF/fitz is deliberately avoided
 because of its AGPL licensing.
 
+Every stamper clones the source document (``PdfWriter(clone_from=...)``)
+and merges its overlay onto the cloned pages. A fresh ``PdfWriter()``
+fed page-by-page would drop the document catalog — including the named
+destinations Chromium emits for every anchored heading/figure/table —
+leaving the TOC/index/cross-reference link annotations pointing at
+destinations that no longer exist (links present but dead).
+
 The heavy dependencies are imported lazily inside :func:`add_footer`,
 so this module imports cleanly even when they are missing; a clear
 :class:`RuntimeError` is raised only when the function is actually
@@ -137,9 +144,8 @@ def add_page_background(
     except (ValueError, TypeError):
         return  # unparseable color → leave the PDF as-is
 
-    reader = PdfReader(str(pdf_path))
-    writer = PdfWriter()
-    for index, page in enumerate(reader.pages, start=1):
+    writer = PdfWriter(clone_from=str(pdf_path))
+    for index, page in enumerate(writer.pages, start=1):
         if index >= start_page:
             width = float(page.mediabox.width)
             height = float(page.mediabox.height)
@@ -154,7 +160,6 @@ def add_page_background(
             # over=False → backdrop goes underneath, page content (and its
             # link annotations) stay on top.
             page.merge_page(backdrop, over=False)
-        writer.add_page(page)
 
     with pdf_path.open("wb") as handle:
         writer.write(handle)
@@ -213,9 +218,8 @@ def add_watermark(
     )
     faint.putalpha(alpha.point(lambda v: int(v * opacity)))
     img_w, img_h = faint.size
-    reader = PdfReader(str(pdf_path))
-    writer = PdfWriter()
-    for page in reader.pages:
+    writer = PdfWriter(clone_from=str(pdf_path))
+    for page in writer.pages:
         page_w = float(page.mediabox.width)
         page_h = float(page.mediabox.height)
         draw_w = page_w * width_ratio
@@ -232,7 +236,6 @@ def add_watermark(
         buffer.seek(0)
         overlay = PdfReader(buffer).pages[0]
         page.merge_page(overlay)
-        writer.add_page(page)
 
     with pdf_path.open("wb") as handle:
         writer.write(handle)
@@ -329,16 +332,15 @@ def add_footer(
 
     sorted_segments = sorted(segments) if segments else None
 
-    reader = PdfReader(str(pdf_path))
-    writer = PdfWriter()
-    total = len(reader.pages)
+    writer = PdfWriter(clone_from=str(pdf_path))
+    total = len(writer.pages)
     # Page numbers restart at 1 on the first stamped (content) page and the
     # "of Y" total counts only those pages, so cover + index front matter
     # stays unnumbered instead of forcing the body to start at "Page N".
     content_total = max(total - start_page + 1, 0)
     margin = _MARGIN_MM * _MM_TO_PT
 
-    for index, page in enumerate(reader.pages, start=1):
+    for index, page in enumerate(writer.pages, start=1):
         stamp, label = _page_stamp(
             index, start_page, content_total, lang,
             sorted_segments, page_numbers,
@@ -359,7 +361,6 @@ def add_footer(
             buffer.seek(0)
             overlay = PdfReader(buffer).pages[0]
             page.merge_page(overlay)
-        writer.add_page(page)
 
     with pdf_path.open("wb") as handle:
         writer.write(handle)
@@ -420,14 +421,12 @@ def add_header(
     has_row2 = any(cells[3:])
     n_rows = 2 if has_row2 else 1
 
-    reader = PdfReader(str(pdf_path))
-    writer = PdfWriter()
+    writer = PdfWriter(clone_from=str(pdf_path))
     margin = _MARGIN_MM * _MM_TO_PT
     row_h = _HEADER_ROW_H_PT
 
-    for page_index, page in enumerate(reader.pages, start=1):
+    for page_index, page in enumerate(writer.pages, start=1):
         if page_index < start_page:
-            writer.add_page(page)
             continue
         width = float(page.mediabox.width)
         height = float(page.mediabox.height)
@@ -480,7 +479,6 @@ def add_header(
         buffer.seek(0)
         overlay = PdfReader(buffer).pages[0]
         page.merge_page(overlay)
-        writer.add_page(page)
 
     with pdf_path.open("wb") as handle:
         writer.write(handle)

@@ -4,6 +4,17 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-08-05
+
+### Fixed
+- **PDF links now navigate.** The exported PDF carried every link
+  annotation (TOC, index lists, cross-references, section jumps) but
+  clicking did nothing: the stamping passes (page background, header,
+  footer, watermark) rebuilt the document through a fresh writer, which
+  dropped the named destinations the links point at. The stampers now
+  clone the document instead, so internal links jump and external links
+  open — in the PDF, exactly like the preview.
+
 ## [0.4.0] — 2026-08-05
 
 ### Fixed
