@@ -48,3 +48,6 @@ tutorials/**/_render_log.txt
 .benchmarks/
 
 .deepseek_delegate/
+
+# audit-loop reports (DeepSeek), local only
+.audit_deepseek/
