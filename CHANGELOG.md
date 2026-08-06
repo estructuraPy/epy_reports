@@ -4,6 +4,17 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] — 2026-08-05
+
+### Fixed
+- **Word export honors the page size.** The front-matter `page-size:`
+  (letter / a4 / legal) never reached the DOCX: with a reference doc
+  the export always carried the reference's fixed size, and without one
+  Pandoc emitted no page size at all — so the geometry silently became
+  whatever the reader's Word locale defaulted to. Every section's
+  `<w:pgSz>` is now rewritten (or inserted) after the conversion;
+  margins and orientation are preserved.
+
 ## [0.4.2] — 2026-08-05
 
 ### Fixed

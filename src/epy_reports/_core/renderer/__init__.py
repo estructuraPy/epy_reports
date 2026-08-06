@@ -1327,6 +1327,11 @@ def export_docx(
             outputfile=str(target),
             extra_args=extra_args,
         )
+        # The reference doc ships one fixed page size; honor the
+        # front-matter page-size (letter / a4 / legal) in the DOCX too.
+        from epy_reports._core._docx_page import apply_page_size  # noqa: PLC0415
+
+        apply_page_size(target, normalize_page_size(metadata.get("page-size")))
     finally:
         if svg_tmp is not None:
             shutil.rmtree(svg_tmp, ignore_errors=True)
