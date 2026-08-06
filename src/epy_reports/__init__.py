@@ -22,7 +22,7 @@ from pathlib import Path
 
 from epy_reports._core._plotly import figure_to_markdown
 
-__version__ = "0.4.3"
+__version__ = "0.4.4"
 
 __all__ = ["Report", "__version__", "figure_to_markdown"]
 

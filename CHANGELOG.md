@@ -4,6 +4,28 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] — 2026-08-06
+
+### Fixed
+- **The Ubuntu `.deb` was built as version 0.0.0.** The packager read the
+  literal `version` from `pyproject.toml`, but this project declares a
+  dynamic version (hatch reads it from `__init__.py`), so the lookup
+  found nothing and fell through to a placeholder. It now falls back to
+  the package `__version__`.
+- **The welcome document showed an import that fails.** The scripting
+  example told you to import `epy_reports.epy_suite_connect.docs_bridge`;
+  the module lives under `adapters/`. Fixed in both languages.
+- Build-tool docstrings and `docs/installer.md` still named paths from
+  before those tools became packages.
+
+### Changed
+- **Internal layout aligned with epy_slides and epy_papers** — the three
+  apps now share the same folders and module names: `_core/` holds
+  packages, `_ui/` flat modules, `_packaging/` one package per tool.
+  `_previews` moved to `_ui` (it draws Qt thumbnails), and the `Theme`
+  model and its catalogue moved to `_core` (neither touches Qt, and
+  `_core` must not import from `_ui`). No public API changed.
+
 ## [0.4.3] — 2026-08-05
 
 ### Fixed
