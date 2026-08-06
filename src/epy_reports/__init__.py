@@ -83,7 +83,7 @@ class Report:
 
     def _theme(self):
         """Return the active Theme object."""
-        from epy_reports._ui import themes  # noqa: PLC0415
+        from epy_reports._core import themes  # noqa: PLC0415
 
         return themes.get(self.theme_id)
 

@@ -27,7 +27,7 @@ from epy_reports._core.epyson import (
     _tonal_variants,
     qss_for,
 )
-from epy_reports._ui.themes import THEMES
+from epy_reports._core.themes import THEMES
 
 _HEX_RE = re.compile(r"#[0-9A-Fa-f]{6}\b")
 # Qt also accepts 8-digit (#RRGGBBAA); we only emit 6-digit codes.

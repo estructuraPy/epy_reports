@@ -15,8 +15,8 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from epy_reports import app as app_mod
 from epy_reports._core import _i18n as i18n
-from epy_reports.app import MarkdownWindow
 from epy_reports._ui.tab import MarkdownTab
+from epy_reports.app import MarkdownWindow
 
 _app: QApplication | None = None
 
@@ -73,7 +73,7 @@ def test_welcome_text_is_loaded():
 
 def test_theme_actions_cover_every_theme(window):
     """One radio action exists per registered theme."""
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     assert set(window.theme_actions) == set(themes.THEMES)
 
@@ -280,7 +280,7 @@ def test_references_menu_placeholder_when_no_labels(window):
 
 def test_apply_theme_switches_current(window):
     """Applying a theme updates the active theme reference."""
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     target = next(iter(themes.THEMES))
     window._apply_theme(target, persist=False)

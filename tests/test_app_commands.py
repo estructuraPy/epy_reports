@@ -54,7 +54,7 @@ def window(qapp):
 
 def test_open_theme_editor_saves_and_selects(window, monkeypatch):
     """Accepting the editor saves the payload and selects the new theme."""
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     payload = {"display_name": "Brand New"}
 
@@ -101,7 +101,7 @@ def test_open_theme_editor_cancel_does_nothing(window):
 
     with patch(
         "epy_reports._ui.theme_editor_dialog.ThemeEditorDialog", _FakeEditor
-    ), patch("epy_reports._ui.themes.save_user_theme") as save:
+    ), patch("epy_reports._core.themes.save_user_theme") as save:
         window._open_theme_editor()
     save.assert_not_called()
 
@@ -119,7 +119,7 @@ def test_edit_current_theme_routes_to_editor(window, monkeypatch):
 
 def test_delete_custom_theme_none_available(window, monkeypatch):
     """With no custom themes, the user is informed and nothing is deleted."""
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     monkeypatch.setattr(themes, "user_theme_ids", set)
     with patch.object(QMessageBox, "information") as info:
@@ -129,7 +129,7 @@ def test_delete_custom_theme_none_available(window, monkeypatch):
 
 def test_delete_custom_theme_confirmed(window, monkeypatch):
     """A confirmed delete removes the chosen custom theme."""
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     monkeypatch.setattr(themes, "user_theme_ids", lambda: {"mine"})
     monkeypatch.setitem(
@@ -156,7 +156,7 @@ def test_delete_custom_theme_confirmed(window, monkeypatch):
 def test_refresh_themes_rebuilds_actions(window):
     """Refreshing themes rebuilds the radio actions without raising."""
     window._refresh_themes()
-    from epy_reports._ui import themes
+    from epy_reports._core import themes
 
     assert set(window.theme_actions) == set(themes.THEMES)
 

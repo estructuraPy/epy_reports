@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from epy_reports._config import _loader
-from epy_reports._ui.themes_base import Theme
+from epy_reports._core.themes_base import Theme
 
 if TYPE_CHECKING:
     # Import-time only: keeps this module Qt-free at runtime (Regla —
@@ -508,7 +508,11 @@ def load_all_themes() -> dict[str, Theme]:
 
 def apply_palette(app: QApplication, theme: Theme) -> None:
     """Apply ``theme.qt_palette`` to the running Qt application."""
-    from PySide6.QtGui import QColor, QFont, QPalette  # noqa: PLC0415 - deferred: keeps this module Qt-free for headless render_markdown
+    from PySide6.QtGui import (  # noqa: PLC0415 - deferred: keeps this module Qt-free for headless render_markdown
+        QColor,
+        QFont,
+        QPalette,
+    )
 
     app.setStyle("Fusion")
     # Fluent-style typography: a clean system sans for the chrome. The

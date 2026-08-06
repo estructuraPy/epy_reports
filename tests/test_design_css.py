@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from epy_reports._core._design import design_css, document_css
-from epy_reports._ui.themes_base import Theme
+from epy_reports._core.themes_base import Theme
 
 _THEME = Theme(
     id="t",

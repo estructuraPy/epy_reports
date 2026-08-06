@@ -31,13 +31,14 @@ from PySide6.QtWidgets import (
 )
 
 from epy_reports._core import _i18n as i18n
-from epy_reports._core import bib, snippets
+from epy_reports._core import bib, snippets, themes
 from epy_reports._core._design import document_css
 from epy_reports._core.renderer import export_docx, render_markdown
-from epy_reports._ui import themes
 from epy_reports._ui.about_dialog import _load_branding_pixmap
 from epy_reports._ui.tab import MarkdownTab
-from epy_reports.epy_suite_connect.adapters.docs_bridge import epy_docs_available
+from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    epy_docs_available,
+)
 
 APP_NAME = "epy_reports"
 

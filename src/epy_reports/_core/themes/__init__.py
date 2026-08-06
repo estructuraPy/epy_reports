@@ -27,7 +27,7 @@ from epy_reports._core.epyson import (
     user_theme_ids,
     user_themes_dir,
 )
-from epy_reports._ui.themes_base import Theme
+from epy_reports._core.themes_base import Theme
 
 DEFAULT_THEME_ID = "corporate"
 
