@@ -20,7 +20,7 @@ os.environ.setdefault(
 
 # Repo root: four levels above this file (_packaging -> _core ->
 # epy_reports -> src -> root).
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "src"))
 
 from PySide6.QtCore import (  # noqa: E402

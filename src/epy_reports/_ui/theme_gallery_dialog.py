@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from epy_reports._core import _i18n as i18n
-from epy_reports._core._previews import THEME_THUMB, theme_preview
+from epy_reports._ui._previews import THEME_THUMB, theme_preview
 from epy_reports._ui import themes
 
 _THEME_ROLE = 0x0100  # Qt.UserRole

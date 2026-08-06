@@ -13,7 +13,7 @@ def qapp():
 
 
 def test_theme_preview_for_every_theme(qapp):
-    from epy_reports._core._previews import THEME_THUMB, theme_preview
+    from epy_reports._ui._previews import THEME_THUMB, theme_preview
     from epy_reports._ui import themes
 
     assert themes.THEMES, "the theme catalogue must not be empty"
@@ -25,7 +25,7 @@ def test_theme_preview_for_every_theme(qapp):
 
 def test_layout_preview_for_every_design_block(qapp):
     from epy_reports._core._design import DESIGN_BLOCKS
-    from epy_reports._core._previews import LAYOUT_THUMB, layout_preview
+    from epy_reports._ui._previews import LAYOUT_THUMB, layout_preview
 
     for kind in DESIGN_BLOCKS:
         pix = layout_preview(kind)
