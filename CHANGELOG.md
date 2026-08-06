@@ -4,6 +4,19 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] — 2026-08-05
+
+### Fixed
+- **Many-3D reports no longer blank their earlier figures.** Browsers cap
+  live WebGL contexts (~16) and silently blank the oldest canvas beyond
+  that; every plotly 3D scene holds one, and a subplot grid opens one per
+  scene in a single draw (an estruLab virtual-test twin created 12 at
+  once). The preview and the HTML export now ship a lazy-WebGL shim:
+  figures queue at parse time, draw near the viewport, and far-away
+  figures are evicted under an explicit context budget with their GL
+  contexts released immediately. The PDF export prints without scrolling
+  and keeps the eager path.
+
 ## [0.4.1] — 2026-08-05
 
 ### Fixed
