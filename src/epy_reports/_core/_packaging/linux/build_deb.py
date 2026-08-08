@@ -157,10 +157,18 @@ def _tar_add_dir(tf: tarfile.TarFile, arcname: str,
 
 def _tar_add_tree(tf: tarfile.TarFile, src_dir: Path,
                   dst_prefix: str, skip_pycache: bool = True) -> None:
-    """Recursively add all files from src_dir into dst_prefix/."""
+    """Recursively add all files from src_dir into dst_prefix/.
+
+    ``_core/_packaging`` (this very build tooling, including its gitignored
+    ``dist/`` installer output) lives *inside* ``src/epy_reports`` and must
+    never be shipped as part of the installed package — same rule as the
+    wheel's ``exclude`` in ``pyproject.toml``.
+    """
     for path in sorted(src_dir.rglob("*")):
         if skip_pycache and ("__pycache__" in path.parts or
                              path.suffix == ".pyc"):
+            continue
+        if path == PACKAGING_DIR or PACKAGING_DIR in path.parents:
             continue
         rel = path.relative_to(src_dir)
         arcname = f"{dst_prefix}/{rel}".replace("\\", "/")
