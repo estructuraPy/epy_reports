@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import sys
 from pathlib import Path
 
 # ── Root of THIS library ──────────────────────────────────────────────
@@ -107,12 +108,91 @@ def report_tests_layout(violations: list[str]) -> None:
         print(f"    [!] {v}")
 
 
+def _is_mirror_exempt(rel: str) -> bool:
+    """Whether ``rel`` is not a unit-test target.
+
+    Integration / packaging / schema / showcase modules are exempt.
+    """
+    name = rel.rsplit("/", 1)[-1]
+    if rel.startswith("epy_suite_connect/") or "/adapters/" in rel:
+        return True
+    if "/_packaging/" in rel or name in (
+        "download_wheels.py", "install_offline.py", "__main__.py",
+    ):
+        return True
+    if "_schemas/" in rel:
+        return True
+    return name in ("_famous.py", "_demo.py", "_showcase.py")
+
+
+def audit_module_mirror(lib_root: Path) -> list[str]:
+    """Every real src module must have a mirroring test.
+
+    A mirroring test is ``test_<stem>.py`` or ``test_<stem>_*.py``
+    anywhere under tests/. Closes the gap left by the folder-level
+    tests-layout audit, which reports OK even when a module has no
+    test (suite-wide tests-mirror DNA).
+    """
+    pkg = _find_pkg_dir(lib_root)
+    if pkg is None:
+        return [
+            f"src/<pkg>/ not found under {lib_root} -- cannot "
+            "audit module mirror."
+        ]
+    tests = lib_root / "tests"
+    test_names: set[str] = set()
+    if tests.is_dir():
+        for p in tests.rglob("test_*.py"):
+            if "__pycache__" not in p.parts:
+                test_names.add(p.name)
+    violations: list[str] = []
+    for m in pkg.rglob("*.py"):
+        if "__pycache__" in m.parts or m.name == "__init__.py":
+            continue
+        rel = m.relative_to(pkg).as_posix()
+        if _is_mirror_exempt(rel):
+            continue
+        bare = m.name[:-3].lstrip("_")
+        if bare in ("utils", "types", "constants", "typing", "protocols"):
+            continue
+        if f"test_{bare}.py" in test_names:
+            continue
+        if any(
+            n.startswith(f"test_{bare}_") and n.endswith(".py")
+            for n in test_names
+        ):
+            continue
+        violations.append(
+            f"src module without mirroring test: "
+            f"src/{pkg.name}/{rel} -- add "
+            f"tests/.../test_{bare}.py (suite-wide tests-mirror DNA)."
+        )
+    return violations
+
+
+def report_module_mirror(violations: list[str]) -> None:
+    """Print the module-mirror audit result."""
+    if not violations:
+        print(
+            "\n  Module mirror: OK (every real src module has a "
+            "mirroring test)"
+        )
+    else:
+        print(f"\n  MODULE-MIRROR VIOLATIONS ({len(violations)} total):")
+        for v in violations:
+            print(f"    - {v}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
     parser.add_argument("--quality", action="store_true", help="Run ruff + pyright + coverage checks")
     parser.add_argument(
         "--audit", action="store_true", help="Run only the read-only audits (tests layout, etc.)"
+    )
+    parser.add_argument(
+        "--strict", action="store_true",
+        help="Exit code 1 if the module-mirror audit reports violations.",
     )
     args = parser.parse_args()
 
@@ -156,6 +236,14 @@ def main() -> None:
     # ── Tests layout audit (mirrors src/<pkg>/ + sanctioned _benchmarks/ exception) ──
     tests_layout_violations = audit_tests_layout(LIB_ROOT)
     report_tests_layout(tests_layout_violations)
+
+    # Module-level tests-mirror audit (every real src module has a
+    # mirroring test -- suite-wide DNA).
+    module_mirror_violations = audit_module_mirror(LIB_ROOT)
+    report_module_mirror(module_mirror_violations)
+
+    if args.strict and module_mirror_violations:
+        sys.exit(1)
 
     print()
 
