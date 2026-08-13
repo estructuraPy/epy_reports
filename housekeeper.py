@@ -114,8 +114,14 @@ def _is_mirror_exempt(rel: str) -> bool:
     Integration / packaging / schema / showcase modules are exempt.
     """
     name = rel.rsplit("/", 1)[-1]
-    if rel.startswith("epy_suite_connect/") or "/adapters/" in rel:
-        return True
+    # No blanket exemption for ``epy_suite_connect/``, and none for
+    # adapters: measured across the suite, 96 of the 110 adapter modules
+    # already ship a mirroring test, so "integration code is not a
+    # unit-test target" is not the convention here -- it was a licence for
+    # the gate to go blind on whole packages. The clause that used to sit
+    # here exempted ``adapters/`` (six repos spell it that way, five spell
+    # it ``_adapters/``), and what it hid was the one adapter nobody
+    # tests: ``_export_estrulab.py``, byte-identical in seven repos.
     if "/_packaging/" in rel or name in (
         "download_wheels.py", "install_offline.py", "__main__.py",
     ):
