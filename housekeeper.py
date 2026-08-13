@@ -189,6 +189,65 @@ def report_module_mirror(violations: list[str]) -> None:
             print(f"    - {v}")
 
 
+# ============================================================
+#                    TUTORIALS LAYOUT (3 categories)
+# ============================================================
+
+# The only three tutorial categories the suite recognises. A library
+# teaches at three levels and nothing else: undergraduate, professional
+# practice, research.
+TUTORIAL_CATEGORIES = ("educational", "professional", "research")
+
+
+def audit_tutorials_layout(lib_root: Path) -> list[str]:
+    """``tutorials/`` holds exactly the three canonical categories.
+
+    Infrastructure directories (leading ``_`` or ``.``) are exempt: they
+    are not tutorial categories. Everything else is a violation.
+    ``pedagogical/``, ``validation/``, ``api/``, ``case/``, ``examples/``
+    and the numbered tracks were folded into the three during ORDER O4,
+    and without this gate nothing stops them coming back.
+
+    Empty list = compliant. A repo with no ``tutorials/`` is compliant.
+    """
+    tutorials = lib_root / "tutorials"
+    if not tutorials.is_dir():
+        return []
+    present = {c.name for c in tutorials.iterdir() if c.is_dir()}
+    if not present & set(TUTORIAL_CATEGORIES):
+        # A repo publishing none of the three is a different family: a
+        # book (epy_docs: chapters/, images/), a paper, an app.
+        # STRUCTURE_STANDARD Sec.1 forbids cross-applying one family's
+        # layout rules to another, so the law binds only a repo that
+        # teaches at these levels at all.
+        return []
+    violations: list[str] = []
+    for child in sorted(tutorials.iterdir()):
+        if not child.is_dir():
+            continue
+        name = child.name
+        if name.startswith(("_", ".")):
+            continue
+        if name in TUTORIAL_CATEGORIES:
+            continue
+        violations.append(
+            f"tutorials/{name}/ is not a tutorial category -- tutorials/ "
+            f"holds exactly {', '.join(TUTORIAL_CATEGORIES)}. Move its "
+            f"contents into one of them (STRUCTURE_STANDARD.md Sec.2.7)."
+        )
+    return violations
+
+
+def report_tutorials_layout(violations: list[str]) -> None:
+    """Print the tutorials-layout verdict."""
+    if not violations:
+        print("\n  Tutorials layout: OK (the three categories only)")
+    else:
+        print(f"\n  TUTORIALS-LAYOUT VIOLATIONS ({len(violations)} total):")
+        for v in violations:
+            print(f"    - {v}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -248,7 +307,12 @@ def main() -> None:
     module_mirror_violations = audit_module_mirror(LIB_ROOT)
     report_module_mirror(module_mirror_violations)
 
-    if args.strict and module_mirror_violations:
+    tutorials_layout_violations = audit_tutorials_layout(LIB_ROOT)
+    report_tutorials_layout(tutorials_layout_violations)
+
+    if args.strict and (
+        module_mirror_violations or tutorials_layout_violations
+    ):
         sys.exit(1)
 
     print()
