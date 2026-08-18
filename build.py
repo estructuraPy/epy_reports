@@ -49,7 +49,9 @@ def _build_env() -> dict[str, str]:
     env = os.environ.copy()
     existing = env.get("PYTHONPATH")
     env["PYTHONPATH"] = (
-        f"{BUILD_SUPPORT}{os.pathsep}{existing}" if existing else str(BUILD_SUPPORT)
+        f"{BUILD_SUPPORT}{os.pathsep}{existing}"
+        if existing
+        else str(BUILD_SUPPORT)
     )
     return env
 
@@ -63,11 +65,22 @@ def _verify_qt_runtime(target: Path) -> None:
     """
     internal = target / "_internal"
     required = {
-        "Qt platform plugin": internal / "PySide6" / "plugins" / "platforms" / "qwindows.dll",
+        "Qt platform plugin": internal
+        / "PySide6"
+        / "plugins"
+        / "platforms"
+        / "qwindows.dll",
         "WebEngine helper": internal / "PySide6" / "QtWebEngineProcess.exe",
-        "WebEngine ICU data": internal / "PySide6" / "resources" / "icudtl.dat",
+        "WebEngine ICU data": internal
+        / "PySide6"
+        / "resources"
+        / "icudtl.dat",
     }
-    missing = [f"{label}: {path}" for label, path in required.items() if not path.is_file()]
+    missing = [
+        f"{label}: {path}"
+        for label, path in required.items()
+        if not path.is_file()
+    ]
     poison = [
         str(p)
         for p in internal.rglob("icu*.dll")
@@ -79,8 +92,13 @@ def _verify_qt_runtime(target: Path) -> None:
             print(f"MISSING  {line}")
         for line in poison:
             print(f"POISON   bundled ICU DLL: {line}")
-        sys.exit("Qt runtime verification failed — refusing to ship this bundle.")
-    print("Qt runtime verified: platform plugin, WebEngine helper and resources present.")
+        sys.exit(
+            "Qt runtime verification failed — refusing to ship this bundle."
+        )
+    print(
+        "Qt runtime verified: platform plugin, WebEngine helper "
+        "and resources present."
+    )
 
 
 def _clean() -> None:

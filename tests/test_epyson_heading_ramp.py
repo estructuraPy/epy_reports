@@ -21,7 +21,9 @@ def test_heading_ramp_h6_is_the_deepest_mix():
 def test_heading_ramp_is_monotonically_graduated():
     """Each level moves strictly further toward the muted color than h1."""
     ramp = _heading_ramp("#000000", "#FFFFFF")
-    values = [int(ramp[f"h{i}-color"].lstrip("#")[0:2], 16) for i in range(1, 7)]
+    values = [
+        int(ramp[f"h{i}-color"].lstrip("#")[0:2], 16) for i in range(1, 7)
+    ]
     assert values == sorted(values)
     assert values[0] < values[-1]
 

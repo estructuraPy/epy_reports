@@ -16,6 +16,7 @@ to the System32 copy first. Scope is strictly the build process tree;
 the conda environment itself is not modified.
 """
 
+import contextlib
 import os
 import sys
 
@@ -26,7 +27,7 @@ if sys.platform == "win32":
         os.environ.get("SYSTEMROOT", r"C:\Windows"), "System32", "icuuc.dll"
     )
     if os.path.isfile(_system_icu):
-        try:
+        # A load failure here is not fatal: the pin is best effort, and
+        # Qt still resolves ICU the usual way when it does not take.
+        with contextlib.suppress(OSError):
             ctypes.WinDLL(_system_icu)
-        except OSError:
-            pass

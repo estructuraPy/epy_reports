@@ -30,7 +30,9 @@ def test_table_header_has_accent_border():
 def test_table_zebra_and_tabular_nums():
     """Zebra striping and tabular-nums are both present on tables."""
     css = _load_base_css()
-    assert "table tr:nth-child(even) td { background: var(--bg-stripe); }" in css
+    assert (
+        "table tr:nth-child(even) td { background: var(--bg-stripe); }" in css
+    )
     assert "font-variant-numeric: tabular-nums;" in css
 
 

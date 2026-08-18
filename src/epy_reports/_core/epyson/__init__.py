@@ -143,9 +143,9 @@ def _font_stack(family: dict[str, Any]) -> str:
     return f'"{primary}", {fallback}'
 
 
-def _pt(scales: dict[str, Any], role: str, default_size: float) -> tuple[
-    str, str
-]:
+def _pt(
+    scales: dict[str, Any], role: str, default_size: float
+) -> tuple[str, str]:
     """Return ``("Npt", "weight")`` from a typography ``scales`` entry."""
     entry = scales.get(role, {})
     size = entry.get("size", default_size)
@@ -160,11 +160,11 @@ def _callout_vars(
     out: dict[str, str] = {}
     types = callouts.get("types", {}) if callouts else {}
     fallback = {
-        "note":      "blues",
-        "tip":       "greens",
-        "warning":   "oranges",
+        "note": "blues",
+        "tip": "greens",
+        "warning": "oranges",
         "important": "reds",
-        "caution":   "oranges",
+        "caution": "oranges",
     }
     for kind in ("note", "tip", "warning", "important", "caution"):
         tdef = types.get(kind, {})
@@ -218,8 +218,7 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
     mono_family = families.get("mono_code", {})
     fam_text = _font_stack(text_family)
     fam_code = _font_stack(
-        mono_family
-        or {"primary": "Consolas", "fallback": "monospace"}
+        mono_family or {"primary": "Consolas", "fallback": "monospace"}
     )
 
     # ---- typography -------------------------------------------------
@@ -246,14 +245,13 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
         page.get("header_color", page.get("text", [0, 0, 0]))
     )
     border = _rgb_to_hex(pal.get("border_color", [200, 200, 200]))
-    caption_color = _rgb_to_hex(
-        pal.get("caption_color", [96, 96, 96])
-    )
+    caption_color = _rgb_to_hex(pal.get("caption_color", [96, 96, 96]))
     code_bg = _rgb_to_hex(code_pal.get("background", [245, 245, 245]))
     code_fg = _rgb_to_hex(code_pal.get("text", page.get("text", [0, 0, 0])))
 
-    table_header_bg = _rgb_to_hex(tbl.get("header", code_pal.get(
-        "background", [240, 240, 240])))
+    table_header_bg = _rgb_to_hex(
+        tbl.get("header", code_pal.get("background", [240, 240, 240]))
+    )
     table_header_text = _rgb_to_hex(tbl.get("header_text", [0, 0, 0]))
     table_stripe_bg = _rgb_to_hex(tbl.get("stripe", [250, 250, 250]))
 
@@ -261,9 +259,7 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
     secondary_rgb = colors.get("secondary", primary_rgb)
     accent_strong = _rgb_to_hex(primary_rgb)
     accent_link = _rgb_to_hex(secondary_rgb)
-    accent_yellow = _rgb_to_hex(
-        colors.get("quaternary", [202, 154, 36])
-    )
+    accent_yellow = _rgb_to_hex(colors.get("quaternary", [202, 154, 36]))
 
     # ---- CSS variables ---------------------------------------------
     css_vars: dict[str, str] = {
@@ -292,53 +288,59 @@ def _theme_from_raw(raw: dict[str, Any], default_id: str) -> Theme:
         "font-family-code": fam_code,
         "body-size": body_size,
         "body-weight": body_weight,
-        "h1-size": h1s, "h1-weight": h1w,
-        "h2-size": h2s, "h2-weight": h2w,
-        "h3-size": h3s, "h3-weight": h3w,
-        "h4-size": h4s, "h4-weight": h4w,
-        "h5-size": h5s, "h5-weight": h5w,
-        "h6-size": h6s, "h6-weight": h6w,
+        "h1-size": h1s,
+        "h1-weight": h1w,
+        "h2-size": h2s,
+        "h2-weight": h2w,
+        "h3-size": h3s,
+        "h3-weight": h3w,
+        "h4-size": h4s,
+        "h4-weight": h4w,
+        "h5-size": h5s,
+        "h5-weight": h5w,
+        "h6-size": h6s,
+        "h6-weight": h6w,
         "caption-size": caption_size,
         # Token colours adopt the page text and the strong accent so
         # syntax highlighting tracks the layout palette automatically.
-        "tok-kw":  accent_strong,
-        "tok-cf":  accent_strong,
-        "tok-dt":  accent_link,
-        "tok-bu":  accent_link,
-        "tok-fu":  accent_link,
-        "tok-va":  fg,
-        "tok-st":  caption_color,
-        "tok-ch":  caption_color,
-        "tok-sc":  caption_color,
+        "tok-kw": accent_strong,
+        "tok-cf": accent_strong,
+        "tok-dt": accent_link,
+        "tok-bu": accent_link,
+        "tok-fu": accent_link,
+        "tok-va": fg,
+        "tok-st": caption_color,
+        "tok-ch": caption_color,
+        "tok-sc": caption_color,
         "tok-num": accent_yellow,
-        "tok-co":  caption_color,
-        "tok-an":  accent_yellow,
-        "tok-al":  accent_strong,
-        "tok-er":  accent_strong,
-        "tok-op":  caption_color,
-        "tok-pp":  accent_strong,
-        "tok-ot":  accent_link,
-        "tok-at":  accent_yellow,
+        "tok-co": caption_color,
+        "tok-an": accent_yellow,
+        "tok-al": accent_strong,
+        "tok-er": accent_strong,
+        "tok-op": caption_color,
+        "tok-pp": accent_strong,
+        "tok-ot": accent_link,
+        "tok-at": accent_yellow,
     }
     css_vars.update(_heading_ramp(header_color, caption_color))
     css_vars.update(_callout_vars(raw.get("callouts", {}), palettes))
 
     # ---- Qt palette -------------------------------------------------
     qt_palette: dict[str, str] = {
-        "Window":          bg,
-        "WindowText":      fg,
-        "Base":            bg,
-        "AlternateBase":   code_bg,
-        "Text":            fg,
+        "Window": bg,
+        "WindowText": fg,
+        "Base": bg,
+        "AlternateBase": code_bg,
+        "Text": fg,
         "PlaceholderText": caption_color,
-        "Button":          code_bg,
-        "ButtonText":      fg,
-        "Highlight":       accent_link,
+        "Button": code_bg,
+        "ButtonText": fg,
+        "Highlight": accent_link,
         "HighlightedText": _contrast_text(accent_link),
-        "ToolTipBase":     fg,
-        "ToolTipText":     bg,
-        "Link":            accent_link,
-        "LinkVisited":     accent_strong,
+        "ToolTipBase": fg,
+        "ToolTipText": bg,
+        "Link": accent_link,
+        "LinkVisited": accent_strong,
     }
 
     return Theme(
@@ -360,7 +362,8 @@ def user_themes_dir() -> Path:
     Lives under ``QStandardPaths.AppConfigLocation`` so custom themes
     persist across sessions and are writable even from the frozen build
     (the bundled ``_config/_assets/themes`` are read-only). ``load_all_themes``
-    calls this at MODULE IMPORT time (``themes.py``'s ``THEMES = load_all_themes()``),
+    calls this at MODULE IMPORT time (``themes.py``'s ``THEMES =
+    load_all_themes()``),
     so it must survive a broken/absent Qt runtime — falls back to a
     Qt-free XDG/APPDATA-style path when PySide6 cannot be imported (headless
     ``render_markdown``, or Qt broken on this machine), so theme lookup keeps
@@ -381,7 +384,9 @@ def user_themes_dir() -> Path:
 def _fallback_config_root() -> str:
     """Qt-free approximation of ``QStandardPaths.AppConfigLocation``."""
     if sys.platform == "win32":
-        return os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+        return os.environ.get("APPDATA") or str(
+            Path.home() / "AppData" / "Roaming"
+        )
     if sys.platform == "darwin":
         return str(Path.home() / "Library" / "Application Support")
     return os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
@@ -446,6 +451,7 @@ def build_epyson(values: dict[str, Any]) -> dict[str, Any]:
     for h1..h6, text, caption); and ``callouts``
     (``kind -> {"bg": hex, "border": hex}``).
     """
+
     def rgb(hex_color: str) -> list[int]:
         return list(_hex_to_rgb(hex_color))
 
@@ -453,31 +459,45 @@ def build_epyson(values: dict[str, Any]) -> dict[str, Any]:
         "display_name": values["display_name"],
         "font_family_ref": "default",
         "font_families": {
-            "default": {"primary": values["text_font"],
-                        "fallback": "Arial, sans-serif"},
-            "mono_code": {"primary": values["code_font"],
-                          "fallback": "monospace"},
+            "default": {
+                "primary": values["text_font"],
+                "fallback": "Arial, sans-serif",
+            },
+            "mono_code": {
+                "primary": values["code_font"],
+                "fallback": "monospace",
+            },
         },
-        "typography": {"scales": {
-            role: {"size": spec["size"], "weight": spec["weight"]}
-            for role, spec in values["scales"].items()
-        }},
+        "typography": {
+            "scales": {
+                role: {"size": spec["size"], "weight": spec["weight"]}
+                for role, spec in values["scales"].items()
+            }
+        },
         "palette": {
-            "page": {"background": rgb(values["page_bg"]),
-                     "text": rgb(values["text"]),
-                     "header_color": rgb(values["heading"])},
-            "code": {"background": rgb(values["code_bg"]),
-                     "text": rgb(values["text"])},
+            "page": {
+                "background": rgb(values["page_bg"]),
+                "text": rgb(values["text"]),
+                "header_color": rgb(values["heading"]),
+            },
+            "code": {
+                "background": rgb(values["code_bg"]),
+                "text": rgb(values["text"]),
+            },
             "border_color": rgb(values["border"]),
             "caption_color": rgb(values["text"]),
-            "colors": {"primary": rgb(values["primary"]),
-                       "secondary": rgb(values["secondary"]),
-                       "quaternary": rgb(values["mark"])},
+            "colors": {
+                "primary": rgb(values["primary"]),
+                "secondary": rgb(values["secondary"]),
+                "quaternary": rgb(values["mark"]),
+            },
         },
-        "callouts": {"types": {
-            kind: {"bg": spec["bg"], "border": spec["border"]}
-            for kind, spec in values["callouts"].items()
-        }},
+        "callouts": {
+            "types": {
+                kind: {"bg": spec["bg"], "border": spec["border"]}
+                for kind, spec in values["callouts"].items()
+            }
+        },
     }
 
 
@@ -505,6 +525,7 @@ def load_all_themes() -> dict[str, Theme]:
 
 
 # ----------------------------------------------------- application
+
 
 def apply_palette(app: QApplication, theme: Theme) -> None:
     """Apply ``theme.qt_palette`` to the running Qt application."""

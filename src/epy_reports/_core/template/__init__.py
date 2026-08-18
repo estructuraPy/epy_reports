@@ -148,7 +148,7 @@ def _load_plotly_script() -> str:
 #: -drawn figure is stashed and replayed after the real draw, because
 #: plotly.py chains it on the newPlot promise, which the queue resolves
 #: immediately.
-_PLOTLY_LAZY_SHIM = """
+_PLOTLY_LAZY_SHIM = r"""
 <script>
 (function () {
   'use strict';

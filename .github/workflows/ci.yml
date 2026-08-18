@@ -65,8 +65,13 @@ jobs:
           python-version: "3.12"
       - name: Install build
         run: pip install build
+      # pyproject-build, NOT "python -m build": for -m, sys.path[0] is the
+      # working directory, and this repository ships its own build.py at
+      # the root -- the PyInstaller driver. "python -m build" therefore
+      # runs that instead of the PyPA builder. The console script cannot
+      # be shadowed.
       - name: Build sdist + wheel
-        run: python -m build
+        run: pyproject-build
       - uses: actions/upload-artifact@v4
         with:
           name: dist

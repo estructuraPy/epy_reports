@@ -447,7 +447,9 @@ def _effective_lang(metadata: dict) -> str:
     lang = metadata.get("lang")
     if lang:
         return str(lang)
-    from epy_reports._core import _i18n  # noqa: PLC0415  — avoid cycle at import time
+    from epy_reports._core import (
+        _i18n,  # noqa: PLC0415  — avoid cycle at import time
+    )
 
     return _i18n.current_language()
 
@@ -1329,7 +1331,9 @@ def export_docx(
         )
         # The reference doc ships one fixed page size; honor the
         # front-matter page-size (letter / a4 / legal) in the DOCX too.
-        from epy_reports._core._docx_page import apply_page_size  # noqa: PLC0415
+        from epy_reports._core._docx_page import (
+            apply_page_size,  # noqa: PLC0415
+        )
 
         apply_page_size(target, normalize_page_size(metadata.get("page-size")))
     finally:

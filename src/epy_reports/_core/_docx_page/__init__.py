@@ -19,7 +19,11 @@ import zipfile
 from pathlib import Path
 
 # Page sizes in twentieths of a point (twips): width, height.
-_PAGE_TWIPS = {"letter": (12240, 15840), "a4": (11906, 16838), "legal": (12240, 20160)}
+_PAGE_TWIPS = {
+    "letter": (12240, 15840),
+    "a4": (11906, 16838),
+    "legal": (12240, 20160),
+}
 
 _PGSZ_RE = re.compile(rb"<w:pgSz [^>/]*/>")
 _SECTPR_RE = re.compile(rb"(<w:sectPr[^>/]*>)(.*?)(</w:sectPr>)", re.S)
@@ -44,10 +48,10 @@ def _retag_document(data: bytes, width: int, height: int) -> bytes:
         # Schema order puts pgSz right before pgMar; append at the end
         # of the section otherwise (pandoc emits nothing after it).
         idx = body.find(b"<w:pgMar")
-        if idx >= 0:
-            body = body[:idx] + pg_sz + body[idx:]
-        else:
-            body = body + pg_sz
+        body = (
+            body[:idx] + pg_sz + body[idx:] if idx >= 0
+            else body + pg_sz
+        )
         return open_tag + body + close_tag
 
     return _SECTPR_RE.sub(_fill, new)

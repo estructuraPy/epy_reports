@@ -96,7 +96,10 @@ def _build_sandbox(base: Path) -> dict[str, Path]:
 
 class TestCollectTargets:
     def test_collects_pytest_cache(self, tmp_path):
-        """collect_targets finds dotted cache dirs (.pytest_cache, .ruff_cache)."""
+        """collect_targets finds dotted cache dirs.
+
+        .pytest_cache and .ruff_cache included.
+        """
         hk = _load_housekeeper()
         _build_sandbox(tmp_path)
         targets = hk.collect_targets(tmp_path)
@@ -111,7 +114,10 @@ class TestCollectTargets:
         assert ".ruff_cache" in names
 
     def test_collects_pyc_file(self, tmp_path):
-        """collect_targets picks up .pyc files regardless of parent directory."""
+        """collect_targets picks up .pyc files anywhere.
+
+        The parent directory does not matter.
+        """
         hk = _load_housekeeper()
         paths = _build_sandbox(tmp_path)
         targets = hk.collect_targets(tmp_path)
@@ -143,7 +149,10 @@ class TestCollectTargets:
         assert isinstance(result, list)
 
     def test_dotted_cache_dirs_collected_as_dirs(self, tmp_path):
-        """Dotted DIRS_TO_DELETE entries are collected as directories (not their children)."""
+        """Dotted DIRS_TO_DELETE entries collect as directories.
+
+        Their children are not listed separately.
+        """
         hk = _load_housekeeper()
         paths = _build_sandbox(tmp_path)
         targets = hk.collect_targets(tmp_path)
@@ -232,7 +241,8 @@ class TestMainQualityBranch:
         sys.argv = ["housekeeper.py", "--quality"]
         try:
             hk.main()
-            # capsys isn't available here but that's fine — we just confirm it runs
+            # capsys isn't available here but that's fine — we just confirm it
+            # runs
             return "ok"
         finally:
             sys.argv = original_argv

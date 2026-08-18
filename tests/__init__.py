@@ -1,1 +1,1 @@
-# tests package
+"""Test suite for epy_reports."""
