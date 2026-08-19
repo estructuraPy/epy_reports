@@ -248,6 +248,42 @@ def report_tutorials_layout(violations: list[str]) -> None:
             print(f"    - {v}")
 
 
+# --- documented standard ids (referential integrity) -------------------------
+# Imported from the ONE canonical source rather than copied: Rule 13 was rolled
+# out by injection and its copies drifted apart, so the same rule behaved
+# differently per library. See _packaging/_tooling/doc_standard_refs_block.py.
+_DOC_REFS_BLOCK = (
+    Path(__file__).resolve().parent.parent / "_packaging" / "_tooling"
+    / "doc_standard_refs_block.py"
+)
+if _DOC_REFS_BLOCK.exists():
+    import importlib.util as _ilu
+
+    _spec = _ilu.spec_from_file_location("_doc_standard_refs_block", _DOC_REFS_BLOCK)
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    audit_doc_standard_refs_strict = _mod.audit_doc_standard_refs_strict
+    report_doc_standard_refs = _mod.report_doc_standard_refs
+else:  # pragma: no cover - only when the tooling repo is absent
+
+    def audit_doc_standard_refs_strict(lib_root):
+        return [
+            "doc-standard-refs: _packaging/_tooling/doc_standard_refs_block.py "
+            "is missing, so documented standard ids were NOT checked. This is a "
+            "loud failure on purpose: a silently skipped rule is worse than none."
+        ]
+
+    def report_doc_standard_refs(violations):
+        print("\n" + "=" * 70)
+        print("  DOCUMENTED STANDARD IDS (referential integrity)")
+        print("=" * 70)
+        for _v in violations:
+            print(f"    - {_v}")
+
+
+# ----------------------------------------------------------------------------
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -310,8 +346,13 @@ def main() -> None:
     tutorials_layout_violations = audit_tutorials_layout(LIB_ROOT)
     report_tutorials_layout(tutorials_layout_violations)
 
+    # Documented standard ids must name a catalogued document
+    doc_ref_violations = audit_doc_standard_refs_strict(LIB_ROOT)
+    report_doc_standard_refs(doc_ref_violations)
+
     if args.strict and (
-        module_mirror_violations or tutorials_layout_violations
+        doc_ref_violations
+        or         module_mirror_violations or tutorials_layout_violations
     ):
         sys.exit(1)
 
