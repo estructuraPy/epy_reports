@@ -112,6 +112,10 @@ def _is_mirror_exempt(rel: str) -> bool:
     """Whether ``rel`` is not a unit-test target.
 
     Integration / packaging / schema / showcase modules are exempt.
+
+    SYNCED from _packaging/_tooling/module_mirror_block.py -- edit it THERE
+    and re-run add_hk_module_mirror_xsuite.py --apply. A local edit here is
+    overwritten by the next sync.
     """
     name = rel.rsplit("/", 1)[-1]
     # No blanket exemption for ``epy_suite_connect/``, and none for
@@ -123,7 +127,9 @@ def _is_mirror_exempt(rel: str) -> bool:
     # it ``_adapters/``), and what it hid was the one adapter nobody
     # tests: ``_export_estrulab.py``, byte-identical in seven repos.
     if "/_packaging/" in rel or name in (
-        "download_wheels.py", "install_offline.py", "__main__.py",
+        "download_wheels.py",
+        "install_offline.py",
+        "__main__.py",
     ):
         return True
     if "_schemas/" in rel:
@@ -131,28 +137,147 @@ def _is_mirror_exempt(rel: str) -> bool:
     return name in ("_famous.py", "_demo.py", "_showcase.py")
 
 
-def audit_module_mirror(lib_root: Path) -> list[str]:
-    """Every real src module must have a mirroring test.
+def _mirror_import_roots(src: Path) -> set[str]:
+    """Top-level import roots this repo ships under ``src/``.
 
-    A mirroring test is ``test_<stem>.py`` or ``test_<stem>_*.py``
-    anywhere under tests/. Closes the gap left by the folder-level
-    tests-layout audit, which reports OK even when a module has no
-    test (suite-wide tests-mirror DNA).
+    Every directory directly under ``src/`` is a root, with or without an
+    ``__init__.py``: PEP 420 namespace packages are importable too, and a
+    root filter that demanded ``__init__.py`` would simply stop checking
+    whatever lives in one.
+    """
+    if not src.is_dir():
+        return set()
+    return {
+        c.name
+        for c in src.iterdir()
+        if c.is_dir() and c.name != "__pycache__"
+    }
+
+
+def _mirror_module_exists(src: Path, dotted: str) -> bool:
+    """Whether ``dotted`` resolves to a real module or package under src/.
+
+    PEP 420 aware ON PURPOSE. A directory WITHOUT ``__init__.py`` is a
+    legitimate namespace package and imports fine; an earlier probe that
+    required ``__init__.py`` reported 20 false positives on exactly those
+    directories. The three accepted shapes are therefore ``<path>.py``,
+    ``<path>/__init__.py``, and a bare ``<path>/`` directory.
+    """
+    target = src.joinpath(*dotted.split("."))
+    if target.with_suffix(".py").is_file():
+        return True
+    return target.is_dir()
+
+
+def _mirror_dead_imports(
+    test_path: Path, src: Path, roots: set[str]
+) -> list[str]:
+    """Dotted imports in ``test_path`` naming no module under ``src/``.
+
+    THE REASON THIS RULE EXISTS. The mirror gate used to be pure PRESENCE:
+    it collected the NAME of every ``tests/**/test_*.py`` into a flat set
+    and never opened the file. The file
+    ``epy_buildings/tests/_core/test_optimization.py`` imported
+    ``epy_buildings._core._optimization``, which does not exist -- the
+    module is at ``_design/_optimization.py``. Every pytest collection of
+    that repo raised ModuleNotFoundError from 2026-07-23 to 2026-08-20,
+    and this gate counted the broken file as coverage the whole time.
+
+    Only imports rooted in a package this repo ships are checked; a sibling
+    library's module is not on this repo's disk and is none of this gate's
+    business. Relative imports are skipped -- resolving them needs the
+    test's own package identity, which the flat-name convention that this
+    gate is built on does not pin down.
+    """
+    import ast as _ast
+
+    try:
+        source = test_path.read_text(encoding="utf-8", errors="replace")
+        tree = _ast.parse(source)
+    except SyntaxError as e:
+        return [f"does not parse, so its imports cannot be verified - {e}"]
+
+    dead: list[str] = []
+    seen: set[str] = set()
+    for node in _ast.walk(tree):
+        dotted_names: list[str] = []
+        if isinstance(node, _ast.Import):
+            dotted_names = [a.name for a in node.names]
+        elif isinstance(node, _ast.ImportFrom):
+            if node.level or not node.module:
+                continue
+            dotted_names = [node.module]
+        for dotted in dotted_names:
+            if dotted in seen or dotted.split(".")[0] not in roots:
+                continue
+            seen.add(dotted)
+            if not _mirror_module_exists(src, dotted):
+                dead.append(f"imports `{dotted}`, which does not exist")
+    return dead
+
+
+def _mirror_advisory(store: list[str] | None = None) -> list[str]:
+    """Carry the path-parity advisory from the audit to the report.
+
+    ``report_module_mirror(violations)`` is called with exactly one
+    argument in all twenty-nine housekeepers; widening that signature would
+    make this sync rewrite twenty-nine call sites in ``main()`` as well. A
+    tiny accessor keeps the wiring untouched and keeps the advisory out of
+    the ``--strict`` failure tuple, which is the point: path parity is a
+    WARNING, never a failure.
+    """
+    if store is not None:
+        _mirror_advisory.lines = list(store)
+    return getattr(_mirror_advisory, "lines", [])
+
+
+def audit_module_mirror(lib_root: Path) -> list[str]:
+    """Every real src module needs a mirroring test whose imports RESOLVE.
+
+    Two checks, both failures:
+
+    1. PRESENCE -- a ``test_<stem>.py`` or ``test_<stem>_*.py`` exists
+       somewhere under ``tests/``. Closes the gap left by the folder-level
+       tests-layout audit, which reports OK even when a module has no test.
+    2. IMPORTABILITY -- every crediting test parses, and every dotted
+       import it makes into a package this repo ships resolves to a real
+       module or package on disk. A test that cannot be imported is not
+       coverage, and for a month one of them was counted as coverage.
+
+    Path parity -- does the test sit at the MIRRORED path? -- is
+    deliberately NOT a failure. Measured 2026-08-21 across the suite: 359
+    mirrors, 26% of them, live at a non-mirrored path, and the bulk of
+    those follow two conventions the suite chose on purpose. It is
+    reported as an advisory instead; see ``report_module_mirror``.
+
+    SYNCED from _packaging/_tooling/module_mirror_block.py -- edit it THERE
+    and re-run add_hk_module_mirror_xsuite.py --apply. A local edit here is
+    overwritten by the next sync.
     """
     pkg = _find_pkg_dir(lib_root)
     if pkg is None:
         return [
-            f"src/<pkg>/ not found under {lib_root} -- cannot "
-            "audit module mirror."
+            f"src/<pkg>/ not found under {lib_root} -- cannot audit "
+            f"module mirror."
         ]
+    src = pkg.parent
+    roots = _mirror_import_roots(src)
+
     tests = lib_root / "tests"
-    test_names: set[str] = set()
+    # stem -> the test files carrying that stem. The old gate kept only the
+    # NAMES, in a flat set, and threw the paths away -- which is why it
+    # could neither open the file nor say where the mirror actually lived.
+    by_name: dict[str, list[Path]] = {}
     if tests.is_dir():
         for p in tests.rglob("test_*.py"):
             if "__pycache__" not in p.parts:
-                test_names.add(p.name)
+                by_name.setdefault(p.name, []).append(p)
+
     violations: list[str] = []
-    for m in pkg.rglob("*.py"):
+    crediting: dict[Path, None] = {}
+    off_mirror: list[tuple[str, str]] = []
+
+    for m in sorted(pkg.rglob("*.py")):
         if "__pycache__" in m.parts or m.name == "__init__.py":
             continue
         rel = m.relative_to(pkg).as_posix()
@@ -161,32 +286,91 @@ def audit_module_mirror(lib_root: Path) -> list[str]:
         bare = m.name[:-3].lstrip("_")
         if bare in ("utils", "types", "constants", "typing", "protocols"):
             continue
-        if f"test_{bare}.py" in test_names:
+        mirrors = list(by_name.get(f"test_{bare}.py", []))
+        for name, paths in by_name.items():
+            if name.startswith(f"test_{bare}_") and name.endswith(".py"):
+                mirrors.extend(paths)
+        if not mirrors:
+            violations.append(
+                f"src module without mirroring test: "
+                f"src/{pkg.name}/{rel} -- add tests/.../test_{bare}.py "
+                f"(suite-wide tests-mirror DNA)."
+            )
             continue
-        if any(
-            n.startswith(f"test_{bare}_") and n.endswith(".py")
-            for n in test_names
-        ):
-            continue
-        violations.append(
-            f"src module without mirroring test: "
-            f"src/{pkg.name}/{rel} -- add "
-            f"tests/.../test_{bare}.py (suite-wide tests-mirror DNA)."
+        for t in mirrors:
+            crediting[t] = None
+        # Path parity, advisory only. The mirrored home of
+        # src/<pkg>/a/b/c.py is tests/a/b/test_c.py.
+        want_dir = (tests / rel).parent
+        if not any(t.parent == want_dir for t in mirrors):
+            where = mirrors[0].relative_to(lib_root).parent.as_posix()
+            off_mirror.append((rel, where))
+
+    for t in sorted(crediting):
+        where = t.relative_to(lib_root).as_posix()
+        for problem in _mirror_dead_imports(t, src, roots):
+            violations.append(
+                f"mirroring test {where} {problem} -- it cannot be "
+                f"collected, so it is not coverage; point it at the real "
+                f"module or delete it."
+            )
+
+    # Two conventions the suite adopted deliberately. They are named here
+    # so the advisory does NOT advise against them.
+    flat_connect = sum(
+        1 for rel, _ in off_mirror if "epy_suite_connect/" in rel
+    )
+    root_designer = sum(
+        1
+        for rel, _ in off_mirror
+        if "/" not in rel and rel.endswith("_designer.py")
+    )
+    advisory: list[str] = []
+    if off_mirror:
+        residual = len(off_mirror) - flat_connect - root_designer
+        advisory.append(
+            f"{len(off_mirror)} mirroring test(s) sit at a non-mirrored "
+            f"path ({flat_connect} flat epy_suite_connect, "
+            f"{root_designer} root designer, {residual} other). Advisory "
+            f"only -- the mirror is credited either way."
         )
+        for rel, where in off_mirror[:8]:
+            advisory.append(f"src/{pkg.name}/{rel} -> {where}/")
+        if len(off_mirror) > 8:
+            advisory.append(f"... and {len(off_mirror) - 8} more")
+    _mirror_advisory(advisory)
     return violations
 
 
 def report_module_mirror(violations: list[str]) -> None:
-    """Print the module-mirror audit result."""
+    """Print the module-mirror result, then the path-parity advisory.
+
+    The advisory prints separately and never enters the ``--strict``
+    failure tuple. The two conventions it names are SANCTIONED, and must
+    not be "fixed":
+
+    * the flat ``tests/epy_suite_connect/test_*.py`` layout mirroring
+      ``epy_suite_connect/{adapters,_adapters,_contract}/*.py``;
+    * root designer modules ``src/<pkg>/<x>_designer.py`` tested from
+      ``tests/_design/``.
+    """
     if not violations:
         print(
-            "\n  Module mirror: OK (every real src module has a "
-            "mirroring test)"
+            "\n  Module mirror: OK (every real src module has a mirroring "
+            "test, and every one of them imports)"
         )
     else:
         print(f"\n  MODULE-MIRROR VIOLATIONS ({len(violations)} total):")
         for v in violations:
             print(f"    - {v}")
+    advisory = _mirror_advisory()
+    if advisory:
+        print(
+            f"\n  Module mirror path parity (advisory, NOT a failure): "
+            f"{advisory[0]}"
+        )
+        for line in advisory[1:]:
+            print(f"    . {line}")
 
 
 # ============================================================
