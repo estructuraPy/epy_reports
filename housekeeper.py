@@ -436,6 +436,46 @@ def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
     skip_calls = ("skip", "importorskip", "xfail")
     skip_marks = ("skip", "skipif", "xfail")
 
+    try:
+        tree = _ast.parse(text)
+    except SyntaxError as exc:
+        # NOT a silent []. A test module that does not parse cannot be
+        # collected, so pytest never runs it -- the same outcome this rule
+        # forbids, reached by a different route. Returning no violations here
+        # would make an unparseable file indistinguishable from a clean one,
+        # which is the exact shape of failure the rule exists to catch.
+        line = getattr(exc, "lineno", None) or 1
+        return [(line, f"module does not parse, so it never runs -- {exc.msg}")]
+
+    # WHICH NAMES MEAN PYTEST HERE. Matching the literal string "pytest" let
+    # six shapes through, each verified to skip a real test while the gate
+    # reported zero: `import pytest as pt` then `pt.skip(...)`, and
+    # `from pytest import skip` then a bare `skip(...)`. The module is read
+    # for its own import statements instead.
+    pytest_aliases = {"pytest"}
+    unittest_aliases = {"unittest"}
+    bare_skip_names: set = set()
+    bare_mark_root: set = set()
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.Import):
+            for a in node.names:
+                if a.name == "pytest":
+                    pytest_aliases.add(a.asname or "pytest")
+                elif a.name == "unittest":
+                    unittest_aliases.add(a.asname or "unittest")
+        elif isinstance(node, _ast.ImportFrom):
+            if node.module == "pytest":
+                for a in node.names:
+                    local = a.asname or a.name
+                    if a.name in skip_calls:
+                        bare_skip_names.add(local)
+                    elif a.name == "mark":
+                        bare_mark_root.add(local)
+            elif node.module == "unittest":
+                for a in node.names:
+                    if a.name in ("skip", "skipIf", "skipUnless", "expectedFailure"):
+                        bare_skip_names.add(a.asname or a.name)
+
     def _dotted(node: object) -> str:
         parts: list[str] = []
         while isinstance(node, _ast.Attribute):
@@ -446,58 +486,73 @@ def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
         return ".".join(reversed(parts))
 
     def _skip_mark(node: object) -> str:
-        """The bare mark name if `node` is a forbidden mark, else ``""``."""
+        """The bare mark name if `node` is a forbidden mark, else empty."""
         target = node.func if isinstance(node, _ast.Call) else node
-        dotted = _dotted(target)
-        if not dotted.startswith("pytest.mark."):
-            return ""
-        bare = dotted.rsplit(".", 1)[-1]
-        return bare if bare in skip_marks else ""
+        parts = _dotted(target).split(".")
+        if len(parts) >= 3 and parts[0] in pytest_aliases and parts[1] == "mark":
+            bare = parts[-1]
+            return bare if bare in skip_marks else ""
+        # `from pytest import mark` then `mark.skipif(...)`
+        if len(parts) == 2 and parts[0] in bare_mark_root:
+            return parts[-1] if parts[-1] in skip_marks else ""
+        # unittest decorators silence a test just as completely
+        if len(parts) == 2 and parts[0] in unittest_aliases and parts[-1] in (
+            "skip", "skipIf", "skipUnless", "expectedFailure"
+        ):
+            return parts[-1]
+        if len(parts) == 1 and parts[0] in bare_skip_names:
+            return parts[0]
+        return ""
 
-    try:
-        tree = _ast.parse(text)
-    except SyntaxError as exc:
-        # NOT a silent []. A test module that does not parse cannot be
-        # collected, so pytest never runs it -- the same outcome this rule
-        # forbids, reached by a different route. Returning no violations here
-        # would make an unparseable file indistinguishable from a clean one,
-        # which is the exact shape of failure the rule exists to catch.
-        line = getattr(exc, "lineno", None) or 1
-        return [
-            (line, f"module does not parse, so it never runs -- {exc.msg}")
-        ]
+    def _marks_anywhere(node: object) -> list[str]:
+        """Forbidden marks anywhere inside an expression.
+
+        The assigned form was matched only at the top of the value, so
+        `pytestmark = [pytest.mark.skipif(...)]` -- pytest's own documented
+        multi-mark idiom -- and a ternary around the same mark both read as
+        clean while skipping a real test.
+        """
+        out: list[str] = []
+        for sub in _ast.walk(node):
+            mark = _skip_mark(sub)
+            if mark:
+                out.append(mark)
+        return out
 
     definitions = (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)
-    found: set[tuple[int, str]] = set()
+    found: set = set()
     for node in _ast.walk(tree):
         if isinstance(node, definitions):
             for dec in node.decorator_list:
                 mark = _skip_mark(dec)
                 if mark:
-                    found.add(
-                        (dec.lineno, f"@pytest.mark.{mark} on {node.name}")
-                    )
+                    found.add((dec.lineno, f"@...{mark} on {node.name}"))
         elif isinstance(node, _ast.Call):
-            # Exactly ``pytest.skip`` / ``pytest.importorskip`` /
-            # ``pytest.xfail``, not any dotted name ending in one of them:
-            # ``pytest.mark.skip(...)`` is a Call too, and matching it here
-            # reported every decorator twice.
-            dotted = _dotted(node.func)
-            if dotted in {f"pytest.{name}" for name in skip_calls}:
-                found.add((node.lineno, f"{dotted}(...)"))
+            # Exactly the module-level skip calls, not any dotted name ending
+            # in one of them: `pytest.mark.skip(...)` is a Call too, and
+            # matching it here reported every decorator twice.
+            parts = _dotted(node.func).split(".")
+            if len(parts) == 2 and parts[0] in pytest_aliases and parts[1] in skip_calls:
+                found.add((node.lineno, f"{'.'.join(parts)}(...)"))
+            elif len(parts) == 1 and parts[0] in bare_skip_names:
+                found.add((node.lineno, f"{parts[0]}(...) imported from pytest"))
+            elif len(parts) == 2 and parts[1] == "skipTest":
+                # unittest's runtime skip, reached through self/cls
+                found.add((node.lineno, f"{'.'.join(parts)}(...)"))
         elif isinstance(node, (_ast.Assign, _ast.AnnAssign)):
             value = node.value
-            mark = _skip_mark(value) if value is not None else ""
-            if mark:
+            if value is None:
+                continue
+            marks = _marks_anywhere(value)
+            if marks:
                 plain = isinstance(node, _ast.Assign)
                 targets = node.targets if plain else [node.target]
                 name = next(
-                    (t.id for t in targets if isinstance(t, _ast.Name)),
-                    "<assign>",
+                    (t.id for t in targets if isinstance(t, _ast.Name)), "<assign>"
                 )
                 found.add((
                     node.lineno,
-                    f"{name} = pytest.mark.{mark}(...) (assigned)",
+                    f"{name} = ...{marks[0]}... (assigned)",
                 ))
     return sorted(found)
 
