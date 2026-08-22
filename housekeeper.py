@@ -383,6 +383,198 @@ def report_module_mirror(violations: list[str]) -> None:
 TUTORIAL_CATEGORIES = ("educational", "professional", "research")
 
 
+def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
+    """Every live pytest skip in one module, found by AST rather than by line.
+
+    Catches four shapes:
+
+    * ``@pytest.mark.skip`` / ``@pytest.mark.skipif`` / ``@pytest.mark.xfail``
+      as a decorator, bare or called;
+    * ``pytest.skip(...)``, ``pytest.importorskip(...)`` and
+      ``pytest.xfail(...)`` as calls, at any depth -- including inside an
+      ``except`` handler, which turns a real error into a green skip;
+    * ``NAME = pytest.mark.skipif(...)``, the ASSIGNED form the per-line regex
+      could not see because it has no leading ``@``;
+    * ``pytestmark = pytest.mark.skip...``, which silences a whole module.
+
+    ``xfail`` is in scope because Rule 8 puts it there. A non-strict xfail
+    stops reporting the moment the code starts working, and a strict one is
+    still a committed test whose result the suite has agreed not to act on.
+    The per-line regex it replaces named only skip/skipif/importorskip, so it
+    could not have seen either.
+
+    WHY AN AST WALK AND NOT A REGEX
+    -------------------------------
+    Eleven housekeepers in this suite still matched these four alternatives
+    per LINE, and that regex was blind in both directions.
+
+    It MISSED the assigned form, ``NAME = pytest.mark.skipif(...)``, because
+    its first alternative demands a leading ``@``. Three such marks gated 54
+    tests across this suite, and one repo reported a clean 0 while 23 of one
+    file's 55 tests were silenced by one of them.
+
+    And it MATCHED prose. Any docstring or comment naming
+    ``pytest.importorskip`` while explaining why it must not be used counted
+    as a violation -- which is precisely why the one file documenting these
+    patterns had to be exempted WHOLESALE by filename. See
+    ``audit_no_skipped_tests`` for what that exemption cost.
+
+    Walking the AST removes both blind spots at once: comments and strings are
+    not nodes, and an assignment is.
+
+    SYNCED from _packaging/_tooling/rule8_skip_block.py -- edit it THERE and
+    re-run add_hk_rule8_xsuite.py --apply. A local edit here is overwritten by
+    the next sync.
+    """
+    import ast as _ast
+
+    # Imported locally, not at module level: nine housekeepers in this suite
+    # carry no top-level ``import ast``, and the block has to drop into all
+    # twenty-nine unchanged. The two tuples are local for the same reason --
+    # the block owns no module-level state, so nothing it needs can be left
+    # stranded behind a sync or shadowed by a repo-local edit.
+    skip_calls = ("skip", "importorskip", "xfail")
+    skip_marks = ("skip", "skipif", "xfail")
+
+    def _dotted(node: object) -> str:
+        parts: list[str] = []
+        while isinstance(node, _ast.Attribute):
+            parts.append(node.attr)
+            node = node.value
+        if isinstance(node, _ast.Name):
+            parts.append(node.id)
+        return ".".join(reversed(parts))
+
+    def _skip_mark(node: object) -> str:
+        """The bare mark name if `node` is a forbidden mark, else ``""``."""
+        target = node.func if isinstance(node, _ast.Call) else node
+        dotted = _dotted(target)
+        if not dotted.startswith("pytest.mark."):
+            return ""
+        bare = dotted.rsplit(".", 1)[-1]
+        return bare if bare in skip_marks else ""
+
+    try:
+        tree = _ast.parse(text)
+    except SyntaxError as exc:
+        # NOT a silent []. A test module that does not parse cannot be
+        # collected, so pytest never runs it -- the same outcome this rule
+        # forbids, reached by a different route. Returning no violations here
+        # would make an unparseable file indistinguishable from a clean one,
+        # which is the exact shape of failure the rule exists to catch.
+        line = getattr(exc, "lineno", None) or 1
+        return [
+            (line, f"module does not parse, so it never runs -- {exc.msg}")
+        ]
+
+    definitions = (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)
+    found: set[tuple[int, str]] = set()
+    for node in _ast.walk(tree):
+        if isinstance(node, definitions):
+            for dec in node.decorator_list:
+                mark = _skip_mark(dec)
+                if mark:
+                    found.add(
+                        (dec.lineno, f"@pytest.mark.{mark} on {node.name}")
+                    )
+        elif isinstance(node, _ast.Call):
+            # Exactly ``pytest.skip`` / ``pytest.importorskip`` /
+            # ``pytest.xfail``, not any dotted name ending in one of them:
+            # ``pytest.mark.skip(...)`` is a Call too, and matching it here
+            # reported every decorator twice.
+            dotted = _dotted(node.func)
+            if dotted in {f"pytest.{name}" for name in skip_calls}:
+                found.add((node.lineno, f"{dotted}(...)"))
+        elif isinstance(node, (_ast.Assign, _ast.AnnAssign)):
+            value = node.value
+            mark = _skip_mark(value) if value is not None else ""
+            if mark:
+                plain = isinstance(node, _ast.Assign)
+                targets = node.targets if plain else [node.target]
+                name = next(
+                    (t.id for t in targets if isinstance(t, _ast.Name)),
+                    "<assign>",
+                )
+                found.add((
+                    node.lineno,
+                    f"{name} = pytest.mark.{mark}(...) (assigned)",
+                ))
+    return sorted(found)
+
+
+def audit_no_skipped_tests(lib_root: Path) -> list[str]:
+    """Scan tests/ for forbidden skip markers (Rule 8). Returns violations.
+
+    A test that cannot run is fixed or deleted. It is never skipped.
+    ``pytest.skip``, ``pytest.importorskip``, ``pytest.xfail``,
+    ``@pytest.mark.skip``, ``@pytest.mark.skipif`` and ``@pytest.mark.xfail``
+    are all forbidden in committed tests, in decorator, call and ASSIGNED
+    form.
+
+    THERE IS NO BY-NAME EXEMPTION, AND THERE MUST NEVER BE ONE AGAIN.
+    ``test_housekeeper.py`` used to be exempted entirely, on the grounds that
+    it "must mention these regex patterns to test them" -- but the patterns it
+    mentions live in STRINGS, which the AST walk never visits, while the plain
+    ``@pytest.mark.skip`` that same file also carried was real and thereby
+    invisible. The audit could not see its own debt. The exemption existed
+    only to paper over the per-line regex's habit of matching prose; once the
+    walk stopped reading prose, the exemption had nothing left to justify it
+    and everything to hide.
+
+    A guard against a missing import is not exempt either. Measured
+    2026-08-21 across this suite, every one of the 18 modules named by a
+    ``pytest.importorskip`` call was installed, and most were declared as
+    REQUIRED dependencies of the very package whose tests guarded against
+    them. A test guarding against the absence of a dependency the package
+    cannot install without is dead weight that will one day silently disable
+    itself instead of failing. Where an extra is genuinely optional, the test
+    belongs behind that extra in the test matrix, not behind a runtime skip.
+
+    SYNCED from _packaging/_tooling/rule8_skip_block.py -- edit it THERE and
+    re-run add_hk_rule8_xsuite.py --apply. A local edit here is overwritten by
+    the next sync.
+    """
+    tests_root = lib_root / "tests"
+    if not tests_root.is_dir():
+        return []
+    violations: list[str] = []
+    for py_file in sorted(tests_root.rglob("*.py")):
+        if "__pycache__" in py_file.parts:
+            continue
+        rel = py_file.relative_to(lib_root)
+        try:
+            text = py_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            # Unreadable is not clean. Say so rather than dropping the file.
+            violations.append(
+                f"{rel}: cannot be read, so it cannot be audited -- {exc}"
+            )
+            continue
+        for line_no, what in _skip_violations_in_source(text):
+            violations.append(
+                f"{rel}:{line_no}: forbidden test skip ({what}) -- "
+                f"either fix the test or delete it."
+            )
+    return violations
+
+
+def report_skipped_tests(violations: list[str]) -> None:
+    """Print the Rule 8 result.
+
+    Two literals below are asserted on by housekeeper tests already shipping
+    in this suite: ``Skipped tests: OK`` and ``SKIPPED-TEST VIOLATIONS``. Keep
+    both substrings intact when rewording.
+    """
+    if not violations:
+        print("\n  Skipped tests: OK (none)")
+        return
+    print(f"\n  SKIPPED-TEST VIOLATIONS ({len(violations)} total):")
+    for v in violations[:30]:
+        print(f"    [!] {v}")
+    if len(violations) > 30:
+        print(f"    ... and {len(violations) - 30} more")
+
+
 def audit_tutorials_layout(lib_root: Path) -> list[str]:
     """``tutorials/`` holds exactly the three canonical categories.
 
@@ -534,9 +726,15 @@ def main() -> None:
     doc_ref_violations = audit_doc_standard_refs_strict(LIB_ROOT)
     report_doc_standard_refs(doc_ref_violations)
 
+    # Skipped-test audit (Rule 8: a test that cannot run is fixed or
+    # deleted, never skipped)
+    skip_violations = audit_no_skipped_tests(LIB_ROOT)
+    report_skipped_tests(skip_violations)
+
     if args.strict and (
         doc_ref_violations
         or         module_mirror_violations or tutorials_layout_violations
+        or skip_violations
     ):
         sys.exit(1)
 
