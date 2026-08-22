@@ -92,7 +92,7 @@ convention = "google"
 # its lines are JS, not Python, and must stay verbatim.
 "src/epy_reports/_core/template/__init__.py" = ["E501"]
 # Example scripts favor readability over library docstring/line rules.
-"tutorials/**/*.py" = ["D", "SIM105", "E501"]
+"examples/**/*.py" = ["D", "SIM105", "E501"]
 # Build/release tooling (installer + dev scripts) embeds shell heredocs,
 # long literal paths and sys.path bootstrap imports.
 "src/epy_reports/_core/_packaging/**/*.py" = ["D", "E402", "E501"]
