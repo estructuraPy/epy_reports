@@ -13,11 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-pypdf = pytest.importorskip("pypdf")
-reportlab = pytest.importorskip("reportlab")
-PIL = pytest.importorskip("PIL")
-
-from epy_reports._core._pdf_footer import (  # noqa: E402
+from epy_reports._core._pdf_footer import (
     add_footer,
     add_header,
     add_metadata,

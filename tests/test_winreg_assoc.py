@@ -15,12 +15,6 @@ import pytest
 
 from epy_reports._core import winreg_assoc as wa
 
-windows_only = pytest.mark.skipif(
-    sys.platform != "win32",
-    reason="winreg_assoc only operates on Windows",
-)
-
-
 # ---------------------------------------------------------------------------
 # Pure helpers (cross-platform)
 # ---------------------------------------------------------------------------
@@ -88,9 +82,18 @@ def test_open_default_apps_settings_false_off_windows(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-@windows_only
 def test_register_then_unregister_round_trip():
-    """register writes the documented keys; unregister removes them."""
+    """register writes the documented keys; unregister removes them.
+
+    Off Windows there is no registry, so the documented contract is the
+    RuntimeError instead -- asserted here against the REAL platform,
+    which the monkeypatched contract tests above cannot reach.
+    """
+    if sys.platform != "win32":
+        with pytest.raises(RuntimeError):
+            wa.register(make_default=False)
+        return
+
     import winreg
 
     try:
@@ -122,9 +125,17 @@ def test_register_then_unregister_round_trip():
         )
 
 
-@windows_only
 def test_unregister_is_idempotent():
-    """A second unregister on a clean hive does not raise."""
+    """A second unregister on a clean hive removes nothing more.
+
+    Off Windows the same call raises by contract, so both platforms
+    assert a concrete result rather than merely not crashing.
+    """
+    if sys.platform != "win32":
+        with pytest.raises(RuntimeError):
+            wa.unregister()
+        return
+
     wa.unregister()
-    # Running again should simply report nothing more to remove.
-    wa.unregister()
+    # Nothing is left to remove, so the second pass reports an empty list.
+    assert wa.unregister() == []

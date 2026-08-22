@@ -13,8 +13,6 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from epy_reports._core.renderer import export_docx
 
 # ---------------------------------------------------------------------------
@@ -143,23 +141,19 @@ def test_export_docx_strips_plotly_fence_without_fallback_to_note():
 
 def test_real_export_corporate_template(tmp_path: Path):
     """Real Pandoc + corporate reference template embeds the theme styles."""
-    pytest.importorskip("pypandoc", reason="pypandoc not available")
-
-    # Resolve the bundled corporate template via importlib.resources.
-    try:
-        pkg = importlib.resources.files(
-            "epy_reports._config._assets.reference_docx"
+    # pypandoc-binary is a required dependency of this package and the
+    # reference_docx templates are committed package data, so a missing
+    # one is a packaging defect that must fail here, not be skipped past.
+    pkg = importlib.resources.files(
+        "epy_reports._config._assets.reference_docx"
+    )
+    ref_resource = pkg / "corporate.docx"
+    out = tmp_path / "out_corporate.docx"
+    with importlib.resources.as_file(ref_resource) as ref_path:
+        assert ref_path.is_file(), (
+            "corporate.docx not found in _config/_assets/reference_docx"
         )
-        ref_resource = pkg / "corporate.docx"
-        with importlib.resources.as_file(ref_resource) as ref_path:
-            assert ref_path.is_file(), (
-                "corporate.docx not found in _config/_assets/reference_docx"
-            )
-            out = tmp_path / "out_corporate.docx"
-            export_docx(SAMPLE_MD, out, reference_doc=ref_path)
-
-    except (FileNotFoundError, ModuleNotFoundError) as exc:
-        pytest.skip(f"reference_docx assets not available: {exc}")
+        export_docx(SAMPLE_MD, out, reference_doc=ref_path)
 
     assert out.exists(), "Output .docx was not created"
     # The clean, theme-styled reference embeds the named styles but no logo
@@ -178,8 +172,6 @@ def test_real_export_corporate_template(tmp_path: Path):
 
 def test_real_export_no_reference(tmp_path: Path):
     """Real Pandoc export without reference_doc still works."""
-    pytest.importorskip("pypandoc", reason="pypandoc not available")
-
     out = tmp_path / "out_plain.docx"
     export_docx(SAMPLE_MD, out)
     assert out.exists()

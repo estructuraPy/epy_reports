@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
+import plotly.graph_objects as go
 
 from epy_reports._core._plotly import (
     expand_plotly,
@@ -189,7 +189,6 @@ def test_figure_to_markdown_fake_fig_strip_plotly_for_export():
 
 def test_figure_to_markdown_real_fig_roundtrip():
     """A real Plotly figure round-trips through expand_plotly."""
-    go = pytest.importorskip("plotly.graph_objects")
     fig = go.Figure(go.Scatter(y=[1, 2, 3]))
     out = expand_plotly(figure_to_markdown(fig))
     assert 'class="epy-plotly"' in out
