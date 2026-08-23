@@ -619,7 +619,7 @@ add_footer(pdf, "Confidencial", page_numbers=True, lang="es")
 
 ```python
 from pathlib import Path
-from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+from epy_reports.epy_suite_connect._adapters.docs_bridge import (
     epy_docs_available,
     render_document,
 )

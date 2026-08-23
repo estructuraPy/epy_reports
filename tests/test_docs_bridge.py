@@ -15,12 +15,12 @@ from unittest.mock import MagicMock, patch
 
 def test_epy_docs_available_true():
     """Returns True when find_spec finds epy_docs."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         epy_docs_available,
     )
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.importlib.util.find_spec",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.importlib.util.find_spec",
         return_value=MagicMock(),
     ):
         assert epy_docs_available() is True
@@ -28,12 +28,12 @@ def test_epy_docs_available_true():
 
 def test_epy_docs_available_false():
     """Returns False when find_spec returns None (package absent)."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         epy_docs_available,
     )
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.importlib.util.find_spec",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.importlib.util.find_spec",
         return_value=None,
     ):
         assert epy_docs_available() is False
@@ -46,7 +46,7 @@ def test_epy_docs_available_false():
 
 def test_list_layouts_returns_real_values():
     """list_layouts() delegates to epy_docs.available_layouts()."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import list_layouts
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import list_layouts
 
     layouts = list_layouts()
     assert isinstance(layouts, list)
@@ -56,7 +56,7 @@ def test_list_layouts_returns_real_values():
 
 def test_list_document_types_returns_real_values():
     """list_document_types() delegates to available_document_types()."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         list_document_types,
     )
 
@@ -73,13 +73,13 @@ def test_list_document_types_returns_real_values():
 
 def test_list_layouts_raises_when_unavailable():
     """list_layouts() raises BridgeUnavailableError if epy_docs missing."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         BridgeUnavailableError,
         list_layouts,
     )
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.importlib.util.find_spec",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.importlib.util.find_spec",
         return_value=None,
     ):
         try:
@@ -92,13 +92,13 @@ def test_list_layouts_raises_when_unavailable():
 
 def test_list_document_types_raises_when_unavailable():
     """list_document_types() raises BridgeUnavailableError when absent."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         BridgeUnavailableError,
         list_document_types,
     )
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.importlib.util.find_spec",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.importlib.util.find_spec",
         return_value=None,
     ):
         try:
@@ -123,7 +123,7 @@ def test_render_document_calls_writer_correctly():
     mock_writer_cls = MagicMock(return_value=mock_writer)
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.epy_docs_available",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.epy_docs_available",
         return_value=True,
     ):
         import sys
@@ -132,7 +132,7 @@ def test_render_document_calls_writer_correctly():
         fake_epy_docs.DocumentWriter = mock_writer_cls
 
         with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
-            from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+            from epy_reports.epy_suite_connect._adapters.docs_bridge import (
                 render_document,
             )
 
@@ -178,7 +178,7 @@ def test_render_document_html_only():
     mock_writer_cls = MagicMock(return_value=mock_writer)
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.epy_docs_available",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.epy_docs_available",
         return_value=True,
     ):
         import sys
@@ -187,7 +187,7 @@ def test_render_document_html_only():
         fake_epy_docs.DocumentWriter = mock_writer_cls
 
         with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
-            from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+            from epy_reports.epy_suite_connect._adapters.docs_bridge import (
                 render_document,
             )
 
@@ -215,7 +215,7 @@ def test_render_document_docx():
     mock_writer_cls = MagicMock(return_value=mock_writer)
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.epy_docs_available",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.epy_docs_available",
         return_value=True,
     ):
         import sys
@@ -224,7 +224,7 @@ def test_render_document_docx():
         fake_epy_docs.DocumentWriter = mock_writer_cls
 
         with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
-            from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+            from epy_reports.epy_suite_connect._adapters.docs_bridge import (
                 render_document,
             )
 
@@ -253,7 +253,7 @@ def test_render_document_keep_lists_together_opt_out():
     mock_writer_cls = MagicMock(return_value=mock_writer)
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.epy_docs_available",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.epy_docs_available",
         return_value=True,
     ):
         import sys
@@ -262,7 +262,7 @@ def test_render_document_keep_lists_together_opt_out():
         fake_epy_docs.DocumentWriter = mock_writer_cls
 
         with patch.dict(sys.modules, {"epy_docs": fake_epy_docs}):
-            from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+            from epy_reports.epy_suite_connect._adapters.docs_bridge import (
                 render_document,
             )
 
@@ -291,13 +291,13 @@ def test_render_document_keep_lists_together_opt_out():
 
 def test_render_document_raises_when_unavailable():
     """render_document raises BridgeUnavailableError if epy_docs missing."""
-    from epy_reports.epy_suite_connect.adapters.docs_bridge import (
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         BridgeUnavailableError,
         render_document,
     )
 
     with patch(
-        "epy_reports.epy_suite_connect.adapters.docs_bridge.importlib.util.find_spec",
+        "epy_reports.epy_suite_connect._adapters.docs_bridge.importlib.util.find_spec",
         return_value=None,
     ):
         try:
