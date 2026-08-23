@@ -742,6 +742,12 @@ def report_shadowed_tests(violations: list[str]) -> None:
         print(f"    ... and {len(violations) - 30} more")
 
 
+#: The only files allowed to sit directly in ``tutorials/``: an index for the
+#: three categories. Anything else -- a notebook, a script, a stray note --
+#: belongs inside the category it teaches at.
+TUTORIAL_LOOSE_FILE_ALLOWLIST = frozenset({"README.md"})
+
+
 def audit_tutorials_layout(lib_root: Path) -> list[str]:
     """``tutorials/`` holds exactly the three canonical categories.
 
@@ -767,6 +773,18 @@ def audit_tutorials_layout(lib_root: Path) -> list[str]:
     violations: list[str] = []
     for child in sorted(tutorials.iterdir()):
         if not child.is_dir():
+            # A loose FILE here used to be skipped in silence, so the rule
+            # "tutorials/ holds exactly the three categories" was enforced
+            # against directories only and a notebook dropped at the top
+            # level was invisible to every housekeeper in the suite.
+            # README.md is the one thing that belongs beside the three.
+            if child.name in TUTORIAL_LOOSE_FILE_ALLOWLIST:
+                continue
+            violations.append(
+                f"tutorials/{child.name} is a loose file -- tutorials/ holds "
+                f"exactly {', '.join(TUTORIAL_CATEGORIES)}. Move it into the "
+                f"category it teaches at (STRUCTURE_STANDARD.md Sec.2.7)."
+            )
             continue
         name = child.name
         if name.startswith(("_", ".")):
