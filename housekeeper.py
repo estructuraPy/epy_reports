@@ -824,6 +824,43 @@ else:  # pragma: no cover - only when the tooling repo is absent
 # ----------------------------------------------------------------------------
 
 
+
+# --- epy_suite_connect layout (three concerns + the prefix rule) -------------
+# Imported from the ONE canonical source rather than copied. `audit_structure`
+# only asks whether a file is somewhere inside the layer, so a module loose at
+# its root satisfies it -- epy_towers, with six of them and a non-prefixed
+# `adapters/`, printed "Structure: OK (canonical layout)" and exited 0.
+_CONNECT_LAYOUT_BLOCK = (
+    Path(__file__).resolve().parent.parent / "_packaging" / "_tooling"
+    / "connect_layout_block.py"
+)
+if _CONNECT_LAYOUT_BLOCK.exists():
+    import importlib.util as _ilu_cl
+
+    _spec_cl = _ilu_cl.spec_from_file_location(
+        "_connect_layout_block", _CONNECT_LAYOUT_BLOCK
+    )
+    _mod_cl = _ilu_cl.module_from_spec(_spec_cl)
+    _spec_cl.loader.exec_module(_mod_cl)
+    audit_connect_layout_strict = _mod_cl.audit_connect_layout_strict
+    report_connect_layout = _mod_cl.report_connect_layout
+else:  # pragma: no cover - only when the tooling repo is absent
+
+    def audit_connect_layout_strict(lib_root):
+        return [
+            "connect-layout: _packaging/_tooling/connect_layout_block.py is "
+            "missing, so the epy_suite_connect layout was NOT checked. This is "
+            "a loud failure on purpose: a silently skipped rule is worse than "
+            "none."
+        ]
+
+    def report_connect_layout(violations):
+        print("\n" + "=" * 70)
+        print("  epy_suite_connect LAYOUT (three concerns + prefix rule)")
+        print("=" * 70)
+        for v in violations:
+            print(f"    - {v}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -900,11 +937,17 @@ def main() -> None:
     shadowed_violations = audit_no_shadowed_tests(LIB_ROOT)
     report_shadowed_tests(shadowed_violations)
 
+    # epy_suite_connect keeps its three concerns in three directories, and
+    # the adapters folder carries the suite's underscore prefix
+    connect_layout_violations = audit_connect_layout_strict(LIB_ROOT)
+    report_connect_layout(connect_layout_violations)
+
     if args.strict and (
         doc_ref_violations
         or         module_mirror_violations or tutorials_layout_violations
         or skip_violations
         or shadowed_violations
+        or connect_layout_violations
     ):
         sys.exit(1)
 
