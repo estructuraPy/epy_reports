@@ -17,6 +17,24 @@ Output:
     dist/epy-reports_<version>_all.deb
 
 The script prints a verification listing of the ar members at the end.
+
+O7 EXCEPTION -- zero importers is this module's DESIGNED state, not dead wiring
+------------------------------------------------------------------------------
+
+This is release tooling, run as a script rather than imported by the library.
+``pyproject.toml`` excludes ``_core/_packaging/`` from both the wheel and the
+sdist, and ``housekeeper.py`` allowlists the directory for the module-mirror
+gate, so nothing in this repo has a reason to import it.
+
+Note the difference from the packaging scripts in epy_tanks and its siblings:
+``_packaging/`` HERE is an importable package -- it carries an ``__init__.py``
+-- so an importer count of zero is a fact about how this file is used, not
+about whether it could be imported at all.
+
+A dead-wiring sweep that ranks modules by importer count will surface this
+file every time it runs. It has been surfaced, measured and reviewed
+(2026-08-22): it is LIVE and it stays. Do not delete it on an importer count
+alone -- check how it is invoked first.
 """
 
 from __future__ import annotations
