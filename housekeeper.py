@@ -123,9 +123,12 @@ def _is_mirror_exempt(rel: str) -> bool:
     # already ship a mirroring test, so "integration code is not a
     # unit-test target" is not the convention here -- it was a licence for
     # the gate to go blind on whole packages. The clause that used to sit
-    # here exempted ``adapters/`` (six repos spell it that way, five spell
-    # it ``_adapters/``), and what it hid was the one adapter nobody
-    # tests: ``_export_estrulab.py``, byte-identical in seven repos.
+    # here exempted ``adapters/`` -- and both spellings of it. The
+    # canonical one is ``_adapters/``; the census belongs in
+    # STRUCTURE_STANDARD.md 2.6, not in this comment, which said six and
+    # five when the disk said fifteen and five. What the clause hid was
+    # the one adapter nobody tests: ``_export_estrulab.py``,
+    # byte-identical in seven repos.
     if "/_packaging/" in rel or name in (
         "download_wheels.py",
         "install_offline.py",
