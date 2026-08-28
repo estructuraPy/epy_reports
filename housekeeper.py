@@ -882,6 +882,42 @@ else:  # pragma: no cover - only when the tooling repo is absent
         for v in violations:
             print(f"    - {v}")
 
+
+# --- V_ validation rows (a comparison needs two numbers) ---------------------
+# Imported from the ONE canonical source rather than copied. Measured
+# 2026-08-27: 31,208 of 32,527 comparison rows across 570 V_ documents in 16
+# repositories put the SAME number in the library column and in the hand-calc
+# column, so each read "+0.00 % / PASS" while comparing nothing. Documents
+# certified by a fixture under tests/_benchmarks/ are exempt, because there the
+# two numbers come from the clause and from the library inside one test.
+_V_SELFCMP_BLOCK = (
+    Path(__file__).resolve().parent.parent / "_packaging" / "_tooling"
+    / "v_selfcomparison_block.py"
+)
+if _V_SELFCMP_BLOCK.exists():
+    import importlib.util as _ilu_vs
+
+    _spec_vs = _ilu_vs.spec_from_file_location("_v_selfcomparison_block", _V_SELFCMP_BLOCK)
+    _mod_vs = _ilu_vs.module_from_spec(_spec_vs)
+    _spec_vs.loader.exec_module(_mod_vs)
+    audit_v_selfcomparison = _mod_vs.audit_v_selfcomparison
+    report_v_selfcomparison = _mod_vs.report_v_selfcomparison
+else:  # pragma: no cover - only when the tooling repo is absent
+
+    def audit_v_selfcomparison(lib_root):
+        return [
+            "v-selfcomparison: _packaging/_tooling/v_selfcomparison_block.py is "
+            "missing, so the V_ validation rows were NOT checked. This is a loud "
+            "failure on purpose: a silently skipped rule is worse than none."
+        ]
+
+    def report_v_selfcomparison(violations):
+        print("\n" + "=" * 70)
+        print("  V_ VALIDATION ROWS (a comparison needs two numbers)")
+        print("=" * 70)
+        for v in violations:
+            print(f"    - {v}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -963,12 +999,18 @@ def main() -> None:
     connect_layout_violations = audit_connect_layout_strict(LIB_ROOT)
     report_connect_layout(connect_layout_violations)
 
+    # A validation row must compare two independently obtained numbers; a
+    # value compared with itself reads PASS and verifies nothing
+    v_selfcomparison_violations = audit_v_selfcomparison(LIB_ROOT)
+    report_v_selfcomparison(v_selfcomparison_violations)
+
     if args.strict and (
         doc_ref_violations
         or         module_mirror_violations or tutorials_layout_violations
         or skip_violations
         or shadowed_violations
         or connect_layout_violations
+        or v_selfcomparison_violations
     ):
         sys.exit(1)
 
