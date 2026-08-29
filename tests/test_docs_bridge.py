@@ -8,6 +8,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # ---------------------------------------------------------------------------
 # Availability detection
 # ---------------------------------------------------------------------------
@@ -46,7 +48,9 @@ def test_epy_docs_available_false():
 
 def test_list_layouts_returns_real_values():
     """list_layouts() delegates to epy_docs.available_layouts()."""
-    from epy_reports.epy_suite_connect._adapters.docs_bridge import list_layouts
+    from epy_reports.epy_suite_connect._adapters.docs_bridge import (
+        list_layouts,
+    )
 
     layouts = list_layouts()
     assert isinstance(layouts, list)
@@ -313,3 +317,43 @@ def test_render_document_raises_when_unavailable():
             pass
         else:
             raise AssertionError("Expected BridgeUnavailableError")
+
+
+def test_a_present_but_broken_epy_docs_is_refused_by_name(monkeypatch):
+    # epy_docs_available() asks with find_spec, which imports nothing --
+    # right for deciding whether to OFFER the feature, and not a promise
+    # that the import will work. A package that is present and BROKEN
+    # answers yes and raises, and that reached the user as a crash in a
+    # dialog instead of the named refusal this bridge exists to give.
+    #
+    # Measured in the sibling application: the same shape took down the
+    # whole window, because the call ran while a menu was being built.
+    import builtins
+
+    from epy_reports.epy_suite_connect._adapters import docs_bridge
+
+    monkeypatch.setattr(docs_bridge, "epy_docs_available", lambda: True)
+    real = builtins.__import__
+
+    def refuse(name, *args, **kwargs):
+        if name.split(".")[0] == "epy_docs":
+            raise ImportError("No module named 'epy_docs._core'")
+        return real(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", refuse)
+
+    with pytest.raises(docs_bridge.BridgeUnavailableError) as raised:
+        docs_bridge.list_layouts()
+    assert "could not be imported" in str(raised.value)
+
+
+def test_an_absent_epy_docs_still_says_it_is_an_add_on(monkeypatch):
+    # The control, and the distinction that matters to the reader: one
+    # of these is fixed by buying and installing something, the other by
+    # repairing an install. Collapsing them loses that.
+    from epy_reports.epy_suite_connect._adapters import docs_bridge
+
+    monkeypatch.setattr(docs_bridge, "epy_docs_available", lambda: False)
+    with pytest.raises(docs_bridge.BridgeUnavailableError) as raised:
+        docs_bridge.list_layouts()
+    assert "commercial add-on" in str(raised.value)
