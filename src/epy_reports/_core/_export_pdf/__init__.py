@@ -40,6 +40,11 @@ def render_report_pdf(
     """
     import shutil  # noqa: PLC0415
 
+    # The stamping moved to epy_export, where it lives once instead
+    # of twice. Bound to the old local name so the call sites below
+    # read as they did: this commit is a MOVE, and a diff that also
+    # renames seven call sites hides whether anything else changed.
+    import epy_export as _pdf_footer  # noqa: PLC0415
     from PySide6.QtCore import (  # noqa: PLC0415
         QElapsedTimer,
         QEventLoop,
@@ -51,7 +56,6 @@ def render_report_pdf(
     from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: PLC0415
     from PySide6.QtWidgets import QApplication  # noqa: PLC0415
 
-    from epy_reports._core import _pdf_footer  # noqa: PLC0415
     from epy_reports._core.renderer import (  # noqa: PLC0415, E501
         inject_page_numbers,
         normalize_page_size,
@@ -206,6 +210,8 @@ def render_report_pdf(
             subject=meta.get("subtitle", ""),
             keywords=meta.get("keywords", ""),
             rights=meta.get("copyright", ""),
+            creator="epy_reports",
+            producer="epy_reports — ANM Ingeniería",
         )
         out_path.write_bytes(work.read_bytes())
     finally:
