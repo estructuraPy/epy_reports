@@ -918,6 +918,46 @@ else:  # pragma: no cover - only when the tooling repo is absent
         for v in violations:
             print(f"    - {v}")
 
+
+# --- SOURCE.md reference ids (the filename is the identity) ------------------
+# Imported from the ONE canonical source rather than copied. Measured
+# 2026-08-29: the reference store had been rebuilt and renumbered, so 41
+# citation sites across 20 SOURCE.md files resolved to the WRONG document --
+# several of them under the words "confirmed by direct SQLite query". An id
+# that resolves to something looks exactly like an id that resolves to the
+# right thing until the two are checked against each other.
+_SOURCE_IDS_BLOCK = (
+    Path(__file__).resolve().parent.parent / "_packaging" / "_tooling"
+    / "source_ids_block.py"
+)
+if _SOURCE_IDS_BLOCK.exists():
+    import importlib.util as _ilu_si
+
+    _spec_si = _ilu_si.spec_from_file_location("_source_ids_block", _SOURCE_IDS_BLOCK)
+    _mod_si = _ilu_si.module_from_spec(_spec_si)
+    _spec_si.loader.exec_module(_mod_si)
+    audit_source_ids = _mod_si.audit_source_ids
+    report_source_ids = _mod_si.report_source_ids
+else:  # pragma: no cover - only when the tooling repo is absent
+
+    def audit_source_ids(lib_root):
+        return {
+            "ran": True,
+            "why": None,
+            "violations": [
+                ("_packaging/_tooling/source_ids_block.py", "is missing, so the "
+                 "SOURCE.md reference ids were NOT checked. This is a loud failure "
+                 "on purpose: a silently skipped rule is worse than none.")
+            ],
+        }
+
+    def report_source_ids(result):
+        print("\n" + "=" * 70)
+        print("  SOURCE.md REFERENCE IDS (the filename is the identity)")
+        print("=" * 70)
+        for rel, why in result["violations"]:
+            print(f"    - {rel}: {why}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -1004,6 +1044,12 @@ def main() -> None:
     v_selfcomparison_violations = audit_v_selfcomparison(LIB_ROOT)
     report_v_selfcomparison(v_selfcomparison_violations)
 
+    # A cited references.db id must resolve to a document the file names; the
+    # store was renumbered once and every stale id still resolved to something
+    _source_ids = audit_source_ids(LIB_ROOT)
+    report_source_ids(_source_ids)
+    source_ids_violations = _source_ids["violations"]
+
     if args.strict and (
         doc_ref_violations
         or         module_mirror_violations or tutorials_layout_violations
@@ -1011,6 +1057,7 @@ def main() -> None:
         or shadowed_violations
         or connect_layout_violations
         or v_selfcomparison_violations
+        or source_ids_violations
     ):
         sys.exit(1)
 
