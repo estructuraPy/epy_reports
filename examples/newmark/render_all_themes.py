@@ -19,8 +19,14 @@ index blocks (TOC, LOF, LOT, LOE):
 
 After the final PDF is written, the ``footer`` and ``page-numbers`` front-matter
 values are applied as a :mod:`reportlab` overlay via
-:func:`epy_reports._core._pdf_footer.add_footer`, and the ``header`` cells
-(if present) via :func:`epy_reports._core._pdf_footer.add_header`.
+:func:`epy_export.add_footer`, and the ``header`` cells (if present) via
+:func:`epy_export.add_header`.
+
+The stamping used to live in ``epy_reports._core._pdf_footer``. It moved
+to ``epy_export`` when the document family stopped carrying a copy each;
+this example was left pointing at the old home, and the leftover empty
+directory made the failure read ``unknown location`` rather than
+``no module named``.
 
 Run it from this directory::
 
@@ -43,11 +49,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl
-from PySide6.QtGui import QPageLayout, QPageSize
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QApplication
-
 ROOT = Path(__file__).resolve().parent
 
 # Prefer an installed epy_reports; fall back to the in-repo source tree so the
@@ -55,7 +56,7 @@ ROOT = Path(__file__).resolve().parent
 try:
     from epy_reports._core import themes
     from epy_reports._core._design import document_css
-    from epy_reports._core._pdf_footer import (
+    from epy_export import (
         add_footer,
         add_header,
         add_page_background,
@@ -75,7 +76,7 @@ except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
     from epy_reports._core import themes
     from epy_reports._core._design import document_css
-    from epy_reports._core._pdf_footer import (
+    from epy_export import (
         add_footer,
         add_header,
         add_page_background,
@@ -91,6 +92,17 @@ except ImportError:
         parse_front_matter,
         parse_header_cells,
     )
+
+# PySide6 must be imported after epy_reports, not before: importing the
+# package pins the system ICU on Windows, and Qt resolves ICU at load
+# time. Importing Qt first binds the wrong copy, and then every
+# PySide6.Qt* import dies with a DLL error that names nothing. Ruff
+# flags these imports with E402 because they follow code; the position is
+# a load-order requirement, not a style preference.
+from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl  # noqa: E402
+from PySide6.QtGui import QPageLayout, QPageSize  # noqa: E402
+from PySide6.QtWebEngineWidgets import QWebEngineView  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
 SOURCE = ROOT / "newmark.md"
 OUT_DIR = ROOT / "_render" / "themes"
