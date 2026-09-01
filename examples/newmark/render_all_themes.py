@@ -54,8 +54,6 @@ ROOT = Path(__file__).resolve().parent
 # Prefer an installed epy_reports; fall back to the in-repo source tree so the
 # example runs straight from a clone without `pip install -e .`.
 try:
-    from epy_reports._core import themes
-    from epy_reports._core._design import document_css
     from epy_export import (
         add_footer,
         add_header,
@@ -63,6 +61,9 @@ try:
         add_watermark,
         extract_anchor_pages,
     )
+
+    from epy_reports._core import themes
+    from epy_reports._core._design import document_css
     from epy_reports._core.renderer import (
         inject_page_numbers,
         normalize_page_size,
@@ -74,8 +75,6 @@ try:
     )
 except ImportError:
     sys.path.insert(0, str(ROOT.parent.parent / "src"))
-    from epy_reports._core import themes
-    from epy_reports._core._design import document_css
     from epy_export import (
         add_footer,
         add_header,
@@ -83,6 +82,9 @@ except ImportError:
         add_watermark,
         extract_anchor_pages,
     )
+
+    from epy_reports._core import themes
+    from epy_reports._core._design import document_css
     from epy_reports._core.renderer import (
         inject_page_numbers,
         normalize_page_size,

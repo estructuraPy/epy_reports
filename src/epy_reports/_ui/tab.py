@@ -476,6 +476,16 @@ class MarkdownTab(QWidget):
                         subject=subtitle,
                         keywords=keywords,
                         rights=rights,
+                        # Required, with no default: the shared engine
+                        # refuses to guess which application produced a
+                        # document. This call site was missed when the
+                        # stamping moved to epy_export, and it is the
+                        # PDF export of the WINDOW -- every export from
+                        # the interface raised TypeError, which the
+                        # `except (OSError, RuntimeError)` below does
+                        # not even catch.
+                        creator="epy_reports",
+                        producer="epy_reports — ANM Ingeniería",
                     )
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(tmp_pdf), str(target))
