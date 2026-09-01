@@ -51,3 +51,10 @@ tutorials/**/_render_log.txt
 
 # audit-loop reports (DeepSeek), local only
 .audit_deepseek/
+
+# Rendered example output. Regenerable by running the example, large
+# (megabytes of PDF per theme), and already ignored under tutorials/ --
+# the rule simply never covered examples/, where these repos actually
+# keep their runnable demos.
+examples/**/_render/
+examples/**/_render_log.txt
