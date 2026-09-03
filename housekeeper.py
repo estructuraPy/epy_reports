@@ -958,6 +958,45 @@ else:  # pragma: no cover - only when the tooling repo is absent
         for rel, why in result["violations"]:
             print(f"    - {rel}: {why}")
 
+
+# --- Suite-wide manual: one home, and it is not a library repo ---------------
+# Imported from the ONE canonical source rather than copied. Measured
+# 2026-09-02: ePy_Suite_Capacidades.md existed in references/ AND in epy_docs/,
+# two editions apart after two months of independent edits. A second copy of a
+# suite document inside a library repo always drifts, because that repo is
+# where the person editing that library is looking.
+_SUITE_MANUAL_BLOCK = (
+    Path(__file__).resolve().parent.parent / "_packaging" / "_tooling"
+    / "suite_manual_block.py"
+)
+if _SUITE_MANUAL_BLOCK.exists():
+    import importlib.util as _ilu_sm
+
+    _spec_sm = _ilu_sm.spec_from_file_location("_suite_manual_block", _SUITE_MANUAL_BLOCK)
+    _mod_sm = _ilu_sm.module_from_spec(_spec_sm)
+    _spec_sm.loader.exec_module(_mod_sm)
+    audit_suite_manual = _mod_sm.audit_suite_manual
+    report_suite_manual = _mod_sm.report_suite_manual
+else:  # pragma: no cover - only when the tooling repo is absent
+
+    def audit_suite_manual(lib_root):
+        return {
+            "ran": True,
+            "why": None,
+            "violations": [
+                ("_packaging/_tooling/suite_manual_block.py", "is missing, so the "
+                 "suite-manual duplication rule was NOT checked. This is a loud "
+                 "failure on purpose: a silently skipped rule is worse than none.")
+            ],
+        }
+
+    def report_suite_manual(result):
+        print("\n" + "=" * 70)
+        print("  SUITE-WIDE MANUAL (one home: references/, never a library repo)")
+        print("=" * 70)
+        for rel, why in result["violations"]:
+            print(f"    - {rel}: {why}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ePy Suite Minimal Housekeeper")
     parser.add_argument("--apply", action="store_true", help="Delete temp/cache files")
@@ -1050,6 +1089,12 @@ def main() -> None:
     report_source_ids(_source_ids)
     source_ids_violations = _source_ids["violations"]
 
+    # A suite-wide manual duplicated into a library repo will drift; the
+    # canonical file lives in references/ and a pointer here is enough
+    _suite_manual = audit_suite_manual(LIB_ROOT)
+    report_suite_manual(_suite_manual)
+    suite_manual_violations = _suite_manual["violations"]
+
     if args.strict and (
         doc_ref_violations
         or         module_mirror_violations or tutorials_layout_violations
@@ -1058,6 +1103,7 @@ def main() -> None:
         or connect_layout_violations
         or v_selfcomparison_violations
         or source_ids_violations
+        or suite_manual_violations
     ):
         sys.exit(1)
 
