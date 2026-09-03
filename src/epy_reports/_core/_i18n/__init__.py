@@ -115,6 +115,8 @@ _ES: dict[str, str] = {
     "Export via epy_docs...": "Exportar con epy_docs...",
     # --- View menu ---
     "Page view": "Vista de página",
+    "Autosave": "Guardado automático",
+    "Autosaved: {path}": "Guardado automático: {path}",
     # theme display names
     "Academic": "Académico",
     "Classic": "Clásico",

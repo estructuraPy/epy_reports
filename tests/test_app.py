@@ -31,8 +31,30 @@ def qapp():
 
 
 @pytest.fixture
-def window(qapp):
-    """Build a fresh MarkdownWindow and tear it down afterwards."""
+def window(qapp, monkeypatch):
+    """Build a fresh MarkdownWindow and tear it down afterwards.
+
+    ``app_mod.QSettings`` is patched to an in-memory stand-in so the
+    preference tests never touch the real "ANM Ingeniería" registry scope.
+    """
+    class _ScratchSettings:
+        """In-memory QSettings stand-in shared per test invocation."""
+
+        _store: dict[str, object] = {}
+
+        def __init__(self, *_args, **_kwargs):
+            self._store = _ScratchSettings._store
+
+        def value(self, key, default=None, _type=None):
+            return self._store.get(key, default)
+
+        def setValue(self, key, value):  # noqa: N802 - Qt API name
+            self._store[key] = value
+
+        def sync(self):
+            return True
+
+    monkeypatch.setattr(app_mod, "QSettings", _ScratchSettings)
     win = MarkdownWindow()
     try:
         yield win
@@ -487,6 +509,106 @@ def test_on_pdf_done_success_and_failure(window):
     with patch.object(QMessageBox, "warning") as warn:
         window._on_pdf_done(Path("bad.pdf"), False)
     warn.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Autosave
+# ---------------------------------------------------------------------------
+
+
+def test_autosave_off_default_does_not_write(window, tmp_path):
+    """Autosave is off by default; firing the slot leaves disk unchanged."""
+    doc = tmp_path / "autosave_off.md"
+    doc.write_text("original\n", encoding="utf-8")
+    window.open_path(doc)
+    tab = window._current_tab()
+    assert tab is not None
+    tab.editor.setPlainText("# edited\n")
+    assert tab.dirty
+
+    assert not window.act_autosave.isChecked()
+    window._autosave_current()
+
+    assert doc.read_text(encoding="utf-8") == "original\n"
+    assert tab.dirty
+
+
+def test_autosave_writes_dirty_tab_with_path(window, tmp_path):
+    """With autosave on, a dirty saved tab is written and marked clean."""
+    doc = tmp_path / "autosave_on.md"
+    doc.write_text("# before\n", encoding="utf-8")
+    window.open_path(doc)
+    tab = window._current_tab()
+    assert tab is not None
+    tab.editor.setPlainText("# after\n")
+    window.act_autosave.setChecked(True)
+
+    window._autosave_current()
+
+    assert doc.read_text(encoding="utf-8") == "# after\n"
+    assert tab.dirty is False
+
+
+def test_autosave_untitled_never_opens_dialog(window):
+    """Untitled dirty buffers autosave silently without a Save As dialog."""
+    tab = window._new_tab()
+    tab.editor.setPlainText("# unsaved\n")
+    window.act_autosave.setChecked(True)
+
+    def _fail_dialog(*args, **kwargs):
+        raise AssertionError("a dialog opened")
+
+    with patch.object(
+        app_mod.QFileDialog, "getSaveFileName", side_effect=_fail_dialog
+    ):
+        window._autosave_current()
+
+    assert tab.dirty is True
+
+
+def test_autosave_skips_when_export_in_flight(window, tmp_path):
+    """Autosave yields while an export is in flight."""
+    doc = tmp_path / "inflight.md"
+    doc.write_text("original\n", encoding="utf-8")
+    window.open_path(doc)
+    tab = window._current_tab()
+    assert tab is not None
+    tab.editor.setPlainText("# edited\n")
+    window.act_autosave.setChecked(True)
+    window._exports_in_flight = 1
+
+    try:
+        window._autosave_current()
+    finally:
+        window._exports_in_flight = 0
+
+    assert doc.read_text(encoding="utf-8") == "original\n"
+    assert tab.dirty is True
+
+
+def test_exports_in_flight_decrements_after_docs_error(window):
+    """A failed epy_docs export releases the autosave counter."""
+    window._exports_in_flight = 1
+    with patch.object(QMessageBox, "critical"):
+        window._on_docs_done_err("boom")
+    assert window._exports_in_flight == 0
+
+
+def test_autosave_preference_persists(window, qapp):
+    """The Autosave checkable preference is restored from settings."""
+    window.act_autosave.setChecked(True)
+
+    second = None
+    try:
+        second = MarkdownWindow()
+        assert second.act_autosave.isChecked() is True
+    finally:
+        if second is not None:
+            second.deleteLater()
+            from PySide6.QtCore import QEvent
+
+            qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+            qapp.processEvents()
 
 
 # ---------------------------------------------------------------------------

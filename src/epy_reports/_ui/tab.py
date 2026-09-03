@@ -9,6 +9,7 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
+import epy_export
 from PySide6.QtCore import QMarginsF, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import (
     QDesktopServices,
@@ -291,7 +292,7 @@ class MarkdownTab(QWidget):
         """
         if self._path is None:
             return False
-        self._path.write_text(self.editor.toPlainText(), encoding="utf-8")
+        epy_export.write_text_atomic(self._path, self.editor.toPlainText())
         self._set_dirty(False)
         return True
 

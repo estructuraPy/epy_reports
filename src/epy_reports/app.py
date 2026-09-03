@@ -9,7 +9,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -45,6 +45,8 @@ APP_NAME = "epy_reports"
 SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
+
+AUTOSAVE_INTERVAL_MS = 30_000
 
 def _load_manual_text(filename: str = "welcome.md") -> str:
     """Load a bundled user-manual document and resolve its image placeholders.
@@ -136,6 +138,9 @@ class MarkdownWindow(QMainWindow):
 
         self.setAcceptDrops(True)
 
+        # Autosave and the export guards both depend on this counter.
+        self._exports_in_flight = 0
+
         # Load persisted theme (defaults to EPY when nothing is saved).
         self._settings = QSettings("ANM Ingeniería", "epy_reports")
         saved_theme = str(
@@ -150,6 +155,18 @@ class MarkdownWindow(QMainWindow):
         )
         self.act_page_view.setChecked(self._paged_enabled)
         self._apply_paged(self._paged_enabled)
+
+        # Restore the persisted autosave preference. The timer must exist
+        # BEFORE setChecked: the action's toggled signal is already wired.
+        self._autosave_enabled = (
+            str(self._settings.value("autosave", "false")).lower() == "true"
+        )
+        self._autosave_timer = QTimer(self)
+        self._autosave_timer.setInterval(AUTOSAVE_INTERVAL_MS)
+        self._autosave_timer.timeout.connect(self._autosave_current)
+        # Setting the check state also starts/stops the repeating timer via
+        # the toggled handler, so restoring the preference restores both.
+        self.act_autosave.setChecked(self._autosave_enabled)
 
         # Internationalization: snapshot the English chrome, then apply the
         # persisted language. Switching later relabels the UI live.
@@ -236,6 +253,9 @@ class MarkdownWindow(QMainWindow):
         self.act_page_view = QAction("Page view", self, checkable=True)
         self.act_page_view.setShortcut(QKeySequence("Ctrl+Shift+A"))
         self.act_page_view.toggled.connect(self._toggle_page_view)
+
+        self.act_autosave = QAction("Autosave", self, checkable=True)
+        self.act_autosave.toggled.connect(self._toggle_autosave)
 
         self.act_docs_export = QAction("Export via epy_docs...", self)
         if epy_docs_available():
@@ -602,6 +622,7 @@ class MarkdownWindow(QMainWindow):
         self._populate_theme_menu()
         self.view_menu.addSeparator()
         self.view_menu.addAction(self.act_page_view)
+        self.view_menu.addAction(self.act_autosave)
         self.page_size_menu = self.view_menu.addMenu("Page size")
         for act in self.page_size_group.actions():
             self.page_size_menu.addAction(act)
@@ -974,6 +995,35 @@ class MarkdownWindow(QMainWindow):
         self.statusBar().showMessage(
             f"Page view: {'on' if enabled else 'off'}", 2000
         )
+
+    def _toggle_autosave(self, enabled: bool) -> None:
+        """Toggle periodic autosave and persist the choice."""
+        self._settings.setValue("autosave", "true" if enabled else "false")
+        if enabled:
+            self._autosave_timer.start()
+        else:
+            self._autosave_timer.stop()
+
+    def _autosave_current(self) -> None:
+        """Autosave the current tab when it is safe to do so.
+
+        The slot deliberately avoids ``_save_current``: an autosave must
+        never open the Save As dialog for an untitled buffer, and it must
+        yield while an export is using the current document.
+        """
+        if not self.act_autosave.isChecked():
+            return
+        if self._exports_in_flight > 0:
+            return
+        tab = self._current_tab()
+        if tab is None or not tab.dirty:
+            return
+        if tab.save():
+            self._refresh_tab_title(tab)
+            self.statusBar().showMessage(
+                i18n.tr("Autosaved: {path}").format(path=str(tab.path)),
+                3000,
+            )
 
     def _apply_paged(self, enabled: bool) -> None:
         """Forward the page-view flag to every open tab."""
@@ -1403,72 +1453,80 @@ class MarkdownWindow(QMainWindow):
 
     def _export_docx(self) -> None:
         """Save the current document as a Word (.docx) file."""
-        tab = self._current_tab()
-        if tab is None:
-            return
-        default = (
-            str(tab.path.with_suffix(".docx"))
-            if tab.path is not None
-            else "untitled.docx"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Export DOCX", default, "Word document (*.docx)"
-        )
-        if not filename:
-            return
-        target = Path(filename)
-        if target.suffix == "":
-            target = target.with_suffix(".docx")
-        text = tab.editor.toPlainText()
-        base_dir = tab.path.parent if tab.path is not None else None
-        reference_doc = self._resolve_reference_doc(
-            self._current_theme.id
-        )
+        self._exports_in_flight += 1
         try:
-            export_docx(
-                text, target, base_dir=base_dir,
-                reference_doc=reference_doc,
-                theme_css=document_css(self._current_theme),
+            tab = self._current_tab()
+            if tab is None:
+                return
+            default = (
+                str(tab.path.with_suffix(".docx"))
+                if tab.path is not None
+                else "untitled.docx"
             )
-        except (OSError, RuntimeError) as exc:
-            QMessageBox.critical(
-                self, "Export DOCX failed", str(exc)
+            filename, _ = QFileDialog.getSaveFileName(
+                self, "Export DOCX", default, "Word document (*.docx)"
             )
-            return
-        self.statusBar().showMessage(
-            f"Exported {target.name}", 5000
-        )
+            if not filename:
+                return
+            target = Path(filename)
+            if target.suffix == "":
+                target = target.with_suffix(".docx")
+            text = tab.editor.toPlainText()
+            base_dir = tab.path.parent if tab.path is not None else None
+            reference_doc = self._resolve_reference_doc(
+                self._current_theme.id
+            )
+            try:
+                export_docx(
+                    text, target, base_dir=base_dir,
+                    reference_doc=reference_doc,
+                    theme_css=document_css(self._current_theme),
+                )
+            except (OSError, RuntimeError) as exc:
+                QMessageBox.critical(
+                    self, "Export DOCX failed", str(exc)
+                )
+                return
+            self.statusBar().showMessage(
+                f"Exported {target.name}", 5000
+            )
+        finally:
+            self._exports_in_flight -= 1
 
     def _export_html(self) -> None:
         """Save the current preview as a standalone HTML file."""
-        tab = self._current_tab()
-        if tab is None:
-            return
-        default = (
-            str(tab.path.with_suffix(".html"))
-            if tab.path is not None
-            else "untitled.html"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Export HTML", default, "HTML (*.html *.htm)"
-        )
-        if not filename:
-            return
-        target = Path(filename)
-        if target.suffix == "":
-            target = target.with_suffix(".html")
-        text = tab.editor.toPlainText()
-        base_dir = tab.path.parent if tab.path is not None else None
-        title = tab.path.name if tab.path is not None else "untitled"
-        html = render_markdown(
-            text,
-            base_dir=base_dir,
-            title=title,
-            theme_css=document_css(self._current_theme),
-            continuous=True,
-        )
-        target.write_text(html, encoding="utf-8")
-        self.statusBar().showMessage(f"Saved HTML: {target}", 3000)
+        self._exports_in_flight += 1
+        try:
+            tab = self._current_tab()
+            if tab is None:
+                return
+            default = (
+                str(tab.path.with_suffix(".html"))
+                if tab.path is not None
+                else "untitled.html"
+            )
+            filename, _ = QFileDialog.getSaveFileName(
+                self, "Export HTML", default, "HTML (*.html *.htm)"
+            )
+            if not filename:
+                return
+            target = Path(filename)
+            if target.suffix == "":
+                target = target.with_suffix(".html")
+            text = tab.editor.toPlainText()
+            base_dir = tab.path.parent if tab.path is not None else None
+            title = tab.path.name if tab.path is not None else "untitled"
+            html = render_markdown(
+                text,
+                base_dir=base_dir,
+                title=title,
+                theme_css=document_css(self._current_theme),
+                continuous=True,
+            )
+            target.write_text(html, encoding="utf-8")
+            self.statusBar().showMessage(f"Saved HTML: {target}", 3000)
+        finally:
+            self._exports_in_flight -= 1
 
     def _print_document(self) -> None:
         """Open the system print dialog for the current preview."""
@@ -1679,113 +1737,136 @@ class MarkdownWindow(QMainWindow):
 
     def _export_pdf(self) -> None:
         """Export the current tab's preview to a PDF file."""
-        tab = self._current_tab()
-        if tab is None:
-            return
-        default = (
-            str(tab.path.with_suffix(".pdf"))
-            if tab.path is not None
-            else "untitled.pdf"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Export PDF", default, "PDF (*.pdf)"
-        )
-        if not filename:
-            return
-        target = Path(filename)
-        if target.suffix == "":
-            target = target.with_suffix(".pdf")
-        self.statusBar().showMessage("Exporting PDF...", 0)
-        tab.export_pdf(target, self._on_pdf_done)
+        self._exports_in_flight += 1
+        started = False
+        try:
+            tab = self._current_tab()
+            if tab is None:
+                return
+            default = (
+                str(tab.path.with_suffix(".pdf"))
+                if tab.path is not None
+                else "untitled.pdf"
+            )
+            filename, _ = QFileDialog.getSaveFileName(
+                self, "Export PDF", default, "PDF (*.pdf)"
+            )
+            if not filename:
+                return
+            target = Path(filename)
+            if target.suffix == "":
+                target = target.with_suffix(".pdf")
+            self.statusBar().showMessage("Exporting PDF...", 0)
+            tab.export_pdf(target, self._on_pdf_done)
+            started = True
+        finally:
+            if not started:
+                self._exports_in_flight -= 1
 
     def _on_pdf_done(self, path: Path, ok: bool) -> None:
         """Report the result of an asynchronous PDF export."""
-        if ok:
-            self.statusBar().showMessage(f"Saved PDF: {path}", 5000)
-        else:
-            self.statusBar().clearMessage()
-            QMessageBox.warning(
-                self, APP_NAME, f"Failed to write PDF:\n{path}"
-            )
+        try:
+            if ok:
+                self.statusBar().showMessage(f"Saved PDF: {path}", 5000)
+            else:
+                self.statusBar().clearMessage()
+                QMessageBox.warning(
+                    self, APP_NAME, f"Failed to write PDF:\n{path}"
+                )
+        finally:
+            self._exports_in_flight -= 1
 
     def _export_via_docs(self) -> None:
         """Launch the epy_docs export dialog and render in a worker."""
-        from epy_reports._ui.docs_export_dialog import (  # noqa: PLC0415
-            DocsExportDialog,
-            _RenderWorker,
-        )
-
-        tab = self._current_tab()
-        if tab is None:
-            return
-
-        # Require the buffer to be saved on disk.
-        if tab.path is None or tab.dirty:
-            choice = QMessageBox.question(
-                self,
-                APP_NAME,
-                "The document must be saved before exporting via "
-                "epy_docs. Save now?",
-                QMessageBox.StandardButton.Save
-                | QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save,
+        self._exports_in_flight += 1
+        started = False
+        try:
+            from epy_reports._ui.docs_export_dialog import (  # noqa: PLC0415
+                DocsExportDialog,
+                _RenderWorker,
             )
-            if choice != QMessageBox.StandardButton.Save:
+
+            tab = self._current_tab()
+            if tab is None:
                 return
-            if not self._save_current():
+
+            # Require the buffer to be saved on disk.
+            if tab.path is None or tab.dirty:
+                choice = QMessageBox.question(
+                    self,
+                    APP_NAME,
+                    "The document must be saved before exporting via "
+                    "epy_docs. Save now?",
+                    QMessageBox.StandardButton.Save
+                    | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Save,
+                )
+                if choice != QMessageBox.StandardButton.Save:
+                    return
+                if not self._save_current():
+                    return
+
+            if tab.path is None:
                 return
 
-        if tab.path is None:
-            return
+            dialog = DocsExportDialog(tab.path, parent=self)
+            if dialog.exec() != DocsExportDialog.DialogCode.Accepted:
+                return
 
-        dialog = DocsExportDialog(tab.path, parent=self)
-        if dialog.exec() != DocsExportDialog.DialogCode.Accepted:
-            return
+            dialog.persist_settings()
 
-        dialog.persist_settings()
+            source = tab.path
+            layout = dialog.layout_name
+            doc_type = dialog.document_type
+            out_dir = dialog.output_dir
+            want_pdf = dialog.export_pdf
+            want_html = dialog.export_html
+            want_docx = dialog.export_docx
 
-        source = tab.path
-        layout = dialog.layout_name
-        doc_type = dialog.document_type
-        out_dir = dialog.output_dir
-        want_pdf = dialog.export_pdf
-        want_html = dialog.export_html
-        want_docx = dialog.export_docx
+            QApplication.setOverrideCursor(
+                QCursor(Qt.CursorShape.WaitCursor)
+            )
+            self.statusBar().showMessage("Exporting via epy_docs…", 0)
 
-        QApplication.setOverrideCursor(
-            QCursor(Qt.CursorShape.WaitCursor)
-        )
-        self.statusBar().showMessage("Exporting via epy_docs…", 0)
-
-        self._docs_worker = _RenderWorker(
-            source_path=source,
-            layout=layout,
-            document_type=doc_type,
-            output_dir=out_dir,
-            pdf=want_pdf,
-            html=want_html,
-            docx=want_docx,
-        )
-        self._docs_worker.finished_ok.connect(self._on_docs_done_ok)
-        self._docs_worker.finished_err.connect(self._on_docs_done_err)
-        self._docs_worker.start()
+            self._docs_worker = _RenderWorker(
+                source_path=source,
+                layout=layout,
+                document_type=doc_type,
+                output_dir=out_dir,
+                pdf=want_pdf,
+                html=want_html,
+                docx=want_docx,
+            )
+            self._docs_worker.finished_ok.connect(self._on_docs_done_ok)
+            self._docs_worker.finished_err.connect(self._on_docs_done_err)
+            self._docs_worker.start()
+            started = True
+        finally:
+            if not started:
+                self._exports_in_flight -= 1
 
     def _on_docs_done_ok(self, out_dir: str) -> None:
         """Handle a successful epy_docs render."""
-        QApplication.restoreOverrideCursor()
-        self.statusBar().showMessage(
-            f"Exported to {out_dir}", 5000
-        )
+        try:
+            QApplication.restoreOverrideCursor()
+            self.statusBar().showMessage(
+                f"Exported to {out_dir}", 5000
+            )
+        finally:
+            self._exports_in_flight -= 1
 
     def _on_docs_done_err(self, message: str) -> None:
         """Handle a failed epy_docs render."""
-        QApplication.restoreOverrideCursor()
-        self.statusBar().clearMessage()
-        QMessageBox.critical(
-            self,
-            APP_NAME,
-            f"epy_docs export failed:\n\n{message}",
-        )
+        try:
+            QApplication.restoreOverrideCursor()
+            self.statusBar().clearMessage()
+            QMessageBox.critical(
+                self,
+                APP_NAME,
+                f"epy_docs export failed:\n\n{message}",
+            )
+        finally:
+            self._exports_in_flight -= 1
 
     # ------------------------------------------------ closing logic
 
