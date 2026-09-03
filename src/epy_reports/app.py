@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from epy_export import ORGANIZATION
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import (
     QAction,
@@ -142,7 +143,7 @@ class MarkdownWindow(QMainWindow):
         self._exports_in_flight = 0
 
         # Load persisted theme (defaults to EPY when nothing is saved).
-        self._settings = QSettings("ANM Ingeniería", "epy_reports")
+        self._settings = QSettings(ORGANIZATION, "epy_reports")
         saved_theme = str(
             self._settings.value("theme", themes.DEFAULT_THEME_ID)
         )
