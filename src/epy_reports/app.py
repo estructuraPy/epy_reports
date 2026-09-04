@@ -266,7 +266,7 @@ class MarkdownWindow(QMainWindow):
         else:
             self.act_docs_export.setEnabled(False)
             self.act_docs_export.setToolTip(
-                "Requires the epy-docs package"
+                i18n.tr("Requires the epy-docs package")
             )
 
         # Theme radio actions (one per registered theme, exclusive group).
@@ -589,7 +589,9 @@ class MarkdownWindow(QMainWindow):
         self.callout_sub = self.elements_menu.addMenu("Callout")
         for act in self.callout_actions:
             self.callout_sub.addAction(act)
-        self.disclosure_sub = self.elements_menu.addMenu("Disclosure")
+        self.disclosure_sub = self.elements_menu.addMenu(
+            i18n.tr("Disclosure")
+        )
         for act in self.disclosure_actions:
             self.disclosure_sub.addAction(act)
         self.elements_menu.addAction(self.act_design_block)
@@ -1303,7 +1305,9 @@ class MarkdownWindow(QMainWindow):
             )
         # Keep the page-size radio + preview in sync with any change.
         self._sync_page_size_menu()
-        self.statusBar().showMessage("Document properties updated", 3000)
+        self.statusBar().showMessage(
+            i18n.tr("Document properties updated"), 3000
+        )
 
     def _link_bibliography(self) -> None:
         """Pick a .bib file and write it into the YAML front matter."""
@@ -1485,7 +1489,7 @@ class MarkdownWindow(QMainWindow):
                 )
             except (OSError, RuntimeError) as exc:
                 QMessageBox.critical(
-                    self, "Export DOCX failed", str(exc)
+                    self, i18n.tr("Export DOCX failed"), str(exc)
                 )
                 self.statusBar().showMessage(
                     f"Export failed: {target.name}", 5000
@@ -1534,7 +1538,7 @@ class MarkdownWindow(QMainWindow):
                 )
             except Exception as exc:  # noqa: BLE001 - failure must reach user
                 QMessageBox.critical(
-                    self, "Export HTML failed", str(exc)
+                    self, i18n.tr("Export HTML failed"), str(exc)
                 )
                 self.statusBar().showMessage(
                     f"Export failed: {target.name}", 5000
@@ -1579,7 +1583,7 @@ class MarkdownWindow(QMainWindow):
             text = _load_manual_text(filename)
         except (FileNotFoundError, OSError):
             QMessageBox.warning(
-                self, "Manual unavailable",
+                self, i18n.tr("Manual unavailable"),
                 f"Could not load the bundled manual '{filename}'.",
             )
             return
@@ -1738,8 +1742,8 @@ class MarkdownWindow(QMainWindow):
         if tab.dirty:
             choice = QMessageBox.question(
                 self,
-                "Reload",
-                "Discard unsaved changes and reload from disk?",
+                i18n.tr("Reload"),
+                i18n.tr("Discard unsaved changes and reload from disk?"),
                 QMessageBox.StandardButton.Yes
                 | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
@@ -1770,7 +1774,7 @@ class MarkdownWindow(QMainWindow):
             target = Path(filename)
             if target.suffix == "":
                 target = target.with_suffix(".pdf")
-            self.statusBar().showMessage("Exporting PDF...", 0)
+            self.statusBar().showMessage(i18n.tr("Exporting PDF..."), 0)
             tab.export_pdf(target, self._on_pdf_done)
             started = True
         finally:
@@ -1809,8 +1813,10 @@ class MarkdownWindow(QMainWindow):
                 choice = QMessageBox.question(
                     self,
                     APP_NAME,
-                    "The document must be saved before exporting via "
-                    "epy_docs. Save now?",
+                    i18n.tr(
+                        "The document must be saved before exporting via "
+                        "epy_docs. Save now?"
+                    ),
                     QMessageBox.StandardButton.Save
                     | QMessageBox.StandardButton.Cancel,
                     QMessageBox.StandardButton.Save,
@@ -1840,7 +1846,9 @@ class MarkdownWindow(QMainWindow):
             QApplication.setOverrideCursor(
                 QCursor(Qt.CursorShape.WaitCursor)
             )
-            self.statusBar().showMessage("Exporting via epy_docs…", 0)
+            self.statusBar().showMessage(
+                i18n.tr("Exporting via epy_docs…"), 0
+            )
 
             self._docs_worker = _RenderWorker(
                 source_path=source,
@@ -1891,7 +1899,7 @@ class MarkdownWindow(QMainWindow):
         name = tab.path.name if tab.path is not None else "untitled.md"
         choice = QMessageBox.question(
             self,
-            "Unsaved changes",
+            i18n.tr("Unsaved changes"),
             f"'{name}' has unsaved changes. Save before closing?",
             QMessageBox.StandardButton.Save
             | QMessageBox.StandardButton.Discard

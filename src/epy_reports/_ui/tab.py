@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from epy_reports._core import _i18n as i18n
 from epy_reports._core import snippets
 from epy_reports._core.renderer import (
     inject_page_numbers,
@@ -236,7 +237,7 @@ class MarkdownTab(QWidget):
             QPlainTextEdit.LineWrapMode.WidgetWidth
         )
         self.editor.setPlaceholderText(
-            "Type Markdown here. Preview updates on the right."
+            i18n.tr("Type Markdown here. Preview updates on the right.")
         )
 
     # ------------------------------------------------------------- API
@@ -980,10 +981,12 @@ class MarkdownTab(QWidget):
         if not combined:
             QMessageBox.information(
                 self,
-                "Cross-reference",
-                "Nothing to cite yet. Add a figure / table / "
-                "equation / section heading, or link a "
-                "bibliography (.bib).",
+                i18n.tr("Cross-reference"),
+                i18n.tr(
+                    "Nothing to cite yet. Add a figure / table / "
+                    "equation / section heading, or link a "
+                    "bibliography (.bib)."
+                ),
             )
             return
         # Pre-fetch bib metadata for nicer labels in the picker.

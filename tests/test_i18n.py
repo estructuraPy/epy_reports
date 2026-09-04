@@ -171,3 +171,46 @@ def test_translate_widget_relabels_children(qapp):
     assert button.text() == "Cancelar"
     assert box.title() == "Pie de página"
     assert edit.placeholderText() == "Título de la figura"
+
+
+def test_new_spanish_ui_keys_are_present_and_translated():
+    """UI strings newly wired to ``tr`` have real Spanish translations.
+
+    A missing key (or one that maps to itself) would silently fall back
+    to English, so a Spanish reader would still see English in that menu,
+    dialog or status bar.
+    """
+    keys = [
+        "Browse themes…",
+        "Design block…",
+        "Disclosure",
+        "Document properties updated",
+        "Unsaved changes",
+        "Requires the epy-docs package",
+        "Discard unsaved changes and reload from disk?",
+        "Exporting PDF...",
+        "Exporting via epy_docs…",
+        "Manual unavailable",
+        "The document must be saved before exporting via epy_docs. Save now?",
+        "Export DOCX failed",
+        "Export HTML failed",
+        "Design block",
+        "Choose a design block:",
+        "Logo:",
+        "Type Markdown here. Preview updates on the right.",
+        "Cross-reference",
+        (
+            "Nothing to cite yet. Add a figure / table / equation / "
+            "section heading, or link a bibliography (.bib)."
+        ),
+        (
+            "Body text with a <a href='#'>link</a> and "
+            "<code>inline code</code>."
+        ),
+        "Note callout",
+        "Themes",
+        "Choose a theme:",
+    ]
+    for key in keys:
+        assert key in i18n._ES
+        assert i18n._ES[key] != key

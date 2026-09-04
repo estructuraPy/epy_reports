@@ -37,11 +37,11 @@ class ThemeGalleryDialog(QDialog):
     ) -> None:
         """Build the swatch grid and pre-select ``current_id`` if given."""
         super().__init__(parent)
-        self.setWindowTitle("Themes")
+        self.setWindowTitle(i18n.tr("Themes"))
         self.setMinimumSize(620, 440)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Choose a theme:"))
+        layout.addWidget(QLabel(i18n.tr("Choose a theme:")))
 
         self._list = QListWidget(self)
         self._list.setViewMode(QListWidget.ViewMode.IconMode)

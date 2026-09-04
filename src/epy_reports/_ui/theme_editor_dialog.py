@@ -250,11 +250,13 @@ class ThemeEditorDialog(QDialog):
         pv = QVBoxLayout(self.preview_box)
         self._pv_heading = QLabel("Heading")
         self._pv_body = QLabel(
-            "Body text with a <a href='#'>link</a> and "
-            "<code>inline code</code>."
+            i18n.tr(
+                "Body text with a <a href='#'>link</a> and "
+                "<code>inline code</code>."
+            )
         )
         self._pv_body.setTextFormat(Qt.TextFormat.RichText)
-        self._pv_callout = QLabel("Note callout")
+        self._pv_callout = QLabel(i18n.tr("Note callout"))
         self._pv_callout.setMargin(8)
         self._pv_code = QLabel("def f(x): return x")
         self._pv_code.setMargin(6)

@@ -45,11 +45,11 @@ class DesignBlockDialog(QDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         """Build the design-block picker grid."""
         super().__init__(parent)
-        self.setWindowTitle("Design block")
+        self.setWindowTitle(i18n.tr("Design block"))
         self.setMinimumSize(560, 420)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Choose a design block:"))
+        layout.addWidget(QLabel(i18n.tr("Choose a design block:")))
 
         self._list = QListWidget(self)
         self._list.setViewMode(QListWidget.ViewMode.IconMode)

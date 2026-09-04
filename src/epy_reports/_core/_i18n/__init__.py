@@ -47,6 +47,7 @@ _ES: dict[str, str] = {
     # --- submenu titles ---
     "Heading": "Título",
     "Callout": "Llamado",
+    "Disclosure": "Declaración",
     "Indexes": "Índices",
     "Theme": "Tema",
     "Page size": "Tamaño de página",
@@ -59,6 +60,8 @@ _ES: dict[str, str] = {
     "Save": "Guardar",
     "Save As...": "Guardar como...",
     "Reload": "Recargar",
+    "Discard unsaved changes and reload from disk?":
+        "¿Descartar los cambios sin guardar y recargar desde el disco?",
     "Close Tab": "Cerrar pestaña",
     "Quit": "Salir",
     # --- Text menu ---
@@ -89,6 +92,7 @@ _ES: dict[str, str] = {
     "Callout: Warning": "Llamado: Advertencia",
     "Callout: Important": "Llamado: Importante",
     "Callout: Caution": "Llamado: Precaución",
+    "Design block…": "Bloque de diseño…",
     "Page break": "Salto de página",
     "Section break (Roman i, ii, iii)": "Salto de sección (romano i, ii, iii)",
     "Section break (Arabic 1, 2, 3)": "Salto de sección (arábigo 1, 2, 3)",
@@ -113,6 +117,15 @@ _ES: dict[str, str] = {
     "Export as DOCX...": "Exportar como DOCX...",
     "Print...": "Imprimir...",
     "Export via epy_docs...": "Exportar con epy_docs...",
+    "Requires the epy-docs package":
+        "Requiere el paquete epy-docs",
+    "Exporting PDF...": "Exportando PDF...",
+    "The document must be saved before exporting via epy_docs. Save now?":
+        "El documento debe guardarse antes de exportar con epy_docs. "
+        "¿Guardar ahora?",
+    "Exporting via epy_docs…": "Exportando con epy_docs…",
+    "Export DOCX failed": "Error al exportar DOCX",
+    "Export HTML failed": "Error al exportar HTML",
     # --- View menu ---
     "Page view": "Vista de página",
     "Autosave": "Guardado automático",
@@ -132,6 +145,7 @@ _ES: dict[str, str] = {
     "Legal": "Oficio",
     # --- Document menu ---
     "Document properties…": "Propiedades del documento…",
+    "Document properties updated": "Propiedades del documento actualizadas",
     # --- Templates menu ---
     "Save current settings as template…":
         "Guardar la configuración actual como plantilla…",
@@ -151,6 +165,11 @@ _ES: dict[str, str] = {
     "New bibliography entry": "Nueva entrada bibliográfica",
     "Export via epy_docs": "Exportar con epy_docs",
     "Document properties": "Propiedades del documento",
+    "Manual unavailable": "Manual no disponible",
+    "Cross-reference": "Referencia cruzada",
+    "Design block": "Bloque de diseño",
+    "Themes": "Temas",
+    "Unsaved changes": "Cambios sin guardar",
     "About epy_reports": "Acerca de epy_reports",
     # --- common dialog labels / buttons ---
     "Caption:": "Título:",
@@ -180,13 +199,22 @@ _ES: dict[str, str] = {
     "Pick a label to insert as <code>@label</code>. Type to filter.":
         "Elija una etiqueta para insertar como <code>@label</code>. "
         "Escriba para filtrar.",
+    (
+        "Nothing to cite yet. Add a figure / table / equation / "
+        "section heading, or link a bibliography (.bib)."
+    ):
+        "Aún no hay nada que citar. Agregue una figura / tabla / "
+        "ecuación / título de sección, o enlace una bibliografía (.bib).",
     "Browse...": "Examinar...",
     "Browse…": "Examinar…",
     "OK": "Aceptar",
     "Cancel": "Cancelar",
+    "Choose a design block:": "Elija un bloque de diseño:",
+    "Choose a theme:": "Elija un tema:",
     # --- Document properties dialog ---
     "Title block": "Bloque de título",
     "Cover page": "Portada",
+    "Logo:": "Logotipo:",
     "Running header (up to 6 cells)": "Encabezado (hasta 6 celdas)",
     "Footer": "Pie de página",
     "Subtitle:": "Subtítulo:",
@@ -257,6 +285,8 @@ _ES: dict[str, str] = {
     # --- field placeholders ---
     "Optional title…": "Título opcional…",
     "Figure caption": "Título de la figura",
+    "Type Markdown here. Preview updates on the right.":
+        "Escriba Markdown aquí. La vista previa se actualiza a la derecha.",
     "Optional caption…": "Título opcional…",
     "Footnote text": "Texto de la nota",
     "Filter: fig, tbl, eq, sec, or any substring":
@@ -296,10 +326,15 @@ _ES: dict[str, str] = {
     "Important": "Importante",
     "Caution": "Precaución",
     "Preview": "Vista previa",
+    "Body text with a <a href='#'>link</a> and <code>inline code</code>.":
+        "Texto del cuerpo con un <a href='#'>enlace</a> y "
+        "<code>código en línea</code>.",
+    "Note callout": "Llamado de nota",
     "Pick a color": "Elegir un color",
     "My theme": "Mi tema",
     "Please enter a name for the theme.": "Ingrese un nombre para el tema.",
     "New theme…": "Tema nuevo…",
+    "Browse themes…": "Explorar temas…",
     "Edit current theme…": "Editar el tema actual…",
     "Delete custom theme…": "Eliminar tema personalizado…",
     "Theme:": "Tema:",

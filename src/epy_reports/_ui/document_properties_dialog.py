@@ -97,7 +97,7 @@ class DocumentPropertiesDialog(QDialog):
         cover_v = QVBoxLayout(cover_box)
         cover_v.addWidget(self.cover_check)
         logo_row = QHBoxLayout()
-        logo_row.addWidget(QLabel("Logo:"))
+        logo_row.addWidget(QLabel(i18n.tr("Logo:")))
         logo_row.addWidget(self.logo_edit)
         logo_row.addWidget(logo_btn)
         cover_v.addLayout(logo_row)
