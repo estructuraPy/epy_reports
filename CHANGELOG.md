@@ -4,6 +4,40 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-09-04
+
+### Added
+- **An autosave the user can turn on or off.** A checkable *Autosave*
+  action in the View menu, off on a fresh install and remembered between
+  sessions. It writes only the current document, only when it has a path
+  and unsaved changes, and never while an export is running; a document
+  that has never been saved is skipped rather than raising a Save As
+  dialog on somebody mid-sentence.
+- **Saves are atomic.** Every save, manual or automatic, writes a
+  complete sibling file and renames it into place
+  (`epy_export.write_text_atomic`), so a save that dies mid-write cannot
+  truncate the only copy.
+
+### Fixed
+- **An HTML export that failed did so in silence.** The render and the
+  write had no error handling and ran from a Qt action, so an exception
+  reached nobody: no message, no file, and a window that looked as if it
+  had worked. A missing figure, an unwritable folder or a read-only
+  target all landed there. Both the HTML and the Word export now report
+  in the status bar as well as in a dialog.
+- **Twenty-three interface strings were English in the Spanish UI** —
+  the View menu, the reload and unsaved-changes prompts, both export
+  failures, the epy_docs handoff, the cross-reference, design block and
+  theme dialogs, and the editor's placeholder. Translation falls back to
+  English silently, so none of this reported itself.
+
+### Changed
+- The settings scope now takes its organisation name from
+  `epy_export.ORGANIZATION`. It was spelled two ways across the family,
+  which on Windows is two registry trees: ePy Studio read one and this
+  editor wrote the other, so the language a reader chose here was never
+  found by the launcher.
+
 ## [0.4.4] — 2026-08-06
 
 ### Fixed
