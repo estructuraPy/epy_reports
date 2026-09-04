@@ -42,32 +42,63 @@ def test_epy_docs_available_false():
 
 
 # ---------------------------------------------------------------------------
-# list_layouts / list_document_types — delegate to epy_docs (installed)
+# list_layouts / list_document_types — what this bridge itself owns
+#
+# These two called the real epy_docs, which is a commercial add-on nobody
+# can install on a runner: the tests could not pass anywhere but on a
+# machine that had bought it, and the whole workflow failed on them. What
+# the bridge owns is the delegation and the shape it returns, and that is
+# testable against a stand-in -- the idiom every other test in this file
+# already uses. Whether the real package answers "corporate" is that
+# package's own test, not this one's.
 # ---------------------------------------------------------------------------
 
 
-def test_list_layouts_returns_real_values():
-    """list_layouts() delegates to epy_docs.available_layouts()."""
+def _with_fake_epy_docs(**attributes):
+    """Patch in a stand-in epy_docs carrying the given callables."""
+    import sys
+
+    fake = MagicMock()
+    for name, value in attributes.items():
+        setattr(fake, name, value)
+    return patch.dict(sys.modules, {"epy_docs": fake}), patch(
+        "epy_reports.epy_suite_connect._adapters.docs_bridge."
+        "epy_docs_available",
+        return_value=True,
+    )
+
+
+def test_list_layouts_delegates_and_returns_a_list():
+    """list_layouts() returns what epy_docs.available_layouts() gives."""
     from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         list_layouts,
     )
 
-    layouts = list_layouts()
-    assert isinstance(layouts, list)
-    assert len(layouts) > 0
-    assert "corporate" in layouts
+    modules, available = _with_fake_epy_docs(
+        available_layouts=lambda: ("corporate", "academic")
+    )
+    with modules, available:
+        layouts = list_layouts()
+
+    # A tuple in, a list out: the bridge owns the conversion, and a
+    # caller that iterated twice over a generator would get nothing the
+    # second time.
+    assert layouts == ["corporate", "academic"]
 
 
-def test_list_document_types_returns_real_values():
-    """list_document_types() delegates to available_document_types()."""
+def test_list_document_types_delegates_and_returns_a_list():
+    """list_document_types() returns available_document_types()."""
     from epy_reports.epy_suite_connect._adapters.docs_bridge import (
         list_document_types,
     )
 
-    doc_types = list_document_types()
-    assert isinstance(doc_types, list)
-    assert len(doc_types) > 0
-    assert "report" in doc_types
+    modules, available = _with_fake_epy_docs(
+        available_document_types=lambda: iter(("report", "notebook"))
+    )
+    with modules, available:
+        doc_types = list_document_types()
+
+    assert doc_types == ["report", "notebook"]
 
 
 # ---------------------------------------------------------------------------
