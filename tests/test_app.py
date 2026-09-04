@@ -478,6 +478,79 @@ def test_export_html_writes_file(window, tmp_path):
     assert "HTML export" in html
 
 
+def test_export_html_failure_is_reported_not_swallowed(
+    window, tmp_path
+):
+    """A render failure pops a modal and reports it in the status bar."""
+    tab = window._new_tab()
+    tab.editor.setPlainText("# HTML export\n")
+    target = tmp_path / "out.html"
+    # What breaks: a failed export looks exactly like a successful one.
+    with patch.object(
+        app_mod.QFileDialog, "getSaveFileName",
+        return_value=(str(target), ""),
+    ), patch.object(
+        app_mod, "render_markdown",
+        side_effect=RuntimeError("boom"),
+    ), patch.object(
+        app_mod.QMessageBox, "critical",
+    ) as crit:
+        window._export_html()
+
+    assert crit.call_count == 1
+    title = crit.call_args.args[1]
+    assert "failed" in title.lower()
+    assert "Export failed" in window.statusBar().currentMessage()
+    assert not target.exists()
+    assert window._exports_in_flight == 0
+
+
+def test_export_docx_failure_reaches_the_status_bar(
+    window, tmp_path
+):
+    """A DOCX failure shows up on the status bar after the modal."""
+    tab = window._new_tab()
+    tab.editor.setPlainText("# DOCX export\n")
+    target = tmp_path / "out.docx"
+    # What breaks: a failed export looks exactly like a successful one.
+    with patch.object(
+        app_mod.QFileDialog, "getSaveFileName",
+        return_value=(str(target), ""),
+    ), patch.object(
+        app_mod, "export_docx",
+        side_effect=OSError("read-only"),
+    ), patch.object(
+        app_mod.QMessageBox, "critical",
+    ) as crit:
+        window._export_docx()
+
+    assert crit.call_count == 1
+    assert "Export failed" in window.statusBar().currentMessage()
+    assert window._exports_in_flight == 0
+
+
+def test_export_html_success_says_nothing_about_failure(
+    window, tmp_path
+):
+    """A successful HTML export stays away from failure language."""
+    tab = window._new_tab()
+    tab.editor.setPlainText("# HTML export\n\nBody.\n")
+    target = tmp_path / "ok.html"
+    # What breaks: the success path would show a failure notice.
+    with patch.object(
+        app_mod.QFileDialog, "getSaveFileName",
+        return_value=(str(target), ""),
+    ), patch.object(
+        app_mod.QMessageBox, "critical",
+    ) as crit:
+        window._export_html()
+
+    assert target.exists()
+    status = window.statusBar().currentMessage()
+    assert "failed" not in status.lower()
+    crit.assert_not_called()
+
+
 def test_export_html_cancel_writes_nothing(window, tmp_path):
     """Cancelling the HTML dialog produces no file."""
     tab = window._new_tab()

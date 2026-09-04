@@ -1487,6 +1487,9 @@ class MarkdownWindow(QMainWindow):
                 QMessageBox.critical(
                     self, "Export DOCX failed", str(exc)
                 )
+                self.statusBar().showMessage(
+                    f"Export failed: {target.name}", 5000
+                )
                 return
             self.statusBar().showMessage(
                 f"Exported {target.name}", 5000
@@ -1517,15 +1520,25 @@ class MarkdownWindow(QMainWindow):
             text = tab.editor.toPlainText()
             base_dir = tab.path.parent if tab.path is not None else None
             title = tab.path.name if tab.path is not None else "untitled"
-            html = render_markdown(
-                text,
-                base_dir=base_dir,
-                title=title,
-                theme_css=document_css(self._current_theme),
-                continuous=True,
-            )
-            target.write_text(html, encoding="utf-8")
-            self.statusBar().showMessage(f"Saved HTML: {target}", 3000)
+            try:
+                html = render_markdown(
+                    text,
+                    base_dir=base_dir,
+                    title=title,
+                    theme_css=document_css(self._current_theme),
+                    continuous=True,
+                )
+                target.write_text(html, encoding="utf-8")
+                self.statusBar().showMessage(
+                    f"Saved HTML: {target}", 3000
+                )
+            except Exception as exc:  # noqa: BLE001 - failure must reach user
+                QMessageBox.critical(
+                    self, "Export HTML failed", str(exc)
+                )
+                self.statusBar().showMessage(
+                    f"Export failed: {target.name}", 5000
+                )
         finally:
             self._exports_in_flight -= 1
 
