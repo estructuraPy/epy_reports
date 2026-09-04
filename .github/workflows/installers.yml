@@ -23,6 +23,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install the shared engine (not on PyPI)
+        # epy_export holds what the four applications were doing
+        # identically. It is installed from its repository because
+        # it is published nowhere else; without this line pip
+        # cannot resolve the dependency and the job fails before a
+        # single test runs.
+        run: >-
+          pip install "epy_export[pdf,qt] @ git+https://github.com/estructuraPy/epy_export.git@v0.1.0"
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -66,6 +75,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Install the shared engine (not on PyPI)
+        # epy_export holds what the four applications were doing
+        # identically. It is installed from its repository because
+        # it is published nowhere else; without this line pip
+        # cannot resolve the dependency and the job fails before a
+        # single test runs.
+        run: >-
+          pip install "epy_export[pdf,qt] @ git+https://github.com/estructuraPy/epy_export.git@v0.1.0"
 
       - name: Install Python dependencies
         run: |
