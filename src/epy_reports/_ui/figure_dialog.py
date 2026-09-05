@@ -96,7 +96,7 @@ class FigureDialog(QDialog):
         return self.caption_edit.text().strip()
 
     @property
-    def width(self) -> str:
+    def width(self) -> str:  # pyright: ignore[reportIncompatibleMethodOverride] - the dialog's width is a user-facing CSS string, deliberately shadowing QWidget.width()
         """Width string, stripped; falls back to '80%' when empty."""
         value = self.width_edit.text().strip()
         return value if value else "80%"

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 # Repo root: four levels above this file (_packaging -> _core ->
 # epy_reports -> src -> root).
@@ -126,7 +127,10 @@ def build_reference(theme: Theme, target: Path) -> None:
     head_color = _rgb(css.get("heading-color", css.get("fg", "")), "000000")
 
     # ---- Normal: body font / size / text colour -------------------
-    normal = doc.styles["Normal"]
+    # python-docx's published type stubs model doc.styles lookups as
+    # BaseStyle and omit its font attribute; real styles expose Font at
+    # run time, so the style objects are typed Any for this re-skin.
+    normal: Any = doc.styles["Normal"]
     normal.font.name = body_font
     normal.font.size = Pt(body_pt)
     normal.font.color.rgb = fg
@@ -134,7 +138,7 @@ def build_reference(theme: Theme, target: Path) -> None:
     # ---- Body Text / No Spacing inherit the body identity ---------
     for name in ("Body Text", "No Spacing"):
         try:
-            style = doc.styles[name]
+            style: Any = doc.styles[name]
         except KeyError:
             continue
         style.font.name = body_font
@@ -142,7 +146,7 @@ def build_reference(theme: Theme, target: Path) -> None:
 
     # ---- Heading 1..6: heading font / size / weight / colour ------
     for name, (size_var, weight_var) in _HEADINGS.items():
-        style = doc.styles[name]
+        style: Any = doc.styles[name]
         style.font.name = head_font
         style.font.size = Pt(_pt(css.get(size_var, ""), body_pt + 2))
         style.font.bold = _bold(css.get(weight_var, "700"))
@@ -152,7 +156,7 @@ def build_reference(theme: Theme, target: Path) -> None:
     h1_pt = _pt(css.get("h1-size", ""), body_pt + 12)
     for name, scale, bold in (("Title", 1.6, True), ("Subtitle", 1.15, False)):
         try:
-            style = doc.styles[name]
+            style: Any = doc.styles[name]
         except KeyError:
             continue
         style.font.name = head_font
@@ -162,7 +166,7 @@ def build_reference(theme: Theme, target: Path) -> None:
 
     # ---- Caption / Quote follow the muted + accent css vars -------
     try:
-        caption = doc.styles["Caption"]
+        caption: Any = doc.styles["Caption"]
         caption.font.name = body_font
         caption.font.size = Pt(_pt(css.get("caption-size", ""), body_pt - 1))
         caption.font.color.rgb = _rgb(css.get("fg-muted", ""), "606060")
@@ -170,7 +174,7 @@ def build_reference(theme: Theme, target: Path) -> None:
         pass
     for name in ("Quote", "Intense Quote"):
         try:
-            style = doc.styles[name]
+            style: Any = doc.styles[name]
         except KeyError:
             continue
         style.font.name = body_font

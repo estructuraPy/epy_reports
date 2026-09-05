@@ -23,7 +23,12 @@ def qapp():
     """Provide a module-scoped QApplication instance."""
     global _app
     if _app is None:
-        _app = QApplication.instance() or QApplication([])
+        _instance = QApplication.instance()
+        _app = (
+            _instance
+            if isinstance(_instance, QApplication)
+            else QApplication([])
+        )
     return _app
 
 

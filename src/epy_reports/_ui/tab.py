@@ -134,9 +134,17 @@ class _ExternalOpenPage(QWebEnginePage):
     """
 
     def acceptNavigationRequest(  # noqa: N802 (Qt override)
-        self, url: QUrl, _type, _is_main_frame: bool
+        self,
+        url: QUrl | str,
+        _type: QWebEnginePage.NavigationType,
+        _is_main_frame: bool,
     ) -> bool:
-        QDesktopServices.openUrl(url)
+        # Qt declares this virtual with a url that may arrive as
+        # a string; narrowing to QUrl would have refused exactly
+        # the calls the base class promises to make.
+        QDesktopServices.openUrl(
+            QUrl(url) if isinstance(url, str) else url
+        )
         self.deleteLater()
         return False
 
@@ -144,7 +152,16 @@ class _ExternalOpenPage(QWebEnginePage):
 class _PreviewView(QWebEngineView):
     """Preview view: popup links go to the system browser."""
 
-    def createWindow(self, _window_type):  # noqa: N802 (Qt override)
+    # OPEN, and deliberately not silenced away: Qt declares this
+    # virtual on the VIEW as returning a QWebEngineView, and this
+    # returns a page. The documented hook for target="_blank" is
+    # the PAGE's createWindow; moving it there is a behaviour
+    # change in the preview, which is why it is recorded rather
+    # than done in a typing pass. Popup handling has no live test.
+    def createWindow(  # noqa: N802 (Qt override)  # pyright: ignore[reportIncompatibleMethodOverride] - see the note above
+        self,
+        _window_type: QWebEnginePage.WebWindowType,
+    ) -> QWebEnginePage:
         return _ExternalOpenPage(self)
 
 
@@ -169,6 +186,7 @@ class MarkdownTab(QWidget):
         self._theme_css: str = ""
         self._page_bg: str = ""
         self._paged = False
+        self._preview_tmp_dir: Path | None = None
 
         self.editor = QPlainTextEdit(self)
         self._setup_editor()
@@ -445,7 +463,11 @@ class MarkdownTab(QWidget):
             result_ok = ok
             try:
                 if ok:
-                    from epy_reports._core import _pdf_footer  # noqa: PLC0415
+                    # The stamping is epy_export's; the local
+                    # `_core._pdf_footer` this used to name has not
+                    # existed since the extraction, and every PDF export
+                    # from the window raised ModuleNotFoundError here.
+                    _pdf_footer = epy_export
 
                     if self._page_bg:
                         _pdf_footer.add_page_background(
@@ -551,11 +573,7 @@ class MarkdownTab(QWidget):
             if not ok:
                 finalize(False, 1)
                 return
-            from epy_reports._core._pdf_footer import (  # noqa: PLC0415
-                extract_anchor_pages,
-            )
-
-            anchor_to_page = extract_anchor_pages(pass1_pdf)
+            anchor_to_page = epy_export.extract_anchor_pages(pass1_pdf)
             segments = _section_segments(anchor_to_page)
             # Section markers are page breaks, not body content; exclude them
             # when locating the first content page.
@@ -1216,7 +1234,7 @@ class MarkdownTab(QWidget):
                 f"<b>Render error</b><pre>{msg}</pre>"
                 "</body></html>"
             )
-        if not hasattr(self, "_preview_tmp_dir"):
+        if self._preview_tmp_dir is None:
             self._preview_tmp_dir = Path(
                 tempfile.mkdtemp(prefix="epy_reports_preview_")
             )
@@ -1259,7 +1277,7 @@ class MarkdownTab(QWidget):
 
     def cleanup_preview_tmp(self) -> None:
         """Delete the temp dir backing the live preview (call on close)."""
-        tmp = getattr(self, "_preview_tmp_dir", None)
+        tmp = self._preview_tmp_dir
         if tmp is not None:
             shutil.rmtree(tmp, ignore_errors=True)
             self._preview_tmp_dir = None

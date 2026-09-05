@@ -219,6 +219,10 @@ def _mirror_dead_imports(
     return dead
 
 
+_MIRROR_ADVISORY: list[str] = []
+"""Where the path-parity advisory waits between audit and report."""
+
+
 def _mirror_advisory(store: list[str] | None = None) -> list[str]:
     """Carry the path-parity advisory from the audit to the report.
 
@@ -230,8 +234,8 @@ def _mirror_advisory(store: list[str] | None = None) -> list[str]:
     WARNING, never a failure.
     """
     if store is not None:
-        _mirror_advisory.lines = list(store)
-    return getattr(_mirror_advisory, "lines", [])
+        _MIRROR_ADVISORY[:] = store
+    return list(_MIRROR_ADVISORY)
 
 
 def audit_module_mirror(lib_root: Path) -> list[str]:
@@ -507,7 +511,7 @@ def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
             return parts[0]
         return ""
 
-    def _marks_anywhere(node: object) -> list[str]:
+    def _marks_anywhere(node: _ast.AST) -> list[str]:
         """Forbidden marks anywhere inside an expression.
 
         The assigned form was matched only at the top of the value, so
@@ -548,8 +552,11 @@ def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
                 continue
             marks = _marks_anywhere(value)
             if marks:
-                plain = isinstance(node, _ast.Assign)
-                targets = node.targets if plain else [node.target]
+                targets = (
+                    node.targets
+                    if isinstance(node, _ast.Assign)
+                    else [node.target]
+                )
                 name = next(
                     (t.id for t in targets if isinstance(t, _ast.Name)), "<assign>"
                 )
@@ -809,6 +816,32 @@ def report_tutorials_layout(violations: list[str]) -> None:
             print(f"    - {v}")
 
 
+def _load_block(name: str, path: Path):
+    """Import a canonical audit block from its file, or say which failed.
+
+    Args:
+        name: Module name to register the block under.
+        path: The block file, already known to exist.
+
+    Returns:
+        The imported module.
+
+    Raises:
+        ImportError: Naming the file. ``spec_from_file_location`` answers
+            None for a path Python cannot make a module of, and a spec
+            can carry no loader; both used to surface as an
+            ``AttributeError`` on None that named nothing.
+    """
+    import importlib.util as _util
+
+    spec = _util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load the audit block at {path}")
+    module = _util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 # --- documented standard ids (referential integrity) -------------------------
 # Imported from the ONE canonical source rather than copied: Rule 13 was rolled
 # out by injection and its copies drifted apart, so the same rule behaved
@@ -818,11 +851,7 @@ _DOC_REFS_BLOCK = (
     / "doc_standard_refs_block.py"
 )
 if _DOC_REFS_BLOCK.exists():
-    import importlib.util as _ilu
-
-    _spec = _ilu.spec_from_file_location("_doc_standard_refs_block", _DOC_REFS_BLOCK)
-    _mod = _ilu.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
+    _mod = _load_block("_doc_standard_refs_block", _DOC_REFS_BLOCK)
     audit_doc_standard_refs_strict = _mod.audit_doc_standard_refs_strict
     report_doc_standard_refs = _mod.report_doc_standard_refs
 else:  # pragma: no cover - only when the tooling repo is absent
@@ -856,13 +885,7 @@ _CONNECT_LAYOUT_BLOCK = (
     / "connect_layout_block.py"
 )
 if _CONNECT_LAYOUT_BLOCK.exists():
-    import importlib.util as _ilu_cl
-
-    _spec_cl = _ilu_cl.spec_from_file_location(
-        "_connect_layout_block", _CONNECT_LAYOUT_BLOCK
-    )
-    _mod_cl = _ilu_cl.module_from_spec(_spec_cl)
-    _spec_cl.loader.exec_module(_mod_cl)
+    _mod_cl = _load_block("_connect_layout_block", _CONNECT_LAYOUT_BLOCK)
     audit_connect_layout_strict = _mod_cl.audit_connect_layout_strict
     report_connect_layout = _mod_cl.report_connect_layout
 else:  # pragma: no cover - only when the tooling repo is absent
@@ -895,11 +918,7 @@ _V_SELFCMP_BLOCK = (
     / "v_selfcomparison_block.py"
 )
 if _V_SELFCMP_BLOCK.exists():
-    import importlib.util as _ilu_vs
-
-    _spec_vs = _ilu_vs.spec_from_file_location("_v_selfcomparison_block", _V_SELFCMP_BLOCK)
-    _mod_vs = _ilu_vs.module_from_spec(_spec_vs)
-    _spec_vs.loader.exec_module(_mod_vs)
+    _mod_vs = _load_block("_v_selfcomparison_block", _V_SELFCMP_BLOCK)
     audit_v_selfcomparison = _mod_vs.audit_v_selfcomparison
     report_v_selfcomparison = _mod_vs.report_v_selfcomparison
 else:  # pragma: no cover - only when the tooling repo is absent
@@ -931,11 +950,7 @@ _SOURCE_IDS_BLOCK = (
     / "source_ids_block.py"
 )
 if _SOURCE_IDS_BLOCK.exists():
-    import importlib.util as _ilu_si
-
-    _spec_si = _ilu_si.spec_from_file_location("_source_ids_block", _SOURCE_IDS_BLOCK)
-    _mod_si = _ilu_si.module_from_spec(_spec_si)
-    _spec_si.loader.exec_module(_mod_si)
+    _mod_si = _load_block("_source_ids_block", _SOURCE_IDS_BLOCK)
     audit_source_ids = _mod_si.audit_source_ids
     report_source_ids = _mod_si.report_source_ids
 else:  # pragma: no cover - only when the tooling repo is absent
@@ -970,11 +985,7 @@ _SUITE_MANUAL_BLOCK = (
     / "suite_manual_block.py"
 )
 if _SUITE_MANUAL_BLOCK.exists():
-    import importlib.util as _ilu_sm
-
-    _spec_sm = _ilu_sm.spec_from_file_location("_suite_manual_block", _SUITE_MANUAL_BLOCK)
-    _mod_sm = _ilu_sm.module_from_spec(_spec_sm)
-    _spec_sm.loader.exec_module(_mod_sm)
+    _mod_sm = _load_block("_suite_manual_block", _SUITE_MANUAL_BLOCK)
     audit_suite_manual = _mod_sm.audit_suite_manual
     report_suite_manual = _mod_sm.report_suite_manual
 else:  # pragma: no cover - only when the tooling repo is absent

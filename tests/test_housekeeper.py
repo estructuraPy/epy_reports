@@ -9,6 +9,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Loader helper
@@ -17,11 +18,27 @@ from pathlib import Path
 _HK_PATH = Path(__file__).resolve().parent.parent / "housekeeper.py"
 
 
-def _load_housekeeper():
-    """Load housekeeper.py as a module from its absolute path."""
+def _load_housekeeper() -> Any:
+    """Load housekeeper.py as a module from its absolute path.
+
+    Returns:
+        The loaded module. Typed Any because the tests below set
+        attributes on it -- LIB_ROOT, the quality-check hooks -- and
+        a ModuleType has none of them declared. Replacing a module's
+        globals is exactly the dynamic boundary a checker cannot see
+        across; what keeps it honest is that every name assigned here
+        is read back by the script under test.
+
+    Raises:
+        ImportError: Naming the file. A spec that is None, or one
+            with no loader, used to surface as an AttributeError on
+            None that named nothing.
+    """
     spec = importlib.util.spec_from_file_location("housekeeper", _HK_PATH)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load the housekeeper at {_HK_PATH}")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    spec.loader.exec_module(mod)
     return mod
 
 

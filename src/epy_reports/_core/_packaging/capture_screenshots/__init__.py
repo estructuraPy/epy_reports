@@ -92,7 +92,11 @@ def grab(app: QApplication, win: MarkdownWindow, name: str) -> None:
 
 def main() -> int:
     """Boot the window off-screen and refresh the editor screenshots."""
-    app = QApplication.instance() or QApplication(sys.argv)
+    instance = QApplication.instance()
+    if isinstance(instance, QApplication):
+        app = instance
+    else:
+        app = QApplication(sys.argv)
     themes.apply_palette(app, themes.get("corporate"))
     app.setStyleSheet(themes.qss_for(themes.get("corporate")))
 

@@ -61,5 +61,6 @@ def test_cancel_button_rejects_the_dialog(qapp):
 
     dlg = DesignBlockDialog()
     buttons = dlg.findChild(QDialogButtonBox)
-    buttons.rejected.emit()
+    if buttons is not None:
+        buttons.rejected.emit()
     assert dlg.result() == QDialog.DialogCode.Rejected

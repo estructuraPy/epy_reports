@@ -281,9 +281,16 @@ class ThemeExporter:
         )
 
     def _on_printed(self, _path: str, ok: bool) -> None:
-        size = self._pending_pdf.stat().st_size if self._pending_pdf.exists() else 0
-        label = "pass1" if self._pending_pdf == self._pass1_pdf else "pass2"
-        print(f"  PDF ({label}) -> {self._pending_pdf.name}  ok={ok}  ({size:,} bytes)")
+        pending = self._pending_pdf
+        if pending is None:
+            print(f"  PDF printed with nothing pending  ok={ok}")
+            return
+        size = pending.stat().st_size if pending.exists() else 0
+        label = "pass1" if pending == self._pass1_pdf else "pass2"
+        print(
+            f"  PDF ({label}) -> {pending.name}  ok={ok}  "
+            f"({size:,} bytes)"
+        )
         if self._pending_after:
             self._pending_after(ok)
 

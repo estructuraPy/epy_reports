@@ -49,7 +49,11 @@ def _letterbox(src: Image.Image, size: int) -> Image.Image:
     """
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     thumb = src.copy()
-    thumb.thumbnail((size, size), Image.LANCZOS)
+    thumb.thumbnail(
+        (size, size),
+        Image.LANCZOS,  # pyright: ignore[reportAttributeAccessIssue] - PIL
+        # stubs omit LANCZOS; it exists at run time.
+    )
     x = (size - thumb.width) // 2
     y = (size - thumb.height) // 2
     canvas.paste(thumb, (x, y), mask=thumb if thumb.mode == "RGBA" else None)

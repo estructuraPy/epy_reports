@@ -82,3 +82,81 @@ def test_the_check_actually_reaches_the_real_call_sites() -> None:
             1 for call in _calls(tree) if _called_name(call) in REQUIRED
         )
     assert found >= 2, f"only {found} stamping call site(s) seen"
+
+
+# ---------------------------------------------------------------------------
+# Imports that name nothing
+# ---------------------------------------------------------------------------
+
+
+def _own_imports(tree: ast.AST, package: str) -> list[str]:
+    """Dotted names this file imports from its OWN package.
+
+    Both spellings count. ``import pkg.a.b`` names a module; ``from
+    pkg.a import b`` names ``b`` inside ``pkg.a``, and ``b`` may be a
+    module that does not exist even though ``pkg.a`` does -- which is
+    exactly the half of this that a module-only check misses.
+    """
+    dotted: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            dotted += [
+                alias.name
+                for alias in node.names
+                if alias.name.split(".")[0] == package
+            ]
+        elif isinstance(node, ast.ImportFrom):
+            if node.level or not node.module:
+                continue
+            if node.module.split(".")[0] != package:
+                continue
+            dotted += [f"{node.module}.{a.name}" for a in node.names]
+    return dotted
+
+
+def _resolves(dotted: str) -> bool:
+    """Whether ``dotted`` is a module, a package, or a name in one."""
+    target = SRC.joinpath(*dotted.split("."))
+    if target.with_suffix(".py").is_file() or target.is_dir():
+        return True
+    # `from pkg.mod import name`: the parent must exist and define it.
+    parent = SRC.joinpath(*dotted.split(".")[:-1])
+    leaf = dotted.rsplit(".", 1)[-1]
+    for candidate in (parent.with_suffix(".py"), parent / "__init__.py"):
+        if candidate.is_file():
+            source = candidate.read_text(encoding="utf-8", errors="replace")
+            return leaf in ast.dump(ast.parse(source))
+    return False
+
+
+def test_no_source_file_imports_a_module_that_does_not_exist() -> None:
+    # THE REASON THIS EXISTS. When the PDF stamping moved to epy_export,
+    # two call sites in the window's export kept importing the local
+    # `_core._pdf_footer` that had gone with it. Both sit inside the
+    # export function, so nothing failed at import time and no test
+    # reached them -- the export tests patch `export_pdf` and never run
+    # its body. Every PDF export from the interface raised
+    # ModuleNotFoundError, in a build that had already shipped.
+    package = SRC.name if (SRC / "__init__.py").is_file() else None
+    if package is None:
+        package = next(p.name for p in SRC.iterdir() if p.is_dir())
+    dead: list[str] = []
+    for path in sorted(SRC.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+        for dotted in _own_imports(tree, package):
+            if not _resolves(dotted):
+                dead.append(f"{path.relative_to(SRC)} imports {dotted}")
+    assert not dead, "imports naming nothing on disk: " + "; ".join(dead)
+
+
+def test_the_dead_import_check_can_see_a_dead_import() -> None:
+    # The control. A resolver that answered True for everything would
+    # pass the test above over any amount of rot.
+    package = SRC.name if (SRC / "__init__.py").is_file() else None
+    if package is None:
+        package = next(p.name for p in SRC.iterdir() if p.is_dir())
+    tree = ast.parse(f"from {package}._core import _gone_module")
+    assert _own_imports(tree, package) == [f"{package}._core._gone_module"]
+    assert not _resolves(f"{package}._core._gone_module")

@@ -842,7 +842,7 @@ class MarkdownWindow(QMainWindow):
         theme = themes.get(theme_id)
         self._current_theme = theme
         app = QApplication.instance()
-        if app is not None:
+        if isinstance(app, QApplication):
             themes.apply_palette(app, theme)
             app.setStyleSheet(themes.qss_for(theme))
 
@@ -1559,7 +1559,7 @@ class MarkdownWindow(QMainWindow):
             return
         # Keep ``printer`` alive while the async print finishes.
         self._active_printer = printer
-        tab.view.page().print(
+        tab.view.page().print(  # pyright: ignore[reportAttributeAccessIssue] - PySide6 stubs omit QWebEnginePage.print, which Qt exposes for printing
             printer,
             lambda _ok: setattr(self, "_active_printer", None),
         )

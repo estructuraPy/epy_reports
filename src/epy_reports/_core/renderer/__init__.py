@@ -1223,7 +1223,7 @@ def _rasterize_svgs_for_docx(
             painter = QPainter(image)
             renderer.render(painter)
             painter.end()
-            image.save(str(png_path), "PNG")
+            image.save(str(png_path), b"PNG")
         except (OSError, RuntimeError, ValueError):
             # Unreadable or malformed SVG — leave the reference unchanged
             # so Pandoc can attempt its own fallback.
