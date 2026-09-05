@@ -4,6 +4,27 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] — 2026-09-05
+
+### Fixed
+- **Every PDF export from the window failed.** Two imports in the export
+  path still named the local `_core._pdf_footer` that moved to
+  `epy_export` when the stamping was extracted, so the export raised
+  ModuleNotFoundError the moment it reached the second pass. Nothing
+  caught it: both imports sit inside the export function, so the package
+  still loaded, and the export tests patch `export_pdf` and never run
+  its body. A test now reads every source file's own imports and fails
+  on one that names nothing on disk.
+- **Two Spanish entries were written twice**, and the second copy
+  silently replaced the first.
+- Interpolated status messages could never be translated, because an
+  f-string is assembled before `tr()` ever sees it. They carry named
+  fields now, and a gate keeps the next one from slipping in.
+
+### Changed
+- The front-matter parser and the truth test come from `epy_export`
+  instead of being kept here as a second copy of each.
+
 ## [0.5.0] — 2026-09-04
 
 ### Added
@@ -77,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Many-3D reports no longer blank their earlier figures.** Browsers cap
   live WebGL contexts (~16) and silently blank the oldest canvas beyond
   that; every plotly 3D scene holds one, and a subplot grid opens one per
-  scene in a single draw (an estruLab virtual-test twin created 12 at
+  scene in a single draw (an epy_lab virtual-test twin created 12 at
   once). The preview and the HTML export now ship a lazy-WebGL shim:
   figures queue at parse time, draw near the viewport, and far-away
   figures are evicted under an explicit context budget with their GL
