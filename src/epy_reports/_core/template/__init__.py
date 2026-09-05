@@ -10,6 +10,11 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote
 
+# Front-matter semantics, which is epy_export's charter. The two
+# copies differed only in how much of the rule their docstring
+# wrote down; the accepted spellings were already the same.
+from epy_export import is_truthy
+
 _PAGEDJS_RUNNER = """
 <script>
 (function () {
@@ -153,7 +158,7 @@ _PLOTLY_LAZY_SHIM = r"""
 (function () {
   'use strict';
   // Budgeted in CONTEXTS, not figures: a subplot grid of gl3d scenes opens
-  // one WebGL context PER SCENE in a single draw (measured: an estruLab
+  // one WebGL context PER SCENE in a single draw (measured: an epy_lab
   // virtual-test twin created 12 at once), so counting figures lets one
   // figure blow straight past the browser's ~16-context cap.
   var GL_BUDGET = 10;
@@ -655,26 +660,6 @@ def _embed_local_images(fragment: str, base_dir: Path | None) -> str:
 _PAGE_SIZE_KEYS = {"letter", "a4", "legal"}
 
 _TRUTHY_VALUES = {"true", "yes", "1", "on"}
-
-
-def is_truthy(value: str | None) -> bool:
-    """Interpret a YAML-ish scalar string as a boolean.
-
-    Treats ``"true"``, ``"yes"``, ``"1"`` and ``"on"`` (case-insensitive,
-    surrounding whitespace ignored) as ``True``; everything else,
-    including ``None`` and the empty string, is ``False``.
-
-    Args:
-        value: Raw metadata string, or ``None`` when the key is absent.
-
-    Returns:
-        ``True`` when the value reads as an affirmative boolean.
-    """
-    if value is None:
-        return False
-    return value.strip().lower() in _TRUTHY_VALUES
-
-
 def _front_matter_block(metadata: dict[str, str]) -> str:
     """Render YAML front matter as a small header above the body.
 

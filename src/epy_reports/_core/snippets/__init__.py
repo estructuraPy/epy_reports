@@ -17,6 +17,13 @@ import json
 import re
 from dataclasses import dataclass
 
+# One parser for the family. The copy that used to live here was
+# byte-for-byte the shared one, so a fix to either reached only
+# whichever application somebody remembered.
+from epy_export import (
+    parse_front_matter as parse_front_matter,  # re-export
+)
+
 # Captures Quarto cross-ref labels: {#fig-foo}, {#tbl-bar width=80%}, etc.
 _LABEL_RE = re.compile(
     r"\{#(?P<label>(?P<kind>fig|tbl|eq|sec)-[A-Za-z0-9_-]+)[^}]*\}"
@@ -115,33 +122,6 @@ def strip_front_matter(text: str) -> str:
     if end < 0:
         return text
     return text[end + 4:]
-
-
-def parse_front_matter(text: str) -> dict[str, str]:
-    """Extract top-level ``key: value`` pairs from a YAML block.
-
-    Nested mappings, lists and multi-line scalars are skipped. The
-    result is good enough for fields like ``title``, ``author``,
-    ``date``, ``bibliography`` and ``csl`` — which is all the editor
-    needs at runtime.
-    """
-    if not text.startswith("---"):
-        return {}
-    end = text.find("\n---", 3)
-    if end < 0:
-        return {}
-    block = text[3:end]
-    meta: dict[str, str] = {}
-    for raw in block.splitlines():
-        if not raw or raw.startswith("#") or raw.startswith(" "):
-            continue
-        if ":" not in raw:
-            continue
-        key, _, value = raw.partition(":")
-        meta[key.strip()] = value.strip().strip("\"'")
-    return meta
-
-
 def parse_header_cells(value: object) -> list[str]:
     """Normalize a ``header`` front-matter value into a list of cells.
 
