@@ -822,7 +822,7 @@ def _watermark_css(metadata: dict[str, str]) -> str:
     """Return CSS painting a faint grayscale watermark behind the document.
 
     Restricted to screen media so it shows live in the preview and the HTML
-    export; the PDF export stamps its own watermark via ``_pdf_footer`` so it
+    export; the PDF export stamps its own watermark via ``epy_export`` so it
     prints reliably on every page.
     """
     watermark = (metadata.get("watermark") or "").strip()

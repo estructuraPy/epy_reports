@@ -383,7 +383,7 @@ class MarkdownTab(QWidget):
         with ~15 mm margins, and (d) when the document front matter
         declares a ``footer`` text or a truthy ``page-numbers`` value,
         stamps every page via
-        :func:`epy_reports._core._pdf_footer.add_footer`
+        :func:`epy_export.add_footer`
         before delivering the final file.
 
         Args:
@@ -455,7 +455,7 @@ class MarkdownTab(QWidget):
             ``start_page`` is the first content page: cover and index
             front matter before it stay clean, and the footer renumbers
             content from 1 (see
-            :func:`epy_reports._core._pdf_footer.add_footer`).
+            :func:`epy_export.add_footer`).
             ``segments`` carries any ``[[section-roman]]`` /
             ``[[section-arabic]]`` boundaries so numbering restarts per
             section in the chosen style.
@@ -611,7 +611,7 @@ class MarkdownTab(QWidget):
         margin, so the printer margin MUST be zero — otherwise the two
         stack (30 mm + 30 mm) and the PDF prints with a 60 mm margin. The
         theme background is painted edge to edge after export by
-        :func:`epy_reports._core._pdf_footer.add_page_background`.
+        :func:`epy_export.add_page_background`.
 
         Args:
             page_size: Page-size key (``letter`` / ``a4`` / ``legal``).
