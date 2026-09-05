@@ -46,7 +46,7 @@ jobs:
         run: >-
           pip install "epy_export[pdf,qt] @ git+https://github.com/estructuraPy/epy_export.git@v0.1.0"
       - name: Install package + dev deps
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,build]"
       - name: Install pyright
         run: npm install -g pyright
       # pyrightconfig.json pins pythonPlatform to Windows. typeshed

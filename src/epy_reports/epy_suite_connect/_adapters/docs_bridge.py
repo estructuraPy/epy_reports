@@ -69,7 +69,7 @@ def _load_epy_docs() -> Any:
             "ANM Ingenieria: ahnavarro@anmingenieria.com"
         )
     try:
-        import epy_docs  # noqa: PLC0415  (lazy import by design)
+        import epy_docs  # noqa: PLC0415  (lazy import by design)  # pyright: ignore[reportMissingImports] - a commercial add-on, absent by design
     except ImportError as exc:
         raise BridgeUnavailableError(
             f"epy_docs is installed but could not be imported ({exc}). "

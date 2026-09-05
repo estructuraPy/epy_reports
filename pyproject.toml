@@ -34,7 +34,7 @@ Issues = "https://github.com/estructuraPy/epy_reports/issues"
 Changelog = "https://github.com/estructuraPy/epy_reports/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-build = ["pyinstaller>=6.6"]
+build = ["pyinstaller>=6.6", "python-docx>=1.1"]
 # NOTE: the epy_docs rendering backend is a commercial, privately
 # distributed package (not on PyPI). It is detected at runtime when
 # installed; do NOT add it here — a public extra pointing at an
