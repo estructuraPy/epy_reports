@@ -51,6 +51,9 @@ _ES: dict[str, str] = {
     "Indexes": "Índices",
     "Theme": "Tema",
     "Page size": "Tamaño de página",
+    "Page size: {name}": "Tamaño de página: {name}",
+    "Page size: {name} (no change)":
+        "Tamaño de página: {name} (sin cambios)",
     "Citation style": "Estilo de cita",
     "Apply template": "Aplicar plantilla",
     "Delete template": "Eliminar plantilla",
@@ -60,6 +63,8 @@ _ES: dict[str, str] = {
     "Save": "Guardar",
     "Save As...": "Guardar como...",
     "Reload": "Recargar",
+    "Saved: {path}": "Guardado: {path}",
+    "Reloaded: {path}": "Recargado: {path}",
     "Discard unsaved changes and reload from disk?":
         "¿Descartar los cambios sin guardar y recargar desde el disco?",
     "Close Tab": "Cerrar pestaña",
@@ -111,6 +116,21 @@ _ES: dict[str, str] = {
     "Tables": "Tablas",
     "Equations": "Ecuaciones",
     "Sections": "Secciones",
+    "Citation": "Cita",
+    "Figure": "Figura",
+    "Section": "Sección",
+    "Heading {level}": "Título {level}",
+    "Callout: {kind}": "Llamado: {kind}",
+    "Disclosure: {label}": "Declaración: {label}",
+    "Not a file:\n{path}": "No es un archivo:\n{path}",
+    "[{kind}]  {detail}": "[{kind}]  {detail}",
+    "Linked {filename} — {count} entries":
+        "Enlazado {filename} — {count} entradas",
+    "Added @{key} to {filename}":
+        "Agregada @{key} a {filename}",
+    "Citation style: {style}": "Estilo de cita: {style}",
+    "Citation style: {style} (no change)":
+        "Estilo de cita: {style} (sin cambios)",
     # --- Export menu ---
     "Export as PDF...": "Exportar como PDF...",
     "Export as HTML...": "Exportar como HTML...",
@@ -124,10 +144,21 @@ _ES: dict[str, str] = {
         "El documento debe guardarse antes de exportar con epy_docs. "
         "¿Guardar ahora?",
     "Exporting via epy_docs…": "Exportando con epy_docs…",
+    "Exported to {path}": "Exportado a {path}",
+    "epy_docs export failed:\n\n{message}":
+        "Error al exportar con epy_docs:\n\n{message}",
     "Export DOCX failed": "Error al exportar DOCX",
     "Export HTML failed": "Error al exportar HTML",
+    "Exported {name}": "Exportado {name}",
+    "Export failed: {name}": "Error al exportar: {name}",
+    "Saved HTML: {path}": "HTML guardado: {path}",
+    "Saved PDF: {path}": "PDF guardado: {path}",
+    "Failed to write PDF:\n{path}":
+        "Error al escribir el PDF:\n{path}",
     # --- View menu ---
     "Page view": "Vista de página",
+    "Page view: on": "Vista de página: activada",
+    "Page view: off": "Vista de página: desactivada",
     "Autosave": "Guardado automático",
     "Autosaved: {path}": "Guardado automático: {path}",
     # theme display names
@@ -149,9 +180,16 @@ _ES: dict[str, str] = {
     # --- Templates menu ---
     "Save current settings as template…":
         "Guardar la configuración actual como plantilla…",
+    "Saved template: {name}": "Plantilla guardada: {name}",
+    "Applied template: {name}": "Plantilla aplicada: {name}",
+    "Delete template '{name}'?":
+        "¿Eliminar la plantilla '{name}'?",
+    "Deleted template: {name}": "Plantilla eliminada: {name}",
     # --- Help menu ---
     "User manual (English)": "Manual de usuario (Inglés)",
     "User manual (Spanish)": "Manual de usuario (Español)",
+    "Could not load the bundled manual '{filename}'.":
+        "No se pudo cargar el manual incluido '{filename}'.",
     "About epy_reports…": "Acerca de epy_reports…",
     # --- dialog window titles ---
     "Insert checklist": "Insertar lista de tareas",
@@ -170,6 +208,8 @@ _ES: dict[str, str] = {
     "Design block": "Bloque de diseño",
     "Themes": "Temas",
     "Unsaved changes": "Cambios sin guardar",
+    "'{name}' has unsaved changes. Save before closing?":
+        "'{name}' tiene cambios sin guardar. ¿Guardar antes de cerrar?",
     "About epy_reports": "Acerca de epy_reports",
     # --- common dialog labels / buttons ---
     "Caption:": "Título:",
@@ -338,6 +378,7 @@ _ES: dict[str, str] = {
     "Edit current theme…": "Editar el tema actual…",
     "Delete custom theme…": "Eliminar tema personalizado…",
     "Theme:": "Tema:",
+    "Theme: {name}": "Tema: {name}",
     "Theme saved: {name}": "Tema guardado: {name}",
     "Delete the custom theme {name}?":
         "¿Eliminar el tema personalizado {name}?",

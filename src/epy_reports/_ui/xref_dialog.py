@@ -84,13 +84,19 @@ class CrossRefDialog(QDialog):
         self.list_widget.clear()
         for label in labels:
             if label.kind == "cite":
-                kind = CITE_DESCRIPTION
+                kind = i18n.tr(CITE_DESCRIPTION)
                 entry = self._bib_lookup.get(label.name)
-                detail = entry.short_label() if entry else f"@{label.name}"
+                detail = entry.short_label() if entry else "@" + label.name
             else:
-                kind = KIND_DESCRIPTIONS.get(label.kind, label.kind)
-                detail = f"@{label.name}"
-            item = QListWidgetItem(f"[{kind:8s}]  {detail}")
+                kind = i18n.tr(
+                    KIND_DESCRIPTIONS.get(label.kind, label.kind)
+                )
+                detail = "@" + label.name
+            item = QListWidgetItem(
+                i18n.tr("[{kind}]  {detail}").format(
+                    kind=kind, detail=detail
+                )
+            )
             item.setData(Qt.ItemDataRole.UserRole, label)
             self.list_widget.addItem(item)
 

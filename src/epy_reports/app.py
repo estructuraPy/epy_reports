@@ -328,7 +328,10 @@ class MarkdownWindow(QMainWindow):
         """Create text-formatting actions (headings, bold/italic, ...)."""
         self.heading_actions: list[QAction] = []
         for level in range(1, 7):
-            act = QAction(f"Heading {level}", self)
+            act = QAction(
+                i18n.tr("Heading {level}").format(level=level),
+                self,
+            )
             act.setShortcut(QKeySequence(f"Ctrl+{level}"))
             act.triggered.connect(
                 lambda checked=False, lv=level: self._on_active_tab(
@@ -484,7 +487,12 @@ class MarkdownWindow(QMainWindow):
 
         self.callout_actions: list[QAction] = []
         for kind in ("note", "tip", "warning", "important", "caution"):
-            act = QAction(f"Callout: {kind.title()}", self)
+            act = QAction(
+                i18n.tr("Callout: {kind}").format(
+                    kind=kind.title()
+                ),
+                self,
+            )
             act.triggered.connect(
                 lambda checked=False, k=kind: self._on_active_tab(
                     "insert_callout", k
@@ -499,7 +507,12 @@ class MarkdownWindow(QMainWindow):
         )
         self.disclosure_actions: list[QAction] = []
         for d_kind, (d_label, _d_text) in DISCLOSURE_PRESETS.items():
-            d_act = QAction(f"Disclosure: {d_label}", self)
+            d_act = QAction(
+                i18n.tr("Disclosure: {label}").format(
+                    label=d_label
+                ),
+                self,
+            )
             d_act.triggered.connect(
                 lambda checked=False, k=d_kind: self._on_active_tab(
                     "insert_disclosure", k
@@ -859,7 +872,10 @@ class MarkdownWindow(QMainWindow):
         if persist:
             self._settings.setValue("theme", theme.id)
             self.statusBar().showMessage(
-                f"Theme: {theme.display_name}", 2000
+                i18n.tr("Theme: {name}").format(
+                    name=theme.display_name
+                ),
+                2000,
             )
 
     def _build_theme_actions(self) -> None:
@@ -995,9 +1011,12 @@ class MarkdownWindow(QMainWindow):
         self._paged_enabled = enabled
         self._apply_paged(enabled)
         self._settings.setValue("paged", "true" if enabled else "false")
-        self.statusBar().showMessage(
-            f"Page view: {'on' if enabled else 'off'}", 2000
+        message = (
+            i18n.tr("Page view: on")
+            if enabled
+            else i18n.tr("Page view: off")
         )
+        self.statusBar().showMessage(message, 2000)
 
     def _toggle_autosave(self, enabled: bool) -> None:
         """Toggle periodic autosave and persist the choice."""
@@ -1063,7 +1082,10 @@ class MarkdownWindow(QMainWindow):
         updated = snippets.set_metadata_field(text, "page-size", key)
         if updated == text:
             self.statusBar().showMessage(
-                f"Page size: {key.title()} (no change)", 3000
+                i18n.tr("Page size: {name} (no change)").format(
+                    name=key.title()
+                ),
+                3000,
             )
             return
         cursor = tab.editor.textCursor()
@@ -1071,7 +1093,9 @@ class MarkdownWindow(QMainWindow):
         cursor.select(cursor.SelectionType.Document)
         cursor.insertText(updated)
         cursor.endEditBlock()
-        self.statusBar().showMessage(f"Page size: {key.title()}", 3000)
+        self.statusBar().showMessage(
+            i18n.tr("Page size: {name}").format(name=key.title()), 3000
+        )
 
     def _show_about(self) -> None:
         """Open the About epy_reports dialog modally."""
@@ -1175,7 +1199,10 @@ class MarkdownWindow(QMainWindow):
             QMessageBox.warning(self, APP_NAME, str(exc))
             return
         self.statusBar().showMessage(
-            f"Saved template: {name.strip()}", 3000
+            i18n.tr("Saved template: {name}").format(
+                name=name.strip()
+            ),
+            3000,
         )
 
     def _apply_template(self, name: str) -> None:
@@ -1227,7 +1254,7 @@ class MarkdownWindow(QMainWindow):
             cursor.insertText(updated)
             cursor.endEditBlock()
         self.statusBar().showMessage(
-            f"Applied template: {name}", 3000
+            i18n.tr("Applied template: {name}").format(name=name), 3000
         )
 
     def _delete_template(self, name: str) -> None:
@@ -1236,8 +1263,8 @@ class MarkdownWindow(QMainWindow):
 
         choice = QMessageBox.question(
             self,
-            "Delete template",
-            f"Delete template '{name}'?",
+            i18n.tr("Delete template"),
+            i18n.tr("Delete template '{name}'?").format(name=name),
             QMessageBox.StandardButton.Yes
             | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -1246,7 +1273,7 @@ class MarkdownWindow(QMainWindow):
             return
         templates.delete_template(name)
         self.statusBar().showMessage(
-            f"Deleted template: {name}", 3000
+            i18n.tr("Deleted template: {name}").format(name=name), 3000
         )
 
     @staticmethod
@@ -1331,7 +1358,10 @@ class MarkdownWindow(QMainWindow):
         tab.link_bibliography(bib_path)
         entries = bib.parse_bib_file(bib_path)
         self.statusBar().showMessage(
-            f"Linked {bib_path.name} — {len(entries)} entries", 5000
+            i18n.tr("Linked {filename} — {count} entries").format(
+                filename=bib_path.name, count=len(entries)
+            ),
+            5000,
         )
 
     def _current_csl_key_from_tab(self, tab) -> str:
@@ -1362,7 +1392,10 @@ class MarkdownWindow(QMainWindow):
         updated = snippets.set_metadata_field(text, "csl", key)
         if updated == text:
             self.statusBar().showMessage(
-                f"Citation style: {key.upper()} (no change)", 3000
+                i18n.tr("Citation style: {style} (no change)").format(
+                    style=key.upper()
+                ),
+                3000,
             )
             return
         cursor = tab.editor.textCursor()
@@ -1371,7 +1404,8 @@ class MarkdownWindow(QMainWindow):
         cursor.insertText(updated)
         cursor.endEditBlock()
         self.statusBar().showMessage(
-            f"Citation style: {key.upper()}", 3000
+            i18n.tr("Citation style: {style}").format(style=key.upper()),
+            3000,
         )
 
     def _new_bib_entry(self) -> None:
@@ -1419,7 +1453,10 @@ class MarkdownWindow(QMainWindow):
         draft = dlg.build_draft()
         bib.append_entry_to_file(bib_path, draft)
         self.statusBar().showMessage(
-            f"Added @{draft.key} to {bib_path.name}", 5000
+            i18n.tr("Added @{key} to {filename}").format(
+                key=draft.key, filename=bib_path.name
+            ),
+            5000,
         )
         # Refresh the References dropdown so the new key shows up.
         self._populate_references_menu()
@@ -1492,11 +1529,14 @@ class MarkdownWindow(QMainWindow):
                     self, i18n.tr("Export DOCX failed"), str(exc)
                 )
                 self.statusBar().showMessage(
-                    f"Export failed: {target.name}", 5000
+                    i18n.tr("Export failed: {name}").format(
+                        name=target.name
+                    ),
+                    5000,
                 )
                 return
             self.statusBar().showMessage(
-                f"Exported {target.name}", 5000
+                i18n.tr("Exported {name}").format(name=target.name), 5000
             )
         finally:
             self._exports_in_flight -= 1
@@ -1534,14 +1574,17 @@ class MarkdownWindow(QMainWindow):
                 )
                 target.write_text(html, encoding="utf-8")
                 self.statusBar().showMessage(
-                    f"Saved HTML: {target}", 3000
+                    i18n.tr("Saved HTML: {path}").format(path=target), 3000
                 )
             except Exception as exc:  # noqa: BLE001 - failure must reach user
                 QMessageBox.critical(
                     self, i18n.tr("Export HTML failed"), str(exc)
                 )
                 self.statusBar().showMessage(
-                    f"Export failed: {target.name}", 5000
+                    i18n.tr("Export failed: {name}").format(
+                        name=target.name
+                    ),
+                    5000,
                 )
         finally:
             self._exports_in_flight -= 1
@@ -1583,8 +1626,11 @@ class MarkdownWindow(QMainWindow):
             text = _load_manual_text(filename)
         except (FileNotFoundError, OSError):
             QMessageBox.warning(
-                self, i18n.tr("Manual unavailable"),
-                f"Could not load the bundled manual '{filename}'.",
+                self,
+                i18n.tr("Manual unavailable"),
+                i18n.tr(
+                    "Could not load the bundled manual '{filename}'."
+                ).format(filename=filename),
             )
             return
         tab = self._create_tab()
@@ -1674,7 +1720,11 @@ class MarkdownWindow(QMainWindow):
         the welcome / untitled empty tab, it is reused.
         """
         if not path.is_file():
-            QMessageBox.warning(self, APP_NAME, f"Not a file:\n{path}")
+            QMessageBox.warning(
+                self,
+                APP_NAME,
+                i18n.tr("Not a file:\n{path}").format(path=path),
+            )
             return
 
         path = path.resolve()
@@ -1708,7 +1758,9 @@ class MarkdownWindow(QMainWindow):
             return self._save_current_as()
         tab.save()
         self._refresh_tab_title(tab)
-        self.statusBar().showMessage(f"Saved: {tab.path}", 3000)
+        self.statusBar().showMessage(
+            i18n.tr("Saved: {path}").format(path=tab.path), 3000
+        )
         return True
 
     def _save_current_as(self) -> bool:
@@ -1731,7 +1783,9 @@ class MarkdownWindow(QMainWindow):
             target = target.with_suffix(".md")
         tab.save_as(target)
         self._refresh_tab_title(tab)
-        self.statusBar().showMessage(f"Saved: {target}", 3000)
+        self.statusBar().showMessage(
+            i18n.tr("Saved: {path}").format(path=target), 3000
+        )
         return True
 
     def _reload_current(self) -> None:
@@ -1751,7 +1805,9 @@ class MarkdownWindow(QMainWindow):
             if choice != QMessageBox.StandardButton.Yes:
                 return
         tab.reload()
-        self.statusBar().showMessage(f"Reloaded: {tab.path}", 2000)
+        self.statusBar().showMessage(
+            i18n.tr("Reloaded: {path}").format(path=tab.path), 2000
+        )
 
     def _export_pdf(self) -> None:
         """Export the current tab's preview to a PDF file."""
@@ -1785,11 +1841,17 @@ class MarkdownWindow(QMainWindow):
         """Report the result of an asynchronous PDF export."""
         try:
             if ok:
-                self.statusBar().showMessage(f"Saved PDF: {path}", 5000)
+                self.statusBar().showMessage(
+                    i18n.tr("Saved PDF: {path}").format(path=path), 5000
+                )
             else:
                 self.statusBar().clearMessage()
                 QMessageBox.warning(
-                    self, APP_NAME, f"Failed to write PDF:\n{path}"
+                    self,
+                    APP_NAME,
+                    i18n.tr("Failed to write PDF:\n{path}").format(
+                        path=path
+                    ),
                 )
         finally:
             self._exports_in_flight -= 1
@@ -1872,7 +1934,7 @@ class MarkdownWindow(QMainWindow):
         try:
             QApplication.restoreOverrideCursor()
             self.statusBar().showMessage(
-                f"Exported to {out_dir}", 5000
+                i18n.tr("Exported to {path}").format(path=out_dir), 5000
             )
         finally:
             self._exports_in_flight -= 1
@@ -1885,7 +1947,9 @@ class MarkdownWindow(QMainWindow):
             QMessageBox.critical(
                 self,
                 APP_NAME,
-                f"epy_docs export failed:\n\n{message}",
+                i18n.tr("epy_docs export failed:\n\n{message}").format(
+                    message=message
+                ),
             )
         finally:
             self._exports_in_flight -= 1
@@ -1900,7 +1964,9 @@ class MarkdownWindow(QMainWindow):
         choice = QMessageBox.question(
             self,
             i18n.tr("Unsaved changes"),
-            f"'{name}' has unsaved changes. Save before closing?",
+            i18n.tr(
+                "'{name}' has unsaved changes. Save before closing?"
+            ).format(name=name),
             QMessageBox.StandardButton.Save
             | QMessageBox.StandardButton.Discard
             | QMessageBox.StandardButton.Cancel,
