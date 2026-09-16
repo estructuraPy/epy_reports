@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
+from epy_reports._config import _loader
 from epy_reports._core import epyson, themes
 from epy_reports._core.themes_base import Theme
 
@@ -69,6 +74,33 @@ def test_get_unknown_falls_back_to_default():
 def test_get_none_falls_back_to_default():
     """``None`` falls back to the default theme."""
     assert themes.get(None).id == themes.DEFAULT_THEME_ID
+
+
+def test_get_falls_back_to_any_registered_theme_when_default_missing(
+    monkeypatch,
+):
+    """No requested id and no default present still returns a real theme.
+
+    Exercises the third fallback rung: the catalogue has entries, but
+    neither the requested id nor ``DEFAULT_THEME_ID`` is one of them.
+    """
+    survivor = themes.THEMES[themes.DEFAULT_THEME_ID]
+    monkeypatch.setattr(themes, "THEMES", {"survivor": survivor})
+    assert themes.get("does-not-exist") is survivor
+
+
+def test_get_returns_hardcoded_fallback_when_catalogue_is_empty(monkeypatch):
+    """An empty catalogue still returns a usable (colourless) Theme.
+
+    This is the last-resort branch so the GUI can boot even if every
+    layout file under ``_config/_assets/themes`` is missing or corrupt.
+    """
+    monkeypatch.setattr(themes, "THEMES", {})
+    theme = themes.get("anything")
+    assert theme.id == "fallback"
+    assert theme.display_name == "Fallback"
+    assert theme.qt_palette == {}
+    assert theme.css_vars == {}
 
 
 def test_reload_keeps_default_present():
@@ -225,3 +257,161 @@ def test_load_all_themes_includes_user(user_dir):
 def test_user_theme_ids_empty_when_dir_absent(user_dir):
     """No user directory yields an empty id set."""
     assert epyson.user_theme_ids() == set()
+
+
+def test_user_theme_ids_skips_a_corrupt_file(user_dir):
+    """A corrupt .epyson file is skipped, its siblings still counted.
+
+    One bad file among many must not hide the rest -- the same
+    best-effort catalogue-assembly rule as load_all_themes().
+    """
+    user_dir.mkdir(parents=True, exist_ok=True)
+    (user_dir / "corrupt.epyson").write_text(
+        "{not valid json", encoding="utf-8"
+    )
+    good_id = epyson.save_user_theme(epyson.build_epyson(_values("Good One")))
+    ids = epyson.user_theme_ids()
+    assert good_id in ids
+    assert "corrupt" not in ids
+
+
+# ---------------------------------------------------------------------------
+# load_all_themes: best-effort skip of a theme that fails to load
+# ---------------------------------------------------------------------------
+
+
+def test_load_all_themes_skips_a_bundled_layout_that_raises(monkeypatch):
+    """A bundled layout that fails to parse is skipped, not fatal.
+
+    The rest of the (real) bundled catalogue must still come through.
+    """
+    real_list = _loader.list_bundled_layout_files
+    monkeypatch.setattr(
+        _loader,
+        "list_bundled_layout_files",
+        lambda: [*real_list(), "corrupt.epyson"],
+    )
+    real_load = epyson.load_layout_theme
+
+    def fake_load(filename):
+        if filename == "corrupt.epyson":
+            raise KeyError("palette")
+        return real_load(filename)
+
+    monkeypatch.setattr(epyson, "load_layout_theme", fake_load)
+    catalogue = epyson.load_all_themes()
+    assert themes.DEFAULT_THEME_ID in catalogue
+    assert "corrupt" not in catalogue
+
+
+def test_load_all_themes_skips_a_corrupt_user_theme(user_dir):
+    """A corrupt user theme file is skipped; the good one still loads."""
+    user_dir.mkdir(parents=True, exist_ok=True)
+    (user_dir / "corrupt.epyson").write_text(
+        "{not valid json", encoding="utf-8"
+    )
+    good_id = epyson.save_user_theme(epyson.build_epyson(_values("Also Good")))
+    catalogue = epyson.load_all_themes()
+    assert good_id in catalogue
+    assert "corrupt" not in catalogue
+    # Bundled themes are still present alongside the user one.
+    assert themes.DEFAULT_THEME_ID in catalogue
+
+
+# ---------------------------------------------------------------------------
+# user_themes_dir: Qt-free fallback when PySide6.QtCore has no QStandardPaths
+# ---------------------------------------------------------------------------
+
+
+def test_user_themes_dir_falls_back_when_qt_unavailable(monkeypatch):
+    """A broken/absent Qt runtime still resolves a themes directory.
+
+    Simulated by hiding QStandardPaths from PySide6.QtCore so the
+    module-level ``from PySide6.QtCore import QStandardPaths`` raises
+    ImportError, exactly as it would with no Qt runtime at all.
+    """
+    from PySide6 import QtCore
+
+    monkeypatch.delattr(QtCore, "QStandardPaths", raising=False)
+    path = epyson.user_themes_dir()
+    assert path.parts[-2:] == ("epy_reports", "themes")
+
+
+# ---------------------------------------------------------------------------
+# _fallback_config_root: Qt-free per-platform config root
+# ---------------------------------------------------------------------------
+
+
+def test_fallback_config_root_windows_uses_appdata(monkeypatch):
+    """Windows: APPDATA is used verbatim when set."""
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setenv("APPDATA", r"C:\Users\test\AppData\Roaming")
+    assert epyson._fallback_config_root() == r"C:\Users\test\AppData\Roaming"
+
+
+def test_fallback_config_root_windows_without_appdata(monkeypatch):
+    """Windows: missing APPDATA falls back to ~/AppData/Roaming."""
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.delenv("APPDATA", raising=False)
+    expected = str(Path.home() / "AppData" / "Roaming")
+    assert epyson._fallback_config_root() == expected
+
+
+def test_fallback_config_root_macos(monkeypatch):
+    """macOS: Library/Application Support under the home directory."""
+    monkeypatch.setattr(sys, "platform", "darwin")
+    expected = str(
+        Path.home() / "Library" / "Application Support"
+    )
+    assert epyson._fallback_config_root() == expected
+
+
+def test_fallback_config_root_linux_uses_xdg(monkeypatch):
+    """Linux: XDG_CONFIG_HOME is used verbatim when set."""
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", "/home/test/.config-custom")
+    assert epyson._fallback_config_root() == "/home/test/.config-custom"
+
+
+def test_fallback_config_root_linux_without_xdg(monkeypatch):
+    """Linux: missing XDG_CONFIG_HOME falls back to ~/.config."""
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+    expected = str(Path.home() / ".config")
+    assert epyson._fallback_config_root() == expected
+
+
+# ---------------------------------------------------------------------------
+# apply_palette: font fallback and unknown-role guard
+# ---------------------------------------------------------------------------
+
+
+def test_apply_palette_falls_back_when_variable_font_unavailable(
+    qapp, monkeypatch,
+):
+    """No 'Segoe UI Variable' on the box falls back to plain 'Segoe UI'.
+
+    Forces the branch by making every QFont report a family name that
+    never matches, regardless of what is actually installed.
+    """
+    monkeypatch.setattr(QFont, "family", lambda self: "Arial")
+    epyson.apply_palette(qapp, themes.get(themes.DEFAULT_THEME_ID))
+    assert qapp.font().family() == "Arial"  # patched family(), not a crash
+
+
+def test_apply_palette_skips_an_unknown_palette_role(qapp):
+    """A qt_palette key with no matching QPalette.ColorRole is skipped.
+
+    Counter-example: a real role in the same dict is still applied, so
+    the guard only swallows the unknown one, not the whole palette.
+    """
+    theme = Theme(
+        id="weird",
+        display_name="Weird",
+        qt_palette={"NotARealRole": "#123456", "Window": "#FFEE00"},
+        css_vars={},
+    )
+    epyson.apply_palette(qapp, theme)  # must not raise
+    assert qapp.palette().color(qapp.palette().ColorRole.Window).name() == (
+        "#ffee00"
+    )

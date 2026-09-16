@@ -1254,7 +1254,21 @@ def _rasterize_svgs_for_docx(
             painter = QPainter(image)
             renderer.render(painter)
             painter.end()
-            image.save(str(png_path), b"PNG")
+            # "PNG" as a str, not b"PNG". MEASURED on PySide6 6.11.1:
+            # QImage.save(path, b"PNG") raises ValueError("called with wrong
+            # argument values"), while the str form and the no-format form
+            # both succeed -- the binding rejects a type its own reported
+            # signature advertises.
+            #
+            # That ValueError was caught by this function's own
+            # `except (OSError, RuntimeError, ValueError)` below, which
+            # returns the match unchanged. So EVERY SVG in a report was left
+            # as a raw .svg path instead of a rasterised PNG -- and Pandoc's
+            # DOCX writer needs rsvg-convert on PATH to embed SVG and, per
+            # this module's own docstring, "silently drops it otherwise".
+            # A report with an SVG figure exported to Word lost that figure,
+            # with no error anywhere.
+            image.save(str(png_path), "PNG")
         except (OSError, RuntimeError, ValueError):
             # Unreadable or malformed SVG — leave the reference unchanged
             # so Pandoc can attempt its own fallback.

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -176,6 +177,40 @@ def test_translate_widget_relabels_children(qapp):
     assert button.text() == "Cancelar"
     assert box.title() == "Pie de página"
     assert edit.placeholderText() == "Título de la figura"
+
+
+def test_translate_widget_relabels_plain_text_edit_placeholder(qapp):
+    """A QPlainTextEdit's placeholder text is translated too.
+
+    The markdown editor pane uses QPlainTextEdit (not QLineEdit) for its
+    placeholder, so translate_widget must walk that widget class as well.
+    """
+    i18n.set_language("es")
+    w = QWidget()
+    layout = QVBoxLayout(w)
+    area = QPlainTextEdit(w)
+    area.setPlaceholderText(
+        "Type Markdown here. Preview updates on the right."
+    )
+    layout.addWidget(area)
+
+    i18n.translate_widget(w)
+
+    assert area.placeholderText() == i18n._ES[
+        "Type Markdown here. Preview updates on the right."
+    ]
+
+
+def test_translate_widget_leaves_empty_plain_text_placeholder_alone(qapp):
+    """A QPlainTextEdit with no placeholder text is skipped, not crashed on."""
+    i18n.set_language("es")
+    w = QWidget()
+    area = QPlainTextEdit(w)
+    assert area.placeholderText() == ""
+
+    i18n.translate_widget(w)  # must not raise
+
+    assert area.placeholderText() == ""
 
 
 def test_new_spanish_ui_keys_are_present_and_translated():

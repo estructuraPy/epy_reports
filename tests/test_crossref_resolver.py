@@ -387,3 +387,55 @@ def test_table_caption_attr_becomes_anchor():
     out = resolve(src)
     assert "Table 1: A table caption []{#tbl-t}" in out
     assert "caption {#tbl-t}" not in out
+
+
+# ---------------------------------------------------------------------------
+# Definition-site guards: what if the numbering pass and the per-kind
+# caption-rewrite regexes ever disagreed about a label? Every one of the
+# five definition-site closures (_prefix_fig, _prefix_figline, _tag_eq,
+# _scrub_orphan_fig, _prefix_tbl) checks `numbers.get(label)` itself and
+# leaves the line untouched when it comes back None. No single
+# well-formed document can trigger this today -- _XREF_DEF_RE and the
+# five caption regexes agree on the same label shapes -- but the guards
+# are real code with a real contract (a definition line is left exactly
+# as written rather than crashing with a KeyError on `words[kind]`), so
+# monkeypatching _number_labels to "forget everything" exercises all
+# five deterministically.
+# ---------------------------------------------------------------------------
+
+
+def test_definition_site_guards_when_numbering_disagrees(monkeypatch):
+    from epy_reports._core import renderer
+
+    monkeypatch.setattr(renderer, "_number_labels", lambda source: {})
+    src = (
+        "![Cap](img.png){#fig-a}\n\n"
+        ": A figure caption. {#fig-b}\n\n"
+        "**Figure.** orphan caption text. {#fig-c}\n\n"
+        ": A table caption. {#tbl-d}\n\n"
+        "$$\nE=mc^2\n$$ {#eq-e}\n"
+    )
+    out = resolve(src)
+    assert "![Cap](img.png){#fig-a}" in out
+    assert ": A figure caption. {#fig-b}" in out
+    assert "orphan caption text. {#fig-c}" in out
+    assert ": A table caption. {#tbl-d}" in out
+    assert r"\tag{" not in out
+    assert "$$ {#eq-e}" in out
+
+
+def test_unlabeled_equation_block_toggles_state_closed():
+    """A $$...$$ block with no {#eq-x} label still closes in_eq_block.
+
+    Most equations in a real document carry no cross-ref label at all;
+    a LATER labeled equation must still number correctly, proving the
+    unlabeled block's state did not leak forward.
+    """
+    src = (
+        "$$\nx = y\n$$\n\n"
+        "$$\nE = mc^2\n$$ {#eq-e}\n\n"
+        "@eq-e.\n"
+    )
+    out = resolve(src)
+    assert r"\tag{1}" in out
+    assert "[Equation 1](#eq-e)" in out

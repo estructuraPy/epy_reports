@@ -8,6 +8,7 @@ from epy_reports._core.snippets import (
     parse_front_matter,
     parse_header_cells,
     set_metadata_field,
+    strip_front_matter,
 )
 
 # ---------------------------------------------------------------------------
@@ -63,6 +64,39 @@ def test_parse_front_matter_skips_indented_and_comments():
     text = "---\ntitle: T\n# a comment\n  nested: x\n---\n"
     meta = parse_front_matter(text)
     assert meta == {"title": "T"}
+
+
+# ---------------------------------------------------------------------------
+# strip_front_matter
+# ---------------------------------------------------------------------------
+
+
+def test_strip_front_matter_removes_block():
+    """A well-formed front-matter block is removed, body kept.
+
+    The cut lands right after the closing ``---`` line, so the newline
+    that follows it survives as a leading blank line in the body — the
+    function trims the block, not the line break after it.
+    """
+    text = "---\ntitle: T\n---\nBody\n"
+    assert strip_front_matter(text) == "\nBody\n"
+
+
+def test_strip_front_matter_no_leading_marker_is_unchanged():
+    """A document that does not start with ``---`` passes through as-is."""
+    text = "# Heading\n\nBody\n"
+    assert strip_front_matter(text) == text
+
+
+def test_strip_front_matter_unclosed_block_is_unchanged():
+    """An opening ``---`` with no closing ``\\n---`` is left untouched.
+
+    ``strip_front_matter`` only removes a real block; a document that
+    merely starts with a horizontal rule and never closes it must still
+    render as written rather than being silently truncated.
+    """
+    text = "---\ntitle: T\nno closing marker here\n"
+    assert strip_front_matter(text) == text
 
 
 # ---------------------------------------------------------------------------

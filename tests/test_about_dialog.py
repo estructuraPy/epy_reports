@@ -16,9 +16,10 @@ import struct
 from pathlib import Path
 
 import pytest
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QLabel
 
-from epy_reports._ui.about_dialog import AboutDialog
+from epy_reports._ui.about_dialog import AboutDialog, _load_branding_pixmap
 
 # ---------------------------------------------------------------------------
 # Module-scoped QApplication (required for any QWidget instantiation)
@@ -55,6 +56,33 @@ def test_branding_resource_non_empty(filename: str):
     pkg = importlib.resources.files("epy_reports._config._assets.branding")
     data = (pkg / filename).read_bytes()
     assert len(data) > 0, f"{filename} is empty"
+
+
+def test_load_branding_pixmap_returns_real_image(qapp):
+    """A real, bundled branding file loads into a non-null QPixmap."""
+    pixmap = _load_branding_pixmap("epy_reports.png")
+    assert not pixmap.isNull()
+    assert pixmap.width() > 0
+
+
+def test_load_branding_pixmap_missing_resource_returns_empty_pixmap(
+    qapp, monkeypatch
+):
+    """A resource lookup failure is absorbed, not raised.
+
+    ``_load_branding_pixmap`` must keep the About dialog usable even if the
+    package data is missing or the environment cannot resolve resources
+    (e.g. a broken frozen build); it degrades to a blank QPixmap instead of
+    crashing the dialog open.
+    """
+
+    def _raise(*args, **kwargs):
+        raise FileNotFoundError("no such resource package")
+
+    monkeypatch.setattr(importlib.resources, "files", _raise)
+    pixmap = _load_branding_pixmap("epy_reports.png")
+    assert isinstance(pixmap, QPixmap)
+    assert pixmap.isNull()
 
 
 # ---------------------------------------------------------------------------

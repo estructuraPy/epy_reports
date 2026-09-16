@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from epy_reports._core.template import _load_base_css
+from epy_reports._core.template import _load_base_css, _watermark_css
 
 
 def test_heading_ramp_variables_defined_with_defaults():
@@ -75,3 +75,36 @@ def test_epy_plotly_avoids_page_break():
     css = _load_base_css()
     assert ".epy-plotly {" in css
     assert "page-break-inside: avoid;" in css
+
+
+# ---------------------------------------------------------------------------
+# _watermark_css
+# ---------------------------------------------------------------------------
+
+
+def test_watermark_css_empty_when_no_watermark_metadata():
+    """No ``watermark`` key (or a blank one) emits no CSS at all."""
+    assert _watermark_css({}) == ""
+    assert _watermark_css({"watermark": "   "}) == ""
+
+
+def test_watermark_css_paints_screen_only_background():
+    """A non-empty watermark emits a screen-scoped ::after rule."""
+    css = _watermark_css({"watermark": "DRAFT"})
+    assert "@media screen" in css
+    assert 'url("DRAFT")' in css
+    assert "opacity: 0.08" in css
+    assert "filter: grayscale(1)" in css
+
+
+def test_watermark_css_escapes_html_in_the_value():
+    """A watermark value with quotes/angle brackets is HTML-escaped.
+
+    The value is interpolated directly into a CSS ``url(...)`` inside an
+    HTML ``<style>`` block, so an unescaped ``"`` would break out of the
+    CSS string.
+    """
+    css = _watermark_css({"watermark": 'CONFIDENTIAL"<b>'})
+    assert "&quot;" in css
+    assert "&lt;b&gt;" in css
+    assert '"<b>' not in css

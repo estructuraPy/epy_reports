@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog
 
 from epy_reports._ui.document_properties_dialog import (
     DocumentPropertiesDialog,
@@ -177,3 +177,101 @@ def test_the_cover_pdf_is_a_plain_path(qapp):
     dlg.cover_pdf_edit.setText("plantilla/portada.pdf")
     out = dict((f, v) for f, v, _raw in dlg.updates())
     assert out["cover-pdf"] == "plantilla/portada.pdf"
+
+
+# ---------------------------------------------------------------------------
+# File pickers (_pick_logo / _pick_watermark / _pick_cover_pdf / _pick_annexes)
+# ---------------------------------------------------------------------------
+
+
+def test_pick_logo_sets_the_field(qapp, monkeypatch):
+    """Choosing a file in the native dialog fills the logo field."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *a, **k: ("brand/logo.png", "")),
+    )
+    dlg = DocumentPropertiesDialog()
+    dlg._pick_logo()
+    assert dlg.logo_edit.text() == "brand/logo.png"
+
+
+def test_pick_logo_cancelled_leaves_field_unchanged(qapp, monkeypatch):
+    """Cancelling (empty filename) does not touch the field."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *a, **k: ("", "")),
+    )
+    dlg = DocumentPropertiesDialog(meta={"logo": "existing.png"})
+    dlg._pick_logo()
+    assert dlg.logo_edit.text() == "existing.png"
+
+
+def test_pick_watermark_sets_the_field(qapp, monkeypatch):
+    """Choosing a file in the native dialog fills the watermark field."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *a, **k: ("marks/wm.png", "")),
+    )
+    dlg = DocumentPropertiesDialog()
+    dlg._pick_watermark()
+    assert dlg.watermark_edit.text() == "marks/wm.png"
+
+
+def test_pick_cover_pdf_sets_the_field(qapp, monkeypatch):
+    """Choosing a file in the native dialog fills the cover-pdf field."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *a, **k: ("cover.pdf", "")),
+    )
+    dlg = DocumentPropertiesDialog()
+    dlg._pick_cover_pdf()
+    assert dlg.cover_pdf_edit.text() == "cover.pdf"
+
+
+def test_pick_annexes_joins_chosen_files(qapp, monkeypatch):
+    """Choosing several files replaces the field with a joined list."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileNames",
+        staticmethod(lambda *a, **k: (["a.pdf", "b.pdf"], "")),
+    )
+    dlg = DocumentPropertiesDialog()
+    dlg.annexes_edit.setText("old.pdf")
+    dlg._pick_annexes()
+    assert dlg.annexes_edit.text() == "a.pdf, b.pdf"
+
+
+def test_pick_annexes_cancelled_leaves_field_unchanged(qapp, monkeypatch):
+    """Cancelling the multi-file picker (empty list) keeps the old value."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileNames",
+        staticmethod(lambda *a, **k: ([], "")),
+    )
+    dlg = DocumentPropertiesDialog()
+    dlg.annexes_edit.setText("kept.pdf")
+    dlg._pick_annexes()
+    assert dlg.annexes_edit.text() == "kept.pdf"
+
+
+# ---------------------------------------------------------------------------
+# updates() -- header cleared but previously present
+# ---------------------------------------------------------------------------
+
+
+def test_updates_emit_empty_list_for_a_header_that_was_cleared(qapp):
+    """Clearing every header cell of an existing header writes '[]'.
+
+    Same shape as the annexes rule: an omitted ``header`` key and an
+    empty one are different YAML shapes downstream, so a cleared header
+    that used to exist must still be written, as an empty flow sequence.
+    """
+    dlg = DocumentPropertiesDialog(meta={"header": '["Left", "Right"]'})
+    for edit in dlg.header_edits:
+        edit.setText("")
+    out = dict((f, v) for f, v, _raw in dlg.updates())
+    assert out["header"] == "[]"

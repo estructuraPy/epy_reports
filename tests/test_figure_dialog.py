@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog
 
 from epy_reports._ui.figure_dialog import FigureDialog
 
@@ -78,6 +78,31 @@ def test_path_property(qapp):
     dlg = FigureDialog(default_id="1")
     dlg.path_edit.setText("  figures/x.svg  ")
     assert dlg.path == "figures/x.svg"
+
+
+def test_browse_sets_path_from_file_dialog(qapp, monkeypatch):
+    """Picking a file in the native dialog fills the path field."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *args, **kwargs: ("/tmp/beam.png", "")),
+    )
+    dlg = FigureDialog(default_id="1")
+    dlg._browse()
+    assert dlg.path_edit.text() == "/tmp/beam.png"
+
+
+def test_browse_cancelled_leaves_path_unchanged(qapp, monkeypatch):
+    """Cancelling the native dialog (empty filename) leaves the field as-is."""
+    monkeypatch.setattr(
+        QFileDialog,
+        "getOpenFileName",
+        staticmethod(lambda *args, **kwargs: ("", "")),
+    )
+    dlg = FigureDialog(default_id="1")
+    dlg.path_edit.setText("existing/path.png")
+    dlg._browse()
+    assert dlg.path_edit.text() == "existing/path.png"
 
 
 def test_caption_in_alt_text(qapp):

@@ -55,6 +55,20 @@ class TestEmbedLocalImages:
         frag = f'<img src="{(base / "figs" / "beam.png").as_posix()}" />'
         assert 'data:image/png;base64,' in _embed_local_images(frag, None)
 
+    def test_file_uri_src_is_stripped_to_a_plain_path(self, tmp_path):
+        """A ``file:///`` URI is converted to a plain absolute path first.
+
+        A Windows/portable exporter may hand back an ``<img>`` reference
+        written as a ``file:///`` URI rather than a bare filesystem path;
+        it must resolve the same way a plain absolute path does.
+        """
+        base = _write_fig(tmp_path)
+        abs_path = (base / "figs" / "beam.png").as_posix()
+        frag = f'<img src="file:///{abs_path.lstrip("/")}" />'
+        out = _embed_local_images(frag, None)
+        assert 'src="data:image/png;base64,' in out
+        assert "file:///" not in out
+
 
 class TestRenderMarkdownEmbedImages:
     def test_embed_inlines_images_and_drops_base(self, tmp_path):
