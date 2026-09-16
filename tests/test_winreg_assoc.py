@@ -16,6 +16,26 @@ import pytest
 
 from epy_reports._core import winreg_assoc as wa
 
+
+@pytest.fixture
+def on_windows(monkeypatch):
+    """Take the Windows branch of ``open_default_apps_settings`` anywhere.
+
+    These three tests used to carry ``@skipif(sys.platform != "win32")``, so
+    on any other platform they vanished instead of running -- and the suite
+    rule is that tests run, never skip. Nothing about the LOGIC they check is
+    Windows-specific: it is "try the per-app URI, fall back to the generic
+    pane, report False when neither resolves". Only the gate at the top of the
+    function and the ``os.startfile`` call are, and both are patched here, so
+    the branching is exercised on every platform.
+
+    ``raising=False`` because ``os.startfile`` does not exist off Windows;
+    without it the patch itself would fail where the skip used to hide.
+    """
+    monkeypatch.setattr(wa, "_is_windows", lambda: True)
+    return monkeypatch
+
+
 # ---------------------------------------------------------------------------
 # Pure helpers (cross-platform)
 # ---------------------------------------------------------------------------
@@ -131,19 +151,20 @@ def test_open_default_apps_settings_false_off_windows(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only API")
-def test_open_default_apps_settings_succeeds_on_first_uri(monkeypatch):
+def test_open_default_apps_settings_succeeds_on_first_uri(
+    on_windows, monkeypatch,
+):
     """The per-app URI succeeding returns True without trying the fallback."""
     calls = []
-    monkeypatch.setattr(wa.os, "startfile", lambda uri: calls.append(uri))
+    monkeypatch.setattr(wa.os, "startfile", lambda uri: calls.append(uri),
+                        raising=False)
     assert wa.open_default_apps_settings() is True
     assert len(calls) == 1
     assert "registeredAppMachineKey" in calls[0]
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only API")
 def test_open_default_apps_settings_falls_back_on_first_failure(
-    monkeypatch,
+    on_windows, monkeypatch,
 ):
     """A failing per-app URI falls back to the generic Default apps pane."""
     calls = []
@@ -153,7 +174,7 @@ def test_open_default_apps_settings_falls_back_on_first_failure(
         if len(calls) == 1:
             raise OSError("no handler")
 
-    monkeypatch.setattr(wa.os, "startfile", fake_startfile)
+    monkeypatch.setattr(wa.os, "startfile", fake_startfile, raising=False)
     assert wa.open_default_apps_settings() is True
     assert calls == [
         (
@@ -164,14 +185,15 @@ def test_open_default_apps_settings_falls_back_on_first_failure(
     ]
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only API")
-def test_open_default_apps_settings_false_when_both_uris_fail(monkeypatch):
+def test_open_default_apps_settings_false_when_both_uris_fail(
+    on_windows, monkeypatch,
+):
     """When neither URI can be resolved, the function reports False."""
 
     def fake_startfile(uri):
         raise OSError("no handler")
 
-    monkeypatch.setattr(wa.os, "startfile", fake_startfile)
+    monkeypatch.setattr(wa.os, "startfile", fake_startfile, raising=False)
     assert wa.open_default_apps_settings() is False
 
 
@@ -306,11 +328,35 @@ class _FakeRegistry:
         self.values.pop(path, None)
 
 
+#: The names ``winreg_assoc`` reads off ``winreg``. The seven callables are
+#: replaced per test by ``_FakeRegistry``; these four are plain constants the
+#: module only ever passes back, so any distinct sentinel does.
+_WINREG_CONSTANTS = {"HKEY_CURRENT_USER": "HKCU", "KEY_READ": 1,
+                     "KEY_SET_VALUE": 2, "REG_SZ": 1}
+
+
 @pytest.fixture
 def fake_winreg(monkeypatch):
-    """Redirect every winreg call this module makes to an in-memory fake."""
-    if sys.platform != "win32":
-        pytest.skip("winreg is Windows-only")
+    """Redirect every winreg call this module makes to an in-memory fake.
+
+    ``winreg`` is a Windows-only stdlib module, so this fixture used to skip
+    everywhere else -- taking the whole register/unregister round-trip with
+    it, which is the part worth testing and has nothing Windows-specific in
+    its LOGIC. The suite rule is that tests run, never skip, so where the real
+    module is absent a stub is installed for the duration: ``winreg_assoc``
+    imports ``winreg`` inside its functions, so it picks the stub up from
+    ``sys.modules`` and the in-memory registry below answers every call.
+    """
+    import types
+
+    if "winreg" not in sys.modules:
+        try:
+            import winreg  # noqa: F401  (real module on Windows)
+        except ImportError:
+            stub = types.ModuleType("winreg")
+            for name, value in _WINREG_CONSTANTS.items():
+                setattr(stub, name, value)
+            monkeypatch.setitem(sys.modules, "winreg", stub)
     import winreg
 
     fake = _FakeRegistry()
