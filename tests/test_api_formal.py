@@ -56,7 +56,19 @@ class TestVersion:
 class TestAllContract:
     # figure_to_markdown joined the public API in cb1e48f (interactive
     # Plotly figure embedding for report sources).
-    _EXPECTED = ["Report", "__version__", "figure_to_markdown"]
+    # get_theme, document_css and render_markdown joined it so that other
+    # libraries stop rendering themed HTML through _core.themes,
+    # _core._design and _core.renderer. They resolve through the module
+    # __getattr__ -- test_all_symbols_importable below is what proves the
+    # lazy path actually returns them.
+    _EXPECTED = [
+        "Report",
+        "__version__",
+        "document_css",
+        "figure_to_markdown",
+        "get_theme",
+        "render_markdown",
+    ]
 
     def test_all_exists(self):
         assert hasattr(er, "__all__")

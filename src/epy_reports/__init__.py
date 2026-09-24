@@ -22,7 +22,14 @@ from epy_reports._core._plotly import figure_to_markdown
 
 __version__ = "0.7.1"
 
-__all__ = ["Report", "__version__", "figure_to_markdown"]
+__all__ = [
+    "Report",
+    "__version__",
+    "document_css",
+    "figure_to_markdown",
+    "get_theme",
+    "render_markdown",
+]
 
 
 # Pinning ICU before Qt loads lived here, and identically in
@@ -127,3 +134,33 @@ class Report:
             timeout_ms=timeout_ms,
         )
         return out
+
+#: Rendering markdown as themed HTML is what other libraries need from
+#: epy_reports, and reaching it through _core.themes / _core._design /
+#: _core.renderer was the private seam they used. Measured: importing
+#: _core.themes pulls in PySide6 (+56 modules) and _core.renderer costs
+#: 0.8 s, so binding either at module level would contradict this
+#: package's own contract -- Qt loads only for to_pdf, and nothing that
+#: touches Qt may precede the ICU pin above. They are therefore published
+#: lazily (PEP 562): public names, import cost paid on first use.
+#:
+#: ``get_theme`` is ``_core.themes.get`` under a name that survives being
+#: read at the top level of another library; ``get`` alone does not.
+_LAZY = {"get_theme", "document_css", "render_markdown"}
+
+
+def __getattr__(name: str) -> object:
+    """Resolve the heavyweight rendering exports on first use."""
+    if name in _LAZY:
+        if name == "get_theme":
+            from epy_reports._core import themes
+
+            return themes.get
+        if name == "document_css":
+            from epy_reports._core._design import document_css
+
+            return document_css
+        from epy_reports._core.renderer import render_markdown
+
+        return render_markdown
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
