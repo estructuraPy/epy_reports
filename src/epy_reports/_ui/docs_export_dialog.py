@@ -15,8 +15,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from epy_export._ui.docs_export_dialog import DocsExportDialog as _Shared
-from epy_export._ui.docs_export_dialog import RenderWorker as _Worker
+from epy_export import DocsExportDialog as _Shared
+from epy_export import RenderWorker as _Worker
 from PySide6.QtCore import QSettings  # noqa: F401 - patched by name in tests
 from PySide6.QtWidgets import QWidget
 
