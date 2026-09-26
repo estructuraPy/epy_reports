@@ -17,8 +17,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from epy_export import APPEARANCES, DOCUMENT_TYPES, RenderOptions
-from epy_export._core import _backends
+from epy_export import APPEARANCES, DOCUMENT_TYPES, RenderOptions, backends
 
 from epy_reports.epy_suite_connect._adapters import docs_bridge
 
@@ -59,7 +58,7 @@ def engine_hidden():
 def test_it_is_reachable_when_the_engine_imports_here(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(_backends, "backend_present", lambda module: True)
+    monkeypatch.setattr(backends, "backend_present", lambda module: True)
     assert docs_bridge.epy_docs_available() is True
 
 
@@ -71,15 +70,15 @@ def test_it_is_reachable_through_the_interpreter_studio_found(
     # frozen bundle it can never be imported, so asking the import
     # greyed the menu entry out for every user since the first release.
     # ePy Studio names an interpreter that has it.
-    monkeypatch.setenv(_backends.ENV_DOCS_PYTHON, sys.executable)
+    monkeypatch.setenv(backends.ENV_DOCS_PYTHON, sys.executable)
     assert docs_bridge.epy_docs_available() is True
 
 
 def test_it_is_not_reachable_when_there_is_nothing_to_reach(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(_backends, "backend_present", lambda module: False)
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.setattr(backends, "backend_present", lambda module: False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     assert docs_bridge.epy_docs_available() is False
 
 
@@ -95,8 +94,8 @@ def test_asking_costs_no_import_and_no_subprocess(
         raise AssertionError("asking availability started a subprocess")
 
     monkeypatch.setattr(subprocess, "run", _refuse)
-    monkeypatch.setattr(_backends, "backend_present", lambda module: False)
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.setattr(backends, "backend_present", lambda module: False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     assert docs_bridge.epy_docs_available() is False
 
 
@@ -112,7 +111,7 @@ def test_the_layouts_are_listed_even_with_no_engine_at_all(
     # second, independent reason. Hidden for real, because the two lists
     # carry the SAME nine names: nothing in the values can tell where
     # they came from.
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     assert docs_bridge.list_layouts() == list(APPEARANCES)
     assert docs_bridge.list_document_types() == list(DOCUMENT_TYPES)
 
@@ -262,7 +261,7 @@ def _refuse(tmp_path: Path) -> None:
 def test_an_unreachable_engine_is_refused_by_name(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, engine_hidden: None
 ) -> None:
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     with pytest.raises(docs_bridge.BridgeUnavailableError, match="ePy Docs"):
         _refuse(tmp_path)
 
@@ -274,7 +273,7 @@ def test_an_absent_engine_still_says_it_is_an_add_on(
     # message is not left to the dispatcher: this engine is not
     # something you install, it is something you buy. "Install it, or
     # choose another engine" is right for a caller and useless here.
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     with pytest.raises(docs_bridge.BridgeUnavailableError) as raised:
         _refuse(tmp_path)
     message = str(raised.value)
@@ -289,7 +288,7 @@ def test_a_present_but_broken_engine_is_not_reported_as_absent(
     # install; collapsing them loses that. The engine answers present --
     # deciding whether to OFFER must stay cheap and import nothing --
     # and the real cause surfaces at the moment of use.
-    monkeypatch.setattr(_backends, "backend_present", lambda module: True)
+    monkeypatch.setattr(backends, "backend_present", lambda module: True)
 
     def _explode(module: str, *, why: str) -> object:
         raise docs_bridge.BridgeUnavailableError(
@@ -297,10 +296,10 @@ def test_a_present_but_broken_engine_is_not_reported_as_absent(
             f"That is a broken installation of it, not a missing one."
         )
 
-    from epy_export.epy_suite_connect._adapters import _docs
+    from epy_export import docs_adapter as _docs
 
     monkeypatch.setattr(_docs, "load_backend", _explode)
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     with pytest.raises(docs_bridge.BridgeUnavailableError) as raised:
         _refuse(tmp_path)
     assert "broken installation" in str(raised.value)

@@ -176,9 +176,9 @@ def test_the_dialog_is_built_with_no_engine_on_the_machine(
     qapp, tmp_path, engine_hidden, monkeypatch
 ):
     """The window exists even where the engine cannot be imported."""
-    from epy_export._core import _backends
+    from epy_export import backends
 
-    monkeypatch.delenv(_backends.ENV_DOCS_PYTHON, raising=False)
+    monkeypatch.delenv(backends.ENV_DOCS_PYTHON, raising=False)
     source = tmp_path / "informe.md"
     source.write_text("# T\n", encoding="utf-8")
     dialog = DocsExportDialog(source)
@@ -214,7 +214,7 @@ def test_the_organisation_is_not_spelt_inline():
     """
     import inspect
 
-    from epy_export._ui import docs_export_dialog as shared
+    from epy_export import docs_export_dialog as shared
 
     for module in (ded, shared):
         source = inspect.getsource(module)
