@@ -31,7 +31,7 @@ def _find_pkg_dir(lib_root: Path) -> Path | None:
 _QUALITY_CHECK_AVAILABLE = False
 try:
     _repo_root = LIB_ROOT
-    _qc_path = _repo_root / "_packaging" / "quality_check.py"
+    _qc_path = _repo_root / "src" / "epy_reports" / "epy_suite_connect" / "_packaging" / "quality_check.py"
     if _qc_path.is_file():
         import importlib.util
         _spec = importlib.util.spec_from_file_location("_quality_check", _qc_path)
@@ -113,7 +113,7 @@ def _is_mirror_exempt(rel: str) -> bool:
 
     Integration / packaging / schema / showcase modules are exempt.
 
-    SYNCED from _packaging/_tooling/module_mirror_block.py -- edit it THERE
+    SYNCED from src/epy_reports/epy_suite_connect/_packaging/module_mirror_block.py -- edit it THERE
     and re-run add_hk_module_mirror_xsuite.py --apply. A local edit here is
     overwritten by the next sync.
     """
@@ -257,7 +257,7 @@ def audit_module_mirror(lib_root: Path) -> list[str]:
     those follow two conventions the suite chose on purpose. It is
     reported as an advisory instead; see ``report_module_mirror``.
 
-    SYNCED from _packaging/_tooling/module_mirror_block.py -- edit it THERE
+    SYNCED from src/epy_reports/epy_suite_connect/_packaging/module_mirror_block.py -- edit it THERE
     and re-run add_hk_module_mirror_xsuite.py --apply. A local edit here is
     overwritten by the next sync.
     """
@@ -429,7 +429,7 @@ def _skip_violations_in_source(text: str) -> list[tuple[int, str]]:
     Walking the AST removes both blind spots at once: comments and strings are
     not nodes, and an assignment is.
 
-    SYNCED from _packaging/_tooling/rule8_skip_block.py -- edit it THERE and
+    SYNCED from src/epy_reports/epy_suite_connect/_packaging/rule8_skip_block.py -- edit it THERE and
     re-run add_hk_rule8_xsuite.py --apply. A local edit here is overwritten by
     the next sync.
     """
@@ -595,7 +595,7 @@ def audit_no_skipped_tests(lib_root: Path) -> list[str]:
     itself instead of failing. Where an extra is genuinely optional, the test
     belongs behind that extra in the test matrix, not behind a runtime skip.
 
-    SYNCED from _packaging/_tooling/rule8_skip_block.py -- edit it THERE and
+    SYNCED from src/epy_reports/epy_suite_connect/_packaging/rule8_skip_block.py -- edit it THERE and
     re-run add_hk_rule8_xsuite.py --apply. A local edit here is overwritten by
     the next sync.
     """
@@ -604,7 +604,10 @@ def audit_no_skipped_tests(lib_root: Path) -> list[str]:
         return []
     violations: list[str] = []
     for py_file in sorted(tests_root.rglob("*.py")):
-        if "__pycache__" in py_file.parts:
+        if (
+            "__pycache__" in py_file.parts
+            or ("epy_suite_connect" in py_file.parts and "_packaging" in py_file.parts)
+        ):
             continue
         rel = py_file.relative_to(lib_root)
         try:
@@ -845,9 +848,9 @@ def _load_block(name: str, path: Path):
 # --- documented standard ids (referential integrity) -------------------------
 # Imported from the ONE canonical source rather than copied: Rule 13 was rolled
 # out by injection and its copies drifted apart, so the same rule behaved
-# differently per library. See _packaging/_tooling/doc_standard_refs_block.py.
+# differently per library. See src/epy_reports/epy_suite_connect/_packaging/doc_standard_refs_block.py.
 _SUITE_TOOLING = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
 )
 """The suite's private half, which is OPTIONAL exactly like epy_docs.
 
@@ -863,7 +866,7 @@ failure, because a silently skipped rule is worse than none.
 
 
 _DOC_REFS_BLOCK = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
     / "doc_standard_refs_block.py"
 )
 if _DOC_REFS_BLOCK.exists():
@@ -876,7 +879,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
         if not _SUITE_TOOLING.is_dir():
             return []
         return [
-            "doc-standard-refs: _packaging/_tooling/doc_standard_refs_block.py "
+            "doc-standard-refs: src/epy_reports/epy_suite_connect/_packaging/doc_standard_refs_block.py "
             "is missing, so documented standard ids were NOT checked. This is a "
             "loud failure on purpose: a silently skipped rule is worse than none."
         ]
@@ -904,7 +907,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
 # its root satisfies it -- epy_towers, with six of them and a non-prefixed
 # `adapters/`, printed "Structure: OK (canonical layout)" and exited 0.
 _CONNECT_LAYOUT_BLOCK = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
     / "connect_layout_block.py"
 )
 if _CONNECT_LAYOUT_BLOCK.exists():
@@ -917,7 +920,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
         if not _SUITE_TOOLING.is_dir():
             return []
         return [
-            "connect-layout: _packaging/_tooling/connect_layout_block.py is "
+            "connect-layout: src/epy_reports/epy_suite_connect/_packaging/connect_layout_block.py is "
             "missing, so the epy_suite_connect layout was NOT checked. This is "
             "a loud failure on purpose: a silently skipped rule is worse than "
             "none."
@@ -944,7 +947,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
 # certified by a fixture under tests/_benchmarks/ are exempt, because there the
 # two numbers come from the clause and from the library inside one test.
 _V_SELFCMP_BLOCK = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
     / "v_selfcomparison_block.py"
 )
 if _V_SELFCMP_BLOCK.exists():
@@ -957,7 +960,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
         if not _SUITE_TOOLING.is_dir():
             return []
         return [
-            "v-selfcomparison: _packaging/_tooling/v_selfcomparison_block.py is "
+            "v-selfcomparison: src/epy_reports/epy_suite_connect/_packaging/v_selfcomparison_block.py is "
             "missing, so the V_ validation rows were NOT checked. This is a loud "
             "failure on purpose: a silently skipped rule is worse than none."
         ]
@@ -983,7 +986,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
 # that resolves to something looks exactly like an id that resolves to the
 # right thing until the two are checked against each other.
 _SOURCE_IDS_BLOCK = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
     / "source_ids_block.py"
 )
 if _SOURCE_IDS_BLOCK.exists():
@@ -999,7 +1002,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
             "ran": True,
             "why": None,
             "violations": [
-                ("_packaging/_tooling/source_ids_block.py", "is missing, so the "
+                ("src/epy_reports/epy_suite_connect/_packaging/source_ids_block.py", "is missing, so the "
                  "SOURCE.md reference ids were NOT checked. This is a loud failure "
                  "on purpose: a silently skipped rule is worse than none.")
             ],
@@ -1025,7 +1028,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
 # suite document inside a library repo always drifts, because that repo is
 # where the person editing that library is looking.
 _SUITE_MANUAL_BLOCK = (
-    Path(__file__).resolve().parent / "_packaging" / "_tooling"
+    Path(__file__).resolve().parent / "src" / "epy_reports" / "epy_suite_connect" / "_packaging"
     / "suite_manual_block.py"
 )
 if _SUITE_MANUAL_BLOCK.exists():
@@ -1041,7 +1044,7 @@ else:  # pragma: no cover - only when the tooling repo is absent
             "ran": True,
             "why": None,
             "violations": [
-                ("_packaging/_tooling/suite_manual_block.py", "is missing, so the "
+                ("src/epy_reports/epy_suite_connect/_packaging/suite_manual_block.py", "is missing, so the "
                  "suite-manual duplication rule was NOT checked. This is a loud "
                  "failure on purpose: a silently skipped rule is worse than none.")
             ],
@@ -1146,7 +1149,10 @@ def audit_display_side_effects(lib_root: Path) -> list[str]:
         return False
 
     for py_file in sorted(src_dir.rglob("*.py")):
-        if "__pycache__" in py_file.parts:
+        if (
+            "__pycache__" in py_file.parts
+            or ("epy_suite_connect" in py_file.parts and "_packaging" in py_file.parts)
+        ):
             continue
         try:
             tree = ast.parse(py_file.read_text(encoding="utf-8"))
@@ -1226,7 +1232,7 @@ def report_display_side_effects(violations: list[str]) -> None:
 def _load_unit_suffix_block():
     import importlib.util
 
-    block = (LIB_ROOT / "_packaging" / "_tooling" / "unit_suffix_block.py")
+    block = (LIB_ROOT / "src" / "epy_reports" / "epy_suite_connect" / "_packaging" / "unit_suffix_block.py")
     if not block.is_file():
         return None
     spec = importlib.util.spec_from_file_location("_epy_unit_suffix_block", block)
@@ -1242,7 +1248,7 @@ def audit_unit_suffixes(lib_root):
     """Physical-catalogue keys holding a magnitude without naming its unit."""
     if _UNIT_SUFFIX_BLOCK is None:
         return [
-            "unit-suffixes: _packaging/_tooling/unit_suffix_block.py is missing, "
+            "unit-suffixes: src/epy_reports/epy_suite_connect/_packaging/unit_suffix_block.py is missing, "
             "so catalogue units were NOT checked. A silently skipped rule is "
             "worse than none."
         ]
@@ -1303,7 +1309,7 @@ def main() -> None:
             qc_result = _run_qc(LIB_ROOT)
             _print_qr(qc_result, lib_name)
         else:
-            print("\n  --quality requires _packaging/quality_check.py")
+            print("\n  --quality requires src/epy_reports/epy_suite_connect/_packaging/quality_check.py")
 
     # ── Structure audit (basic) ───────────────────────────────────────
     src_dir = LIB_ROOT / "src"
