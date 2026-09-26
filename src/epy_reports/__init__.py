@@ -146,7 +146,7 @@ class Report:
 #:
 #: ``get_theme`` is ``_core.themes.get`` under a name that survives being
 #: read at the top level of another library; ``get`` alone does not.
-_LAZY = {"get_theme", "document_css", "render_markdown"}
+_LAZY = {"get_theme", "document_css", "render_markdown", "renderer"}
 
 
 def __getattr__(name: str) -> object:
@@ -160,6 +160,13 @@ def __getattr__(name: str) -> object:
             from epy_reports._core._design import document_css
 
             return document_css
+        if name == "renderer":
+            # The module itself, so a sibling can patch its seams (the census
+            # forbids reaching the private leaf directly). Lazy for the same
+            # reason as render_markdown below: it pulls the Markdown stack in.
+            from epy_reports._core import renderer
+
+            return renderer
         from epy_reports._core.renderer import render_markdown
 
         return render_markdown

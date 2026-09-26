@@ -24,6 +24,14 @@ class TestImportability:
 
         assert isinstance(Report, type)
 
+    def test_lazy_renderer_module_is_public(self):
+        # Sibling libraries patch the renderer's seams; the census forbids
+        # reaching epy_reports._core.renderer directly, so the module is
+        # published as a lazy attribute of the package.
+        from epy_reports._core import renderer
+
+        assert er.renderer is renderer
+
 
 # ---------------------------------------------------------------------------
 # Version
