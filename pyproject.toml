@@ -68,8 +68,7 @@ addopts = "-ra --strict-markers --strict-config --cov=epy_reports --cov-report=t
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/__pycache__/*"]
-
+omit = ["*/tests/*", "*/__pycache__/*", "*/epy_suite_connect/_packaging/*"]
 [tool.coverage.report]
 show_missing = true
 exclude_lines = [
@@ -78,6 +77,7 @@ exclude_lines = [
 ]
 
 [tool.ruff]
+extend-exclude = ["src/*/epy_suite_connect/_packaging", ".claude"]
 line-length = 79
 target-version = "py310"
 
