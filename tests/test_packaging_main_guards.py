@@ -1,3 +1,4 @@
+# ruff: noqa: E501, N802 - mirrors Qt's camelCase slots and keeps the explainer lines readable
 """The packaging tools' ``__main__`` trailers + make_icon's Pillow guard.
 
 Same technique as ``epy_papers/tests/test_packaging_main_guards.py``: compile
