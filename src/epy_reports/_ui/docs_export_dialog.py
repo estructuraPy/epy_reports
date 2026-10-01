@@ -1,7 +1,7 @@
 """Dialog for exporting the current document through epy_docs.
 
 Thin: the window itself is the family's, in
-``epy_export._ui.docs_export_dialog``. It is the same two combos, the
+``epy_export.docs_export_dialog``. It is the same two combos, the
 same directory picker, the same format checkboxes and the same three
 remembered keys in all three editors, and only the registry scope and
 the translators differ -- so those are what this module supplies.
