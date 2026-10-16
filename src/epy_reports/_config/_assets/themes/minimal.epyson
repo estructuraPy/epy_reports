@@ -1,5 +1,8 @@
 {
   "description": "Layout minimalista - Configuración integrada directa",
+  "audit_status": "n_a",
+  "audit_notes": "Theme definition (typography, margins, RGB palette, callout and table styling, citation-style name): house styling, no engineering magnitude. Citation styles are named, not transcribed.",
+  "references": {"entries": []},
   "version": "4.0.0",
   "last_updated": "2025-11-22",
   "chunk_types": {
@@ -10,16 +13,12 @@
   "font_family_ref": "minimal",
   "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
   "font_families": {
-    "default": {"description": "Fuente por defecto", "primary": "Calibri",
-      "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
-    "minimal": {"description": "Fuente minimalista", "primary": "Calibri",
-      "fallback": "Arial, Helvetica, sans-serif", "latex_primary": "Latin Modern Roman"},
-    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
-      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"}
+    "default": {"description": "Fuente por defecto", "primary": "Calibri", "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
+    "minimal": {"description": "Fuente minimalista", "primary": "Calibri", "fallback": "Arial, Helvetica, sans-serif", "latex_primary": "Latin Modern Roman"},
+    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro", "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"}
   },
   "typography": {
-    "role_assignments": {"caption": "minimal", "code": "mono_code", "figures": "minimal",
-      "footer": "minimal", "headings": "minimal", "tables": "minimal", "text": "minimal"},
+    "role_assignments": {"caption": "minimal", "code": "mono_code", "figures": "minimal", "footer": "minimal", "headings": "minimal", "tables": "minimal", "text": "minimal"},
     "scales": {
       "caption": {"size": 9.5, "weight": "400"},
       "footer": {"size": 9.0, "weight": "400"},
@@ -47,27 +46,17 @@
     "border_color": [192, 192, 192],
     "caption_color": [64, 64, 64],
     "code": {"background": [248, 248, 248], "text": [0, 0, 0]},
-    "colors": {
-      "primary": [0, 0, 0],
-      "secondary": [64, 64, 64],
-      "tertiary": [128, 128, 128],
-      "quaternary": [160, 160, 160],
-      "quinary": [192, 192, 192],
-      "senary": [32, 32, 32],
-      "septenary": [0, 0, 0]
-    },
+    "colors": {"primary": [0, 0, 0], "secondary": [64, 64, 64], "tertiary": [128, 128, 128], "quaternary": [160, 160, 160], "quinary": [192, 192, 192], "senary": [32, 32, 32], "septenary": [0, 0, 0]},
     "page": {"background": [255, 255, 255], "footer_color": [64, 64, 64], "header_color": [0, 0, 0], "text": [0, 0, 0]},
-    "table": {
-      "background": [255, 255, 255],
-      "background_text": [0, 0, 0],
-      "header": [255, 255, 255],
-      "header_text": [0, 0, 0],
-      "stripe": [254, 254, 254],
-      "stripe_text": [0, 0, 0]
-    }
+    "table": {"background": [255, 255, 255], "background_text": [0, 0, 0], "header": [255, 255, 255], "header_text": [0, 0, 0], "stripe": [254, 254, 254], "stripe_text": [0, 0, 0]}
   },
   "callouts": {
-    "format": {"bg_alpha": 0.05, "border": {"style": "solid", "width_px": 0.5}, "line_height": 1.5, "size_scale": 0.95},
+    "format": {
+      "bg_alpha": 0.05,
+      "border": {"style": "solid", "width_px": 0.5},
+      "line_height": 1.5,
+      "size_scale": 0.95
+    },
     "behavior": {
       "callout_format": ":::{{.callout-{{type}}}}\n{{content}}\n:::",
       "collapse": false,
@@ -104,18 +93,7 @@
     "caption_position": "top",
     "header_bold": false,
     "spacing": {"after": "\n\n", "before": "\n\n"},
-    "styling": {
-      "alternating_rows": false,
-      "cell_padding": 0.03,
-      "content_bold": false,
-      "grid_width_px": 0.25,
-      "header_bold": false,
-      "header_wrap_max_chars": 35,
-      "highlight_node_column": true,
-      "line_spacing": 1.3,
-      "right_padding_spaces": 3,
-      "width_in": 7.0
-    },
+    "styling": {"alternating_rows": false, "cell_padding": 0.03, "content_bold": false, "grid_width_px": 0.25, "header_bold": false, "header_wrap_max_chars": 35, "highlight_node_column": true, "line_spacing": 1.3, "right_padding_spaces": 3, "width_in": 7.0},
     "defaults": {
       "alignment": {
         "content": {"horizontal": "right", "vertical": "center"},
@@ -124,15 +102,7 @@
         "title": {"horizontal": "center"}
       },
       "borders": {"style": "solid", "width_px": 0.25},
-      "category_detection": {
-        "analysis": ["analysis"],
-        "design": ["design"],
-        "dimensions": ["dimensions"],
-        "forces": ["forces"],
-        "general": ["general"],
-        "nodes": ["nodes"],
-        "properties": ["properties"]
-      },
+      "category_detection": {"analysis": ["analysis"], "design": ["design"], "dimensions": ["dimensions"], "forces": ["forces"], "general": ["general"], "nodes": ["nodes"], "properties": ["properties"]},
       "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
     }
   },
