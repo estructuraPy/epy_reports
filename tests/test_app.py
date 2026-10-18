@@ -77,6 +77,11 @@ def window(qapp, monkeypatch):
     preference tests never touch the real "ANM Ingeniería" registry scope.
     """
     monkeypatch.setattr(app_mod, "QSettings", _ScratchSettings)
+    # The stand-in's store is class-level so one object outlives the window;
+    # clearing it here keeps a preference one test wrote (autosave, say) from
+    # leaking into the next test's window. Measured: a full run failed
+    # test_autosave_off_default_does_not_write while it passed alone.
+    _ScratchSettings._store.clear()
     win = MarkdownWindow()
     try:
         yield win
@@ -1835,6 +1840,9 @@ def test_run_gui_boots_app_shows_window_and_opens_existing_files(
 
         def setWindowIcon(self, icon):  # noqa: N802 - Qt API name
             calls["icon"] = icon
+
+        def setStyleSheet(self, sheet):  # noqa: N802 - Qt API name
+            calls["sheet"] = sheet
 
         def exec(self):
             return 42

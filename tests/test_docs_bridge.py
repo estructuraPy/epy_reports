@@ -118,7 +118,7 @@ def test_the_layouts_are_listed_even_with_no_engine_at_all(
 
 def test_the_vocabularies_are_the_ones_the_family_publishes() -> None:
     assert "corporate" in docs_bridge.list_layouts()
-    assert len(docs_bridge.list_layouts()) == 9
+    assert len(docs_bridge.list_layouts()) == 10
     assert "report" in docs_bridge.list_document_types()
 
 

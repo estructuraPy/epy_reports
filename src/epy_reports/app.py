@@ -2039,6 +2039,9 @@ class MarkdownWindow(QMainWindow):
 def _run_gui(files: list[str]) -> int:
     """Boot the Qt application and open ``files`` in tabs."""
     app = QApplication(sys.argv)
+    from epy_export import apply_theme  # noqa: PLC0415
+
+    apply_theme(app)
 
     # Set the application-level icon (taskbar / OS task switcher).
     logo_pix = _load_branding_pixmap("epy_reports.png")
