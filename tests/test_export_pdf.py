@@ -217,6 +217,7 @@ def test_no_named_destinations_falls_back_to_single_pass(
     reader = pypdf.PdfReader(str(out))
     assert len(reader.pages) == 3
     # Metadata is always stamped, even on the single-pass fallback.
+    assert reader.metadata is not None
     assert reader.metadata.creator == "epy_reports"
 
 
@@ -346,6 +347,7 @@ def test_watermark_header_footer_and_metadata_are_stamped(
     import pypdf
 
     reader = pypdf.PdfReader(str(out))
+    assert reader.metadata is not None
     assert reader.metadata.title == "My Report"
     assert reader.metadata.author == "A. Navarro"
 

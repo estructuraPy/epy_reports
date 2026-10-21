@@ -8,6 +8,7 @@ the export_docx resource-path / temp-dir cleanup branches.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -391,7 +392,7 @@ def test_rasterize_svgs_success_path_once_the_save_bug_is_worked_around(
     def patched_save(self, filename, fmt=None, quality=-1):
         if isinstance(fmt, (bytes, bytearray)):
             fmt = fmt.decode("ascii")
-        return real_save(self, filename, fmt, quality)
+        return cast(Any, real_save)(self, filename, fmt, quality)
 
     monkeypatch.setattr(QImage, "save", patched_save)
 

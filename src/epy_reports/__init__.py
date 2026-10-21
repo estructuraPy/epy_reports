@@ -16,7 +16,14 @@ importable, scriptable entry point and pulls in Qt only for ``to_pdf``.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from epy_reports._core._plotly import figure_to_markdown
+
+if TYPE_CHECKING:
+    from epy_reports._core._design import document_css
+    from epy_reports._core.renderer import render_markdown
+    from epy_reports._core.themes import get as get_theme
 
 __version__ = "0.7.1"
 

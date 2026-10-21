@@ -45,7 +45,9 @@ def test_letterbox_preserves_aspect_ratio_centered():
     y_margin = (100 - expected_h) // 2
     # Pixel just above the thumbnail (in the letterbox margin) is transparent.
     if y_margin > 0:
-        assert out.getpixel((50, 0))[3] == 0  # alpha channel
+        pixel = out.getpixel((50, 0))
+        assert isinstance(pixel, tuple)
+        assert pixel[3] == 0  # alpha channel
 
 
 def test_letterbox_handles_a_non_rgba_source():

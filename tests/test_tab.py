@@ -1325,5 +1325,6 @@ def test_export_pdf_stamps_watermark_header_footer_and_metadata(
     import pypdf
 
     reader = pypdf.PdfReader(str(out))
+    assert reader.metadata is not None
     assert reader.metadata.title == "Report"
     assert reader.metadata.author == "A. Navarro"

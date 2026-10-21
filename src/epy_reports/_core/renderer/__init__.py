@@ -16,6 +16,7 @@ import shutil
 import tempfile
 from importlib import resources
 from pathlib import Path
+from typing import Any, cast
 
 import pypandoc
 
@@ -1268,7 +1269,7 @@ def _rasterize_svgs_for_docx(
             # this module's own docstring, "silently drops it otherwise".
             # A report with an SVG figure exported to Word lost that figure,
             # with no error anywhere.
-            image.save(str(png_path), "PNG")
+            cast(Any, image.save)(str(png_path), "PNG")
         except (OSError, RuntimeError, ValueError):
             # Unreadable or malformed SVG — leave the reference unchanged
             # so Pandoc can attempt its own fallback.
