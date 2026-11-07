@@ -21,6 +21,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
+    QDockWidget,
     QFileDialog,
     QMainWindow,
     QMenu,
@@ -48,6 +49,21 @@ SUPPORTED_EXTENSIONS = {".md", ".markdown", ".qmd"}
 FILE_FILTER = "Markdown / Quarto (*.md *.markdown *.qmd);;All files (*)"
 
 AUTOSAVE_INTERVAL_MS = 30_000
+
+_GUIDE_STEPS = (
+    (
+        "Document",
+        "Create or open a report; the editor and preview sit together.",
+    ),
+    ("Write", "Write the Markdown; the preview updates on the right."),
+    (
+        "Elements",
+        "Insert figures, tables, equations, references and footnotes.",
+    ),
+    ("Review", "Check the properties, references and page layout."),
+    ("Export", "Export the finished report to PDF, DOCX or HTML."),
+)
+_GUIDE_STAGES = ((0, "Start"), (1, "Write"), (3, "Review"), (4, "Export"))
 
 def _load_manual_text(filename: str = "welcome.md") -> str:
     """Load a bundled user-manual document and resolve its image placeholders.
@@ -126,6 +142,31 @@ class MarkdownWindow(QMainWindow):
         self.tabs.tabCloseRequested.connect(self._close_tab_at)
         self.tabs.currentChanged.connect(self._on_current_changed)
         self.setCentralWidget(self.tabs)
+
+        from epy_export._ui.workflow_guide import WorkflowGuide
+
+        self.guide = WorkflowGuide(
+            _GUIDE_STEPS,
+            _GUIDE_STAGES,
+            self._go_to_guide_step,
+            translate=i18n.tr,
+            on_language_changed=i18n.on_language_changed,
+            subtitle="Follow the report from source to export.",
+        )
+        guide_dock = QDockWidget()
+        guide_dock.setWindowTitle(i18n.tr("Step by step"))
+        i18n.on_language_changed(
+            lambda: guide_dock.setWindowTitle(
+                i18n.tr("Step by step")
+            )
+        )
+        guide_dock.setObjectName("guide")
+        guide_dock.setMinimumWidth(330)
+        guide_dock.setWidget(self.guide)
+        self.guide_dock = guide_dock
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, guide_dock)
+        self.guide.collapse_requested.connect(guide_dock.hide)
+
         self.setStatusBar(QStatusBar(self))
 
         self._build_actions()
@@ -634,6 +675,9 @@ class MarkdownWindow(QMainWindow):
         self.export_menu.addAction(self.act_docs_export)
 
         self.view_menu = QMenu("&View", self)
+        self.guide_action = self.guide_dock.toggleViewAction()
+        self.guide_action.setText(i18n.tr("Step by step"))
+        self.view_menu.addAction(self.guide_action)
         self.theme_sub = self.view_menu.addMenu("Theme")
         self._populate_theme_menu()
         self.view_menu.addSeparator()
@@ -1691,6 +1735,27 @@ class MarkdownWindow(QMainWindow):
             self._populate_references_menu()
 
     # ------------------------------------------------- file actions
+
+    def _go_to_guide_step(self, index: int) -> None:
+        """Run the action named by one guide step."""
+        if index == 0:
+            self._new_tab()
+        elif index == 1:
+            self._focus_active_editor()
+        elif index == 2:
+            self.act_ins_figure.trigger()
+        elif index == 3:
+            self._edit_document_properties()
+        elif index == 4:
+            self._export_pdf()
+        self.guide.set_current(index)
+
+    def _focus_active_editor(self) -> None:
+        """Put the caret in the active document's editor."""
+        tab = self.tabs.currentWidget()
+        editor = getattr(tab, "editor", None)
+        if editor is not None:
+            editor.setFocus()
 
     def _new_tab(self) -> MarkdownTab:
         """Create an empty untitled tab and focus it."""

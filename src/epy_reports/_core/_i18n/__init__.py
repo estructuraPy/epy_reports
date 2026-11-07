@@ -23,6 +23,28 @@ _observers: list[Callable[[], None]] = []
 # Keys MUST match the source strings exactly (including the trailing
 # "..." vs the "…" ellipsis character and the Qt "&" menu accelerators).
 _ES: dict[str, str] = {
+    "Hide guide": "Ocultar guia",
+    "Step by step": "Paso a paso",
+    "GUIDED WORKFLOW": "FLUJO GUIADO",
+    "Step {current} of {total}": "Paso {current} de {total}",
+    "Back": "Atras",
+    "Next: {step}": "Siguiente: {step}",
+    "End of the guide": "Fin de la guia",
+    "Start": "Inicio",
+    "Write": "Escribir",
+    "Review": "Revisar",
+    "Follow the report from source to export.":
+        "Siga el informe desde el origen hasta la exportacion.",
+    "Create or open a report; the editor and preview sit together.":
+        "Cree o abra un informe; el editor y la vista previa estan juntos.",
+    "Write the Markdown; the preview updates on the right.":
+        "Escriba el Markdown; la vista previa se actualiza a la derecha.",
+    "Insert figures, tables, equations, references and footnotes.":
+        "Inserte figuras, tablas, ecuaciones, referencias y notas.",
+    "Check the properties, references and page layout.":
+        "Revise las propiedades, las referencias y la maquetacion.",
+    "Export the finished report to PDF, DOCX or HTML.":
+        "Exporte el informe terminado a PDF, DOCX o HTML.",
     # --- top-level menus (with & accelerator) ---
     "&File": "&Archivo",
     "&Text": "&Texto",

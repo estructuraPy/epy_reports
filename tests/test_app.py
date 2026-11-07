@@ -2452,3 +2452,51 @@ def test_on_docs_done_ok_shows_status_and_releases_counter(window):
     window._on_docs_done_ok("C:/out")
     assert window._exports_in_flight == 0
     assert "C:/out" in window.statusBar().currentMessage()
+
+
+def test_the_guide_walks_the_document_steps(window, monkeypatch) -> None:
+    """The guide names the report route and each step has an action."""
+    calls: list[str] = []
+    window._new_tab()
+    window._focus_active_editor()
+    monkeypatch.setattr(window, "_new_tab", lambda: calls.append("new"))
+    monkeypatch.setattr(
+        window, "_focus_active_editor", lambda: calls.append("write")
+    )
+    monkeypatch.setattr(
+        window.act_ins_figure, "trigger", lambda: calls.append("elements")
+    )
+    monkeypatch.setattr(
+        window,
+        "_edit_document_properties",
+        lambda: calls.append("review"),
+    )
+    monkeypatch.setattr(
+        window, "_export_pdf", lambda: calls.append("export")
+    )
+    assert window.guide.step_names() == [
+        "Document",
+        "Write",
+        "Elements",
+        "Review",
+        "Export",
+    ]
+    for index in range(5):
+        window._go_to_guide_step(index)  # noqa: SLF001
+    assert calls == ["new", "write", "elements", "review", "export"]
+    assert window.guide.current() == 4
+
+
+def test_the_guide_is_on_the_right_and_can_be_hidden(window) -> None:
+    """The arrow hides it and the View action brings it back."""
+    from PySide6.QtCore import Qt
+
+    window.show()
+    assert window.guide_action in window.view_menu.actions()
+    assert window.dockWidgetArea(window.guide_dock) == (
+        Qt.DockWidgetArea.RightDockWidgetArea
+    )
+    window.guide._collapse_button.click()  # noqa: SLF001
+    assert not window.guide_dock.isVisible()
+    window.guide_action.trigger()
+    assert window.guide_dock.isVisible()
