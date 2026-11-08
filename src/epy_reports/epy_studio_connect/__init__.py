@@ -36,3 +36,12 @@ __all__ = [
     "register",
     "unregister",
 ]
+
+from ._connect import (
+    Handoff,
+    StudioConnectError,
+    available,
+    command,
+    handoff,
+    open_app,
+)

@@ -9,7 +9,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from epy_export import ORGANIZATION
+from epy_export import ORGANIZATION, apply_chrome
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import (
     QAction,
@@ -186,7 +186,8 @@ class MarkdownWindow(QMainWindow):
         # Load persisted theme (defaults to EPY when nothing is saved).
         self._settings = QSettings(ORGANIZATION, "epy_reports")
         saved_theme = str(
-            self._settings.value("theme", themes.DEFAULT_THEME_ID)
+            self._settings.value("theme_default", "")
+            or self._settings.value("theme", themes.DEFAULT_THEME_ID)
         )
         self._current_theme: themes.Theme = themes.get(saved_theme)
         self._apply_theme(self._current_theme.id, persist=False)
@@ -225,6 +226,7 @@ class MarkdownWindow(QMainWindow):
             self.setWindowIcon(QIcon(logo_pix))
 
         self._open_welcome_tab()
+        self._build_assistant()
 
     # ------------------------------------------------- actions/menus
 
@@ -324,6 +326,10 @@ class MarkdownWindow(QMainWindow):
         self.act_edit_theme.triggered.connect(self._edit_current_theme)
         self.act_delete_theme = QAction("Delete custom theme…", self)
         self.act_delete_theme.triggered.connect(self._delete_custom_theme)
+        self.act_default_theme = QAction(
+            "Use current theme as default", self
+        )
+        self.act_default_theme.triggered.connect(self._set_default_theme)
 
         # Page-size actions (Letter default, exclusive group). The key
         # is stored as action data and written into the document's
@@ -902,6 +908,7 @@ class MarkdownWindow(QMainWindow):
         if isinstance(app, QApplication):
             themes.apply_palette(app, theme)
             app.setStyleSheet(themes.qss_for(theme))
+            apply_chrome(app)
 
         css = document_css(theme)
         page_bg = theme.css_vars.get("bg", "")
@@ -946,6 +953,7 @@ class MarkdownWindow(QMainWindow):
         self.theme_sub.addAction(self.act_new_theme)
         self.theme_sub.addAction(self.act_edit_theme)
         self.theme_sub.addAction(self.act_delete_theme)
+        self.theme_sub.addAction(self.act_default_theme)
 
     def _refresh_themes(self, select_id: str | None = None) -> None:
         """Reload bundled + user themes and rebuild the Theme submenu."""
@@ -963,6 +971,10 @@ class MarkdownWindow(QMainWindow):
             self._retranslate_ui()
         if select_id:
             self._apply_theme(select_id)
+
+    def _set_default_theme(self) -> None:
+        """Remember the active theme as the startup default."""
+        self._settings.setValue("theme_default", self._current_theme.id)
 
     def _open_theme_gallery(self) -> None:
         """Open the theme gallery; apply the chosen theme on accept."""
@@ -1719,6 +1731,72 @@ class MarkdownWindow(QMainWindow):
         else:
             self.statusBar().clearMessage()
 
+
+    def _build_assistant(self) -> None:
+        """Add the shared assistant beside the step guide."""
+        from epy_reports.epy_studio_connect.assistant import (
+            available,
+            create_panel,
+        )
+
+        if not available():
+            return
+        try:
+            panel = create_panel(
+                app_id="epy_reports",
+                profile="You edit a technical report. Preserve its sections, "
+                "tables, figures, citations and technical claims. Write "
+                "in the report's voice and format.",
+                context_provider=self._assistant_context,
+                apply_callback=self._assistant_apply,
+                language=i18n.current_language(),
+            )
+        except Exception:  # noqa: BLE001 - an optional capability
+            return
+        dock = QDockWidget(i18n.tr("Assistant"), self)
+        dock.setObjectName("assistant")
+        dock.setMinimumWidth(330)
+        dock.setWidget(panel)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
+        self.tabifyDockWidget(self.guide_dock, dock)
+        self.guide_dock.raise_()
+        self.assistant = panel
+        self.assistant_dock = dock
+        if hasattr(self, "view_menu"):
+            action = dock.toggleViewAction()
+            action.setText("Assistant")
+            self.view_menu.addAction(action)
+
+    def _assistant_context(self) -> dict[str, object]:
+        """Return the active document context for the assistant."""
+        tab = self._current_tab()
+        if tab is None:
+            return {
+                "title": "",
+                "document": "",
+                "selection": "",
+                "language": i18n.current_language(),
+            }
+        cursor = tab.editor.textCursor()
+        return {
+            "title": tab.title(),
+            "document": tab.editor.toPlainText(),
+            "selection": cursor.selectedText().replace("\u2029", "\n"),
+            "language": i18n.current_language(),
+            "notes": str(tab.path) if tab.path is not None else "",
+        }
+
+    def _assistant_apply(self, text: str) -> bool:
+        """Replace the selection, or insert at the caret, with the proposal."""
+        tab = self._current_tab()
+        if tab is None:
+            return False
+        cursor = tab.editor.textCursor()
+        cursor.insertText(text)
+        tab.editor.setTextCursor(cursor)
+        tab.editor.setFocus()
+        return True
+
     def _current_tab(self) -> MarkdownTab | None:
         """Return the currently visible MarkdownTab, if any."""
         widget = self.tabs.currentWidget()
@@ -2114,6 +2192,28 @@ def _run_gui(files: list[str]) -> int:
         app.setWindowIcon(QIcon(logo_pix))
 
     window = MarkdownWindow()
+    from epy_export._ui.app_header import install_header  # noqa: PLC0415
+
+    def _studio() -> None:
+        try:
+            from epy_reports.epy_studio_connect import open_app  # noqa: PLC0415
+            open_app("epy_studio")
+        except Exception:  # noqa: BLE001 - the door is optional
+            pass
+
+    install_header(
+        window,
+        title="ePy Reports",
+        subtitle="Reports, written and exported from one source.",
+        logo_path=Path(__file__).resolve().parent
+        / "_config"
+        / "_assets"
+        / "branding"
+        / "epy_reports.png",
+        guide_dock=getattr(window, "guide_dock", None),
+        assistant_dock=getattr(window, "assistant_dock", None),
+        on_studio=_studio,
+    )
     window.show()
     for raw in files:
         candidate = Path(raw)

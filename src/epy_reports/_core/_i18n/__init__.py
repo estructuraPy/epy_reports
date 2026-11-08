@@ -415,6 +415,11 @@ _ES: dict[str, str] = {
         "¿Eliminar el tema personalizado {name}?",
     "No custom themes to delete.":
         "No hay temas personalizados para eliminar.",
+
+    "Use current theme as default":
+        "Usar el tema actual como predeterminado",
+
+    "Assistant": "Asistente",
 }
 
 
