@@ -90,7 +90,7 @@ numeración y el tamaño de página, y los escribe en el front matter por
 usted.
 :::
 
-![El diálogo Document properties escribe la portada, el encabezado, el pie y los ajustes de página en el front matter.](__SHOT_PROPERTIES__){#fig-properties width=75%}
+![El diálogo Document properties escribe la portada, el encabezado, el pie y los ajustes de página en el front matter.](__SHOT_PROPERTIES__){#fig-properties width=90%}
 
 # Formato de texto
 
@@ -125,7 +125,7 @@ Anteponga de uno a seis caracteres `#` a una línea. Añada una etiqueta
 *Elementos ▸ Lista de tareas* (`Ctrl+Shift+L`) — el diálogo pide la cantidad
 de elementos y un título opcional en negrita.
 
-![El diálogo de lista de tareas: cantidad de elementos y un título opcional en negrita.](__SHOT_CHECKLIST__){width=55%}
+![El diálogo de lista de tareas: cantidad de elementos y un título opcional en negrita.](__SHOT_CHECKLIST__){width=95%}
 
 ```markdown
 - Elemento sin orden
@@ -278,7 +278,7 @@ def greet(name: str) -> str:
 **Cómo insertarlo:** *Elementos ▸ Tabla* (`Ctrl+Shift+T`) — defina columnas,
 filas, encabezado y título; el id de referencia se completa por usted.
 
-![El diálogo de tabla: columnas, filas, encabezado y un título.](__SHOT_TABLE__){width=50%}
+![El diálogo de tabla: columnas, filas, encabezado y un título.](__SHOT_TABLE__){width=85%}
 
 Una tabla con barras verticales y una línea de título
 (`: Título {#tbl-id}`) se convierte en una tabla numerada y referenciable:
@@ -312,14 +312,14 @@ ancho opcional. La figura se numera automáticamente y es referenciable:
 la imagen elegida junto a su documento y completa la etiqueta por usted. Use
 *Elementos ▸ Imagen* para una imagen simple sin título.
 
-![El diálogo de figura: elija imagen, título, id de referencia y ancho.](__SHOT_FIGURE__){width=55%}
+![El diálogo de figura: elija imagen, título, id de referencia y ancho.](__SHOT_FIGURE__){width=85%}
 
 # Ecuaciones
 
 **Cómo insertarlo:** *Elementos ▸ Ecuación* (`Ctrl+Shift+Q`) — escriba el
 LaTeX y un id de referencia; la ecuación se numera automáticamente.
 
-![El diálogo de ecuación: escriba el LaTeX y un id de referencia.](__SHOT_EQUATION__){width=65%}
+![El diálogo de ecuación: escriba el LaTeX y un id de referencia.](__SHOT_EQUATION__){width=85%}
 
 Las fórmulas en línea van entre `$` simples; las ecuaciones en bloque entre
 `$$`, con una etiqueta `{#eq-...}` opcional:
@@ -346,7 +346,7 @@ $$ {#eq-newmark}
 elija cualquier elemento etiquetado; para una cita bibliográfica use el menú
 *Referencias* (`Ctrl+Shift+B`), que requiere un `.bib` enlazado.
 
-![El selector de referencias cruzadas lista cada figura, tabla, ecuación y sección etiquetada.](__SHOT_XREF__){width=55%}
+![El selector de referencias cruzadas lista cada figura, tabla, ecuación y sección etiquetada.](__SHOT_XREF__){width=85%}
 
 Refiera cualquier elemento etiquetado con `@` más su id; el número y la
 palabra localizada («Tabla», «Ecuación», …) se completan automáticamente:
@@ -366,14 +366,14 @@ Como mostró Newmark [@newmark1959method], el método es incondicionalmente
 estable para $\beta \geq 1/4$.
 ```
 
-![El diálogo de entrada bibliográfica compone un registro BibTeX desde un formulario.](__SHOT_BIB__){width=60%}
+![El diálogo de entrada bibliográfica compone un registro BibTeX desde un formulario.](__SHOT_BIB__){width=85%}
 
 # Notas al pie
 
 **Cómo insertarlo:** *Elementos ▸ Nota al pie* (`Ctrl+Shift+O`) — inserta el
 marcador y un esbozo de definición para que lo complete.
 
-![El diálogo de nota al pie: el id del marcador y el texto de la nota.](__SHOT_FOOTNOTE__){width=60%}
+![El diálogo de nota al pie: el id del marcador y el texto de la nota.](__SHOT_FOOTNOTE__){width=85%}
 
 Coloque un marcador `[^id]` en el texto y defínalo en cualquier parte; al
 exportar a PDF la nota se ubica al *pie de la página* donde se la
@@ -653,7 +653,7 @@ automáticamente, así que unas pocas decisiones producen una identidad
 coherente. Los temas guardados aparecen junto a los incluidos en *Ver ▸
 Tema* y persisten entre sesiones; edítelos o elimínelos desde el mismo menú.
 
-![El editor de temas: clone un tema y ajuste colores, fuentes, tipografía y llamados con vista previa en vivo.](__SHOT_THEME_EDITOR__){width=80%}
+![El editor de temas: clone un tema y ajuste colores, fuentes, tipografía y llamados con vista previa en vivo.](__SHOT_THEME_EDITOR__){width=90%}
 
 ---
 

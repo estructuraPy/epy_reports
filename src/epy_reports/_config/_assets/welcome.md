@@ -87,7 +87,7 @@ cover page, the running header cells, the footer, page numbers and page
 size, and writes them into the front matter for you.
 :::
 
-![The Document properties dialog writes the cover, header, footer and page settings into the front matter.](__SHOT_PROPERTIES__){#fig-properties width=75%}
+![The Document properties dialog writes the cover, header, footer and page settings into the front matter.](__SHOT_PROPERTIES__){#fig-properties width=90%}
 
 # Text formatting
 
@@ -121,7 +121,7 @@ make the heading a cross-reference target:
 (`Ctrl+Shift+L`) for a task list — the dialog asks for the number of items
 and an optional bold title.
 
-![The checklist dialog: set the number of items and an optional bold title.](__SHOT_CHECKLIST__){width=55%}
+![The checklist dialog: set the number of items and an optional bold title.](__SHOT_CHECKLIST__){width=95%}
 
 ```markdown
 - Unordered item
@@ -270,7 +270,7 @@ def greet(name: str) -> str:
 **Insert it:** *Elements ▸ Table* (`Ctrl+Shift+T`) — set the columns, rows,
 header and caption; the reference id is filled in for you.
 
-![The table dialog: columns, rows, a header toggle and a caption.](__SHOT_TABLE__){width=50%}
+![The table dialog: columns, rows, a header toggle and a caption.](__SHOT_TABLE__){width=85%}
 
 A pipe table with a caption line (`: Caption {#tbl-id}`) becomes a
 numbered, cross-referenceable table:
@@ -304,14 +304,14 @@ optional width. The figure is auto-numbered and cross-referenceable:
 chosen image next to your document and fills in the label for you. Use
 *Elements ▸ Image* for a plain image with no caption.
 
-![The figure dialog: pick an image, a caption, a reference id and a width.](__SHOT_FIGURE__){width=55%}
+![The figure dialog: pick an image, a caption, a reference id and a width.](__SHOT_FIGURE__){width=85%}
 
 # Equations
 
 **Insert it:** *Elements ▸ Equation* (`Ctrl+Shift+Q`) — type the LaTeX and a
 reference id; the equation is auto-numbered.
 
-![The equation dialog: enter the LaTeX and a reference id.](__SHOT_EQUATION__){width=65%}
+![The equation dialog: enter the LaTeX and a reference id.](__SHOT_EQUATION__){width=85%}
 
 Inline math goes between single `$`; display equations between `$$`, with
 an optional `{#eq-...}` label:
@@ -338,7 +338,7 @@ $$ {#eq-newmark}
 labelled element; for a bibliography citation use the *References* menu
 (`Ctrl+Shift+B`), which needs a linked `.bib`.
 
-![The cross-reference picker lists every labelled figure, table, equation and section.](__SHOT_XREF__){width=55%}
+![The cross-reference picker lists every labelled figure, table, equation and section.](__SHOT_XREF__){width=85%}
 
 Reference any labelled element with `@` plus its id; the number and the
 localized word ("Table", "Equation", …) are filled in automatically:
@@ -357,14 +357,14 @@ As shown by Newmark [@newmark1959method], the method is unconditionally
 stable for $\beta \geq 1/4$.
 ```
 
-![The bibliography entry dialog composes a BibTeX record from a form.](__SHOT_BIB__){width=60%}
+![The bibliography entry dialog composes a BibTeX record from a form.](__SHOT_BIB__){width=85%}
 
 # Footnotes
 
 **Insert it:** *Elements ▸ Footnote* (`Ctrl+Shift+O`) — it drops the marker
 and a matching definition stub for you to fill in.
 
-![The footnote dialog: the marker id and the note text.](__SHOT_FOOTNOTE__){width=60%}
+![The footnote dialog: the marker id and the note text.](__SHOT_FOOTNOTE__){width=85%}
 
 Drop a marker `[^id]` in the text and define it anywhere; on PDF export the
 note is placed at the *foot of the page* where it is referenced:
@@ -639,7 +639,7 @@ choices yield a coherent identity. Saved themes appear next to the
 built-in ones in *View ▸ Theme* and persist across sessions; edit or
 remove them from the same menu.
 
-![The theme editor: clone a theme, then tweak colors, fonts, typography and callouts with a live preview.](__SHOT_THEME_EDITOR__){width=80%}
+![The theme editor: clone a theme, then tweak colors, fonts, typography and callouts with a live preview.](__SHOT_THEME_EDITOR__){width=90%}
 
 ---
 

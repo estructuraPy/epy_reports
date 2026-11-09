@@ -1666,9 +1666,10 @@ class MarkdownWindow(QMainWindow):
     # ----------------------------------------------- tab management
 
     def _open_welcome_tab(self) -> None:
-        """Create the initial untitled tab shown at startup."""
+        """Create the one manual tab shown at startup."""
         tab = self._create_tab()
         tab.set_initial_text(WELCOME_TEXT, path=None)
+        self._manual_tab = tab
 
     def _open_manual(self, filename: str) -> None:
         """Open a bundled user-manual document (Help menu) in a new tab.
@@ -1689,8 +1690,15 @@ class MarkdownWindow(QMainWindow):
                 ).format(filename=filename),
             )
             return
+        existing = getattr(self, "_manual_tab", None)
+        if existing is not None and self.tabs.indexOf(existing) >= 0:
+            if not getattr(existing, "_dirty", False):
+                existing.set_initial_text(text, path=None)
+            self.tabs.setCurrentWidget(existing)
+            return
         tab = self._create_tab()
         tab.set_initial_text(text, path=None)
+        self._manual_tab = tab
 
     def _create_tab(self) -> MarkdownTab:
         """Instantiate a new MarkdownTab and wire its signals."""

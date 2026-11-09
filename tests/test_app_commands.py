@@ -171,11 +171,12 @@ def test_refresh_themes_rebuilds_actions(window):
 # ---------------------------------------------------------------------------
 
 
-def test_open_manual_adds_tab(window):
-    """Opening the English manual creates a new tab."""
+def test_open_manual_reuses_the_manual_tab(window):
+    """Opening the English manual reuses its single tab."""
     before = window.tabs.count()
     window._open_manual("welcome.md")
-    assert window.tabs.count() == before + 1
+    assert window.tabs.count() == before
+    assert window._current_tab() is window._manual_tab
 
 
 def test_open_manual_missing_warns(window):

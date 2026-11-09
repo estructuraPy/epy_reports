@@ -2286,11 +2286,12 @@ def test_export_html_appends_suffix_when_missing(window, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_open_manual_opens_a_new_tab_with_the_manual_text(window):
+def test_open_manual_reuses_the_manual_tab(window):
     before = window.tabs.count()
     window._open_manual("welcome.md")
-    assert window.tabs.count() == before + 1
+    assert window.tabs.count() == before
     tab = window._current_tab()
+    assert tab is window._manual_tab
     assert tab.path is None
     assert tab.text() == app_mod.WELCOME_TEXT
 
