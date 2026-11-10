@@ -18,6 +18,16 @@ demostración y un manual: cada sección muestra la *sintaxis* en un bloque
 de código y el *resultado renderizado* justo debajo. Edítelo con libertad
 y luego expórtelo con `Ctrl+P` para verlo como PDF.
 
+# Proyecto de demostración
+
+Este manual es el recorrido del ejemplo de trabajo. Abra *Ayuda -> Abrir
+proyecto de demostración* y ePy Reports carga `demo_es.md` en español o
+`demo.md` en inglés, según el idioma de la interfaz. El demo es un informe
+estructural editable con estadísticas de materiales, una tabla de
+elementos, un flujo Mermaid y un llamado de revisión. Úselo para seguir
+cada sección de este manual o edítelo como punto de partida para su propio
+informe.
+
 ![El editor epy_reports: la fuente Markdown a la izquierda, la vista previa en vivo a la derecha y la barra de menús arriba.](__SHOT_EDITOR__){#fig-editor width=100%}
 
 [[toc]]
