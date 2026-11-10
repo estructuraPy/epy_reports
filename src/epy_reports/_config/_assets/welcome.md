@@ -26,7 +26,7 @@ structural report with material statistics, a member table, a Mermaid
 workflow and a review callout. Use it to follow every section below, or
 edit it as the starting point for your own report.
 
-![The epy_reports editor — Markdown source on the left, live preview on the right, and the menu bar on top.](__SHOT_EDITOR__){#fig-editor width=100%}
+![The epy_reports editor — Markdown source on the left, live preview on the right, and the toolbar on top.](__SHOT_EDITOR__){#fig-editor width=100%}
 
 [[toc]]
 
