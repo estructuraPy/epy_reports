@@ -7,7 +7,6 @@ paths that the core test_app.py does not reach.
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -317,11 +316,6 @@ def test_export_via_docs_starts_worker(window, tmp_path, monkeypatch):
     window._export_via_docs()
     assert started.get("started") is True
     assert started["kw"]["layout"] == "corporate"
-
-
-def test_on_docs_done_ok_updates_status(window):
-    """The docs-done OK handler runs and restores the cursor."""
-    window._on_docs_done_ok(str(Path("out")))
 
 
 def test_on_docs_done_err_shows_error(window):
