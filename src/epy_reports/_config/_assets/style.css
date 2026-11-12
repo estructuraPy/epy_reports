@@ -738,4 +738,19 @@ body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
     h1, h2, h3, h4 { page-break-after: avoid; }
     pre { border: 1px solid var(--border); }
     .callout { border: 1px solid var(--border); border-left-width: 4px; }
+    /* A PDF has no scrollbar: the wrapper must not become a scroll box. Let
+       the table fit the page and wrap long cells instead of clipping or
+       showing a horizontal scrollbar. */
+    .table-wrap {
+        overflow: visible !important;
+    }
+    .table-wrap table,
+    table {
+        width: 100% !important;
+        table-layout: fixed;
+    }
+    table th, table td {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
 }
