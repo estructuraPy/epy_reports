@@ -732,9 +732,11 @@ body.paged.size-legal .doc-content  { width: 215.9mm; min-height: 355.6mm; }
         background: var(--bg);
     }
     a { color: inherit; text-decoration: none; }
-    pre, blockquote, table, img, figure, .callout {
+    pre, blockquote, img, figure, .callout {
         page-break-inside: avoid;
     }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
     h1, h2, h3, h4 { page-break-after: avoid; }
     pre { border: 1px solid var(--border); }
     .callout { border: 1px solid var(--border); border-left-width: 4px; }
