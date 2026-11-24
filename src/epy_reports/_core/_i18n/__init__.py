@@ -58,6 +58,7 @@ _ES: dict[str, str] = {
     "&View": "&Ver",
     "&Templates": "&Plantillas",
     "&Help": "&Ayuda",
+    "Check for updates...": "Buscar actualizaciones...",
     # --- toolbar dropdown buttons (no accelerator) ---
     "File": "Archivo",
     "Text": "Texto",

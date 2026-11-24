@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from epy_reports._core.renderer import render_markdown
     from epy_reports._core.themes import get as get_theme
 
-__version__ = "0.7.1"
+__version__ = "0.8.0"
 
 __all__ = [
     "Report",

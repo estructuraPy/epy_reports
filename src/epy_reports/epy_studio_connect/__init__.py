@@ -19,6 +19,14 @@ needs a display, before any toolkit loads.
 
 from __future__ import annotations
 
+from epy_reports.epy_studio_connect._connect import (
+    Handoff,
+    StudioConnectError,
+    available,
+    command,
+    handoff,
+    open_app,
+)
 from epy_reports.epy_studio_connect._manifest import (
     StudioManifest,
     manifest,
@@ -30,18 +38,15 @@ from epy_reports.epy_studio_connect._registration import (
 )
 
 __all__ = [
+    "Handoff",
+    "StudioConnectError",
     "StudioManifest",
+    "available",
+    "command",
+    "handoff",
     "launch_hint",
     "manifest",
+    "open_app",
     "register",
     "unregister",
 ]
-
-from ._connect import (
-    Handoff,
-    StudioConnectError,
-    available,
-    command,
-    handoff,
-    open_app,
-)

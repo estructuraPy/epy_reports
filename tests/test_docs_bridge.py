@@ -247,7 +247,7 @@ def test_a_source_named_md_is_still_read_as_quarto(
 def _refuse(tmp_path: Path) -> None:
     """Ask for a render that cannot happen, so the message can be read."""
     source = tmp_path / "informe.qmd"
-    source.write_text("# T\n", encoding="utf-8")
+    source.write_text("# T\n\nBody\n", encoding="utf-8")
     docs_bridge.render_document(
         source_path=source,
         layout="corporate",

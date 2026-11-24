@@ -4,6 +4,19 @@ All notable changes to `epy_reports` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-11-23
+
+### Added
+
+- **Help › Check for updates…** opens this application's releases page
+  through the shared `epy_export.open_releases` helper, so the address
+  shape lives in one place instead of once per editor.
+
+### Changed
+
+- Requires `epy_export>=0.5.0`, where the helper and the shared PDF
+  gates live.
+
 ## [0.7.1] — 2026-09-08
 
 ### Fixed
