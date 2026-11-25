@@ -731,7 +731,7 @@ class MarkdownWindow(QMainWindow):
         self.help_menu = QMenu("&Help", self)
         self.help_menu.addAction(self.act_manual_en)
         self.help_menu.addAction(self.act_manual_es)
-        self.help_menu.addAction(self.act_demo)
+        self.file_menu.addAction(self.act_demo)
         self.act_update = QAction(i18n.tr("Check for updates..."), self)
         self.act_update.triggered.connect(self._open_updates)
         self.help_menu.addAction(self.act_update)
